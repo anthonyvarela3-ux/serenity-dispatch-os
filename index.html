@@ -2,6 +2,9 @@
 <html lang="en" class="h-full bg-slate-950 text-slate-100">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <!-- Apple iPadOS & iOS Standalone PWA Tags -->
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -116,6 +119,32 @@
     /* Isolated Stacking Context for Leaflet Map
        Traps Leaflet internal z-indices (z-400 to z-1000) inside level 1,
        guaranteeing modals (z-9999) ALWAYS sit cleanly on top without bleeding through. */
+    /* Mobile GPU & Smooth Momentum Scrolling Optimization */
+    html {
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
+    }
+    body {
+      -webkit-overflow-scrolling: touch;
+    }
+    /* Hardware-accelerated modal scrolling */
+    #modal-ride-focus > div, #modal-parser > div, #modal-settings > div, #modal-location-correction > div {
+      -webkit-overflow-scrolling: touch !important;
+      overscroll-behavior: contain !important;
+      touch-action: pan-y !important;
+      will-change: transform, scroll-position;
+    }
+
+    /* In-Cab Driving Lock (Rigid Viewport Kiosk Mode) */
+    body.drive-locked {
+      height: 100vh !important;
+      max-height: 100vh !important;
+      overflow: hidden !important;
+      touch-action: none !important;
+      user-select: none !important;
+      -webkit-user-select: none !important;
+    }
+
     #cockpit-map-wrapper {
       isolation: isolate;
       position: relative;
@@ -130,7 +159,7 @@
 </head>
 <body class="min-h-full bg-slate-950 text-slate-100 font-sans antialiased flex flex-col selection:bg-teal-500 selection:text-white pb-14">
   <!-- Full-Page Drag & Drop Overlay (Allows dropping manifest screenshots directly onto the live site) -->
-  <div id="fullpage-drop-overlay" class="fixed inset-0 z-[9998] bg-slate-950/90 backdrop-blur-md border-4 border-dashed border-teal-400 hidden flex flex-col items-center justify-center p-6 text-center pointer-events-none">
+  <div id="fullpage-drop-overlay" class="fixed inset-0 z-[9998] bg-slate-950/90  border-4 border-dashed border-teal-400 hidden flex flex-col items-center justify-center p-6 text-center pointer-events-none">
     <div class="w-20 h-20 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-4xl mb-4 animate-bounce">
       <i class="fa-solid fa-cloud-arrow-up"></i>
     </div>
@@ -139,7 +168,7 @@
   </div>
 
   <!-- TOP DISPATCH CONTROL BAR -->
-  <header class="border-b border-slate-800/90 bg-slate-900/95 backdrop-blur-md sticky top-0 z-40 shadow-md">
+  <header class="border-b border-slate-800/90 bg-slate-900/95  sticky top-0 z-40 shadow-md">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
         <!-- Logo & Branding -->
@@ -207,6 +236,25 @@
           <!-- Mobile GPS Radar Button -->
           <button id="btn-gps-mobile" class="md:hidden p-2 text-slate-300 bg-slate-800 rounded-lg hover:bg-slate-700 transition" title="Open Live GPS Map">
             <i class="fa-solid fa-map-location-dot text-teal-400 text-xs"></i>
+          </button>
+
+          <!-- 1-Tap Hard Refresh / Cache Buster -->
+          <button id="btn-force-refresh" type="button" onclick="forceHardRefresh()" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-teal-300 border border-teal-500/30 transition flex items-center space-x-1 cursor-pointer" title="Force iPad to reload latest Cloudflare build past cache">
+            <i class="fa-solid fa-rotate text-teal-400 text-xs"></i>
+            <span class="hidden xl:inline">Refresh App</span>
+          </button>
+
+          <!-- In-Cab Driving Lock Toggle -->
+          <button id="btn-drive-lock" type="button" onclick="toggleDriveLock()" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition flex items-center space-x-1 cursor-pointer" title="Lock screen & map camera for steady driving without jiggle">
+            <i class="fa-solid fa-lock text-slate-400 text-xs" id="icon-drive-lock"></i>
+            <span class="hidden xl:inline" id="label-drive-lock">Drive Lock</span>
+          </button>
+
+          <!-- Address Corrections Report Badge -->
+          <button id="btn-open-corrections-report" type="button" onclick="openCorrectionsReportModal()" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 transition flex items-center space-x-1 cursor-pointer" title="View & Export Address Corrections Report for Dispatch Master System">
+            <i class="fa-solid fa-file-signature text-amber-400 text-xs"></i>
+            <span class="hidden xl:inline">Corrections</span>
+            <span class="px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 font-mono text-[10px] font-bold" id="corrections-badge-count">0</span>
           </button>
 
           <!-- Clear Manifest / Start New Day Button in Header -->
@@ -491,7 +539,7 @@
           
           <!-- In-App Live Navigation HUD Overlay -->
           <div id="cockpit-nav-hud-overlay" class="hidden absolute top-2.5 left-2.5 right-2.5 z-[1000] pointer-events-auto">
-            <div class="bg-slate-950/95 backdrop-blur-md border border-cyan-500/50 rounded-xl p-2.5 sm:p-3 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div class="bg-slate-950/95  border border-cyan-500/50 rounded-xl p-2.5 sm:p-3 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
               
               <!-- Maneuver Instruction & Distance -->
               <div class="flex items-center space-x-3 min-w-0">
@@ -596,14 +644,15 @@
                   </div>
                   <div class="text-xl font-black font-mono text-teal-300" id="cockpit-target-pu">08:46 AM</div>
                   <p class="text-xs text-slate-200 mt-1 truncate" id="cockpit-pu-address">228 Hilltop Dr, Brentwood</p>
-                </div>
-                <div class="mt-2.5 flex items-center space-x-1.5">
-                  <button id="btn-cockpit-nav-pu" type="button" onclick="toggleCockpitNav('pu')" class="w-full py-2 px-2.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center justify-center space-x-1.5 transition cursor-pointer shadow-md">
-                    <i class="fa-solid fa-location-arrow text-[11px]" id="icon-cockpit-nav-pu"></i>
-                    <span id="label-cockpit-nav-pu">Navigate to Pickup</span>
+                  <button type="button" onclick="openLocationCorrectionModal(AppState.currentCockpitTripId, 'pu')" class="mt-1 text-[10px] font-mono text-amber-400 hover:text-amber-300 flex items-center space-x-1 cursor-pointer" title="Report wrong address & snap actual van location">
+                    <i class="fa-solid fa-triangle-exclamation text-[9px]"></i>
+                    <span>Wrong Location?</span>
                   </button>
-                  <a id="btn-cockpit-ext-pu" href="#" target="_blank" rel="noopener noreferrer" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white text-xs transition cursor-pointer shrink-0" title="Pop Out to Google Maps">
-                    <i class="fa-solid fa-arrow-up-right-from-square text-[11px]"></i>
+                </div>
+                <div class="mt-2.5">
+                  <a id="btn-cockpit-nav-pu" href="#" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 px-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-extrabold text-xs flex items-center justify-center space-x-1.5 transition cursor-pointer shadow-md shadow-teal-950/60">
+                    <i class="fa-solid fa-location-arrow text-xs"></i>
+                    <span id="label-cockpit-nav-pu">Navigate to Pickup (Google Maps)</span>
                   </a>
                 </div>
               </div>
@@ -617,14 +666,15 @@
                   </div>
                   <div class="text-xl font-black font-mono text-rose-300" id="cockpit-target-do">09:31 AM</div>
                   <p class="text-xs text-slate-200 mt-1 truncate" id="cockpit-do-address">640 Montauk Hwy, Shirley</p>
-                </div>
-                <div class="mt-2.5 flex items-center space-x-1.5">
-                  <button id="btn-cockpit-nav-do" type="button" onclick="toggleCockpitNav('do')" class="w-full py-2 px-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center justify-center space-x-1.5 transition cursor-pointer shadow-md">
-                    <i class="fa-solid fa-location-arrow text-[11px]" id="icon-cockpit-nav-do"></i>
-                    <span id="label-cockpit-nav-do">Navigate to Dropoff</span>
+                  <button type="button" onclick="openLocationCorrectionModal(AppState.currentCockpitTripId, 'do')" class="mt-1 text-[10px] font-mono text-amber-400 hover:text-amber-300 flex items-center space-x-1 cursor-pointer" title="Report wrong address & snap actual van location">
+                    <i class="fa-solid fa-triangle-exclamation text-[9px]"></i>
+                    <span>Wrong Location?</span>
                   </button>
-                  <a id="btn-cockpit-ext-do" href="#" target="_blank" rel="noopener noreferrer" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white text-xs transition cursor-pointer shrink-0" title="Pop Out to Google Maps">
-                    <i class="fa-solid fa-arrow-up-right-from-square text-[11px]"></i>
+                </div>
+                <div class="mt-2.5">
+                  <a id="btn-cockpit-nav-do" href="#" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs flex items-center justify-center space-x-1.5 transition cursor-pointer shadow-md shadow-rose-950/60">
+                    <i class="fa-solid fa-location-arrow text-xs"></i>
+                    <span id="label-cockpit-nav-do">Navigate to Dropoff (Google Maps)</span>
                   </a>
                 </div>
               </div>
@@ -853,7 +903,7 @@
   </main>
 
   <!-- MODAL 1: MANIFEST PARSER & OCR UPLOADER -->
-  <div id="modal-parser" class="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+  <div id="modal-parser" class="fixed inset-0 z-[9999] bg-black/80  hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between pb-4 border-b border-slate-800">
         <div class="flex items-center space-x-2.5">
@@ -948,7 +998,7 @@
   </div>
 
   <!-- MODAL 2: OPERATIONAL SETTINGS & ENGINE TUNING -->
-  <div id="modal-settings" class="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+  <div id="modal-settings" class="fixed inset-0 z-[9999] bg-black/80  hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between pb-4 border-b border-slate-800">
         <div class="flex items-center space-x-2.5">
@@ -1076,7 +1126,7 @@
   </div>
 
   <!-- MODAL 3: ADD / EDIT TRIP MODAL -->
-  <div id="modal-trip-edit" class="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+  <div id="modal-trip-edit" class="fixed inset-0 z-[9999] bg-black/80  hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between pb-4 border-b border-slate-800">
         <h3 class="text-base font-bold text-white" id="modal-trip-title">Edit Trip Run</h3>
@@ -1152,7 +1202,7 @@
   </div>
 
   <!-- MODAL 4: SIMULATE LIVE ARRIVAL TIME MODAL -->
-  <div id="modal-simulate-time" class="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+  <div id="modal-simulate-time" class="fixed inset-0 z-[9999] bg-black/80  hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl relative">
       <div class="flex items-center justify-between pb-3 border-b border-slate-800">
         <h3 class="text-sm font-bold text-white flex items-center space-x-2">
@@ -1206,7 +1256,7 @@
   </div>
 
   <!-- MODAL 5: CUSTOMER INFORMATION & NOTEPAD WINDOW -->
-  <div id="modal-customer-notes" class="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+  <div id="modal-customer-notes" class="fixed inset-0 z-[9999] bg-black/80  hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between pb-3.5 border-b border-slate-800">
         <div class="flex items-center space-x-2.5">
@@ -1309,7 +1359,7 @@
   </div>
 
   <!-- MODAL 6: LIVE GPS VEHICLE RADAR & ROUTE TELEMATICS MAP -->
-  <div id="modal-gps-radar" class="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4">
+  <div id="modal-gps-radar" class="fixed inset-0 z-[9999] bg-black/80  hidden flex items-center justify-center p-3 sm:p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-4xl w-full p-5 sm:p-6 shadow-2xl relative max-h-[95vh] overflow-y-auto">
       <div class="flex items-center justify-between pb-3.5 border-b border-slate-800">
         <div class="flex items-center space-x-2.5">
@@ -1375,7 +1425,7 @@
   </div>
 
   <!-- MODAL 7: DRIVER CLOCK IN / CLOCK OUT SHIFT MODAL -->
-  <div id="modal-clock-shift" class="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+  <div id="modal-clock-shift" class="fixed inset-0 z-[9999] bg-black/80  hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
       <div class="flex items-center justify-between pb-3.5 border-b border-slate-800">
         <div class="flex items-center space-x-2.5">
@@ -1439,7 +1489,7 @@
   </div>
 
   <!-- MODAL 8: CLEAR BOARD & NEW DAY CONFIRMATION MODAL -->
-  <div id="modal-clear-board" class="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+  <div id="modal-clear-board" class="fixed inset-0 z-[9999] bg-black/80  hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl relative">
       <div class="flex items-center justify-between pb-3.5 border-b border-slate-800">
         <div class="flex items-center space-x-2.5">
@@ -1489,7 +1539,7 @@
   </div>
 
     <!-- MODAL 9: IPAD IN-CAB RIDE FOCUS & DISPATCH CARD -->
-  <div id="modal-ride-focus" class="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-2 sm:p-4">
+  <div id="modal-ride-focus" class="fixed inset-0 z-[9999] bg-black/85  hidden flex items-center justify-center p-2 sm:p-4">
     <div class="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl relative max-h-[95vh] overflow-y-auto flex flex-col justify-between">
       
       <!-- Top Navigation & Status Bar -->
@@ -1576,17 +1626,18 @@
                 <p class="mt-1.5 text-sm sm:text-base font-semibold text-slate-100 leading-snug" id="focus-pu-address">
                   Pickup Address
                 </p>
+                <button type="button" onclick="openLocationCorrectionModal(AppState.currentFocusTripId, 'pu')" class="mt-1.5 text-xs font-mono text-amber-400 hover:text-amber-300 flex items-center space-x-1 cursor-pointer" title="Report wrong address & snap actual van location">
+                  <i class="fa-solid fa-triangle-exclamation text-xs"></i>
+                  <span>Wrong Location?</span>
+                </button>
               </div>
             </div>
 
-            <!-- Big Navigate Button with In-App & External Options -->
+            <!-- Direct Google Maps Navigation Button -->
             <div class="mt-3 pt-2.5 border-t border-slate-850 flex items-center space-x-2">
-              <button id="btn-focus-nav-pu" type="button" onclick="launchInAppNavFromModal('pu')" class="w-full py-2.5 px-3 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center justify-center space-x-2 shadow-md transition cursor-pointer">
+              <a id="btn-focus-nav-pu" href="#" target="_blank" rel="noopener noreferrer" class="w-full py-3 px-3 rounded-xl bg-teal-600 hover:bg-teal-500 active:bg-teal-700 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-lg shadow-teal-950/60 transition cursor-pointer">
                 <i class="fa-solid fa-location-arrow text-sm"></i>
-                <span>Navigate to Pickup (In-App)</span>
-              </button>
-              <a id="btn-focus-ext-pu" href="#" target="_blank" rel="noopener noreferrer" class="p-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white text-xs transition cursor-pointer shrink-0" title="Pop Out to Google Maps">
-                <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                <span>Navigate to Pickup (Google Maps)</span>
               </a>
             </div>
           </div>
@@ -1610,17 +1661,18 @@
                 <p class="mt-1.5 text-sm sm:text-base font-semibold text-slate-100 leading-snug" id="focus-do-address">
                   Dropoff Address
                 </p>
+                <button type="button" onclick="openLocationCorrectionModal(AppState.currentFocusTripId, 'do')" class="mt-1.5 text-xs font-mono text-amber-400 hover:text-amber-300 flex items-center space-x-1 cursor-pointer" title="Report wrong address & snap actual van location">
+                  <i class="fa-solid fa-triangle-exclamation text-xs"></i>
+                  <span>Wrong Location?</span>
+                </button>
               </div>
             </div>
 
-            <!-- Big Navigate Button with In-App & External Options -->
+            <!-- Direct Google Maps Navigation Button -->
             <div class="mt-3 pt-2.5 border-t border-slate-850 flex items-center space-x-2">
-              <button id="btn-focus-nav-do" type="button" onclick="launchInAppNavFromModal('do')" class="w-full py-2.5 px-3 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center justify-center space-x-2 shadow-md transition cursor-pointer">
+              <a id="btn-focus-nav-do" href="#" target="_blank" rel="noopener noreferrer" class="w-full py-3 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-lg shadow-rose-950/60 transition cursor-pointer">
                 <i class="fa-solid fa-location-arrow text-sm"></i>
-                <span>Navigate to Dropoff (In-App)</span>
-              </button>
-              <a id="btn-focus-ext-do" href="#" target="_blank" rel="noopener noreferrer" class="p-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white text-xs transition cursor-pointer shrink-0" title="Pop Out to Google Maps">
-                <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                <span>Navigate to Dropoff (Google Maps)</span>
               </a>
             </div>
           </div>
@@ -1716,6 +1768,10 @@
       navAutoCenter: true,
       navVoiceAudio: false,
       navStepIndex: 0,
+      addressCorrections: [], // Holds verified address updates for master dispatch
+      activeCorrectionTripId: null,
+      activeCorrectionTarget: null,
+      driveLockEnabled: false,
       trips: []
     };
 
@@ -2124,6 +2180,7 @@
       let totalLoadedMiles = 0;
       let totalDeadheadMiles = trip1.deadheadMiles;
       let totalRevenue = 0;
+      let actualRevenue = 0;
       let completedCount = 0;
 
       // Process each trip sequentially
@@ -2150,7 +2207,11 @@
         }
 
         totalLoadedMiles += trip.miles;
-        totalRevenue += trip.revenue;
+        totalRevenue += (trip.revenue || 0);
+        if (trip.status === 'Completed') {
+          actualRevenue += (trip.revenue || 0);
+          completedCount++;
+        }
 
         const schedPUMin = timeToMinutes(trip.schedPU);
         const schedDOMin = timeToMinutes(trip.schedDO);
@@ -2402,6 +2463,8 @@
           totalDriverHours: totalDriverHours.toFixed(2),
           totalLaborPay: totalLaborPay.toFixed(2),
           totalRevenue: totalRevenue.toFixed(2),
+        actualRevenue: actualRevenue.toFixed(2),
+        pendingRevenue: Math.max(0, totalRevenue - actualRevenue).toFixed(2),
           totalFuelAndWear: totalFuelAndWear.toFixed(2),
           netMargin: netMargin.toFixed(2),
           marginPct: marginPct.toFixed(1),
@@ -2621,54 +2684,19 @@
       document.getElementById('cockpit-sched-pu').textContent = `Sched: ${formatTime12(currentTrip.schedPU)}`;
       document.getElementById('cockpit-target-pu').textContent = formatTime12(targetPU);
       document.getElementById('cockpit-pu-address').textContent = currentTrip.puAddress;
+      if (document.getElementById('btn-cockpit-nav-pu')) {
+        document.getElementById('btn-cockpit-nav-pu').href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(currentTrip.puAddress)}`;
+      }
 
       const targetDO = currentTrip.actualDropoff || currentTrip.calculatedDO || currentTrip.schedDO;
       document.getElementById('cockpit-sched-do').textContent = `Sched: ${formatTime12(currentTrip.schedDO)}`;
       document.getElementById('cockpit-target-do').textContent = formatTime12(targetDO);
       document.getElementById('cockpit-do-address').textContent = currentTrip.doAddress;
-
-      // External Google Maps pop-out links
-      if (document.getElementById('btn-cockpit-ext-pu')) {
-        document.getElementById('btn-cockpit-ext-pu').href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(currentTrip.puAddress)}`;
-      }
-      if (document.getElementById('btn-cockpit-ext-do')) {
-        document.getElementById('btn-cockpit-ext-do').href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(currentTrip.doAddress)}`;
+      if (document.getElementById('btn-cockpit-nav-do')) {
+        document.getElementById('btn-cockpit-nav-do').href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(currentTrip.doAddress)}`;
       }
 
-      // Update In-Cab Navigation Buttons Visual State
-      const puBtn = document.getElementById('btn-cockpit-nav-pu');
-      const puLabel = document.getElementById('label-cockpit-nav-pu');
-      const puIcon = document.getElementById('icon-cockpit-nav-pu');
-      
-      const doBtn = document.getElementById('btn-cockpit-nav-do');
-      const doLabel = document.getElementById('label-cockpit-nav-do');
-      const doIcon = document.getElementById('icon-cockpit-nav-do');
 
-      const isNavActive = AppState.liveNavMode && AppState.activeNavTripId === currentTrip.id;
-      
-      if (puBtn && puLabel) {
-        if (isNavActive && AppState.activeNavTarget === 'pu') {
-          puBtn.className = 'w-full py-2 px-2.5 rounded-lg bg-teal-500/20 border-2 border-teal-400 text-teal-200 font-black text-xs flex items-center justify-center space-x-1.5 shadow-lg shadow-teal-950/70 transition cursor-pointer live-pulse';
-          puLabel.textContent = 'Navigating to Pickup (Tap to Stop)';
-          if (puIcon) puIcon.className = 'fa-solid fa-compass text-teal-300 live-pulse';
-        } else {
-          puBtn.className = 'w-full py-2 px-2.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center justify-center space-x-1.5 transition cursor-pointer shadow-md';
-          puLabel.textContent = 'Navigate to Pickup';
-          if (puIcon) puIcon.className = 'fa-solid fa-location-arrow text-[11px]';
-        }
-      }
-
-      if (doBtn && doLabel) {
-        if (isNavActive && AppState.activeNavTarget === 'do') {
-          doBtn.className = 'w-full py-2 px-2.5 rounded-lg bg-rose-500/20 border-2 border-rose-400 text-rose-200 font-black text-xs flex items-center justify-center space-x-1.5 shadow-lg shadow-rose-950/70 transition cursor-pointer live-pulse';
-          doLabel.textContent = 'Navigating to Dropoff (Tap to Stop)';
-          if (doIcon) doIcon.className = 'fa-solid fa-compass text-rose-300 live-pulse';
-        } else {
-          doBtn.className = 'w-full py-2 px-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center justify-center space-x-1.5 transition cursor-pointer shadow-md';
-          doLabel.textContent = 'Navigate to Dropoff';
-          if (doIcon) doIcon.className = 'fa-solid fa-location-arrow text-[11px]';
-        }
-      }
 
       // Courtesy Messaging Hub inside Cockpit
       const courtesyHub = document.getElementById('cockpit-courtesy-hub');
@@ -2817,7 +2845,7 @@
       const shiftHrsEl = document.getElementById('cockpit-shift-hours');
       if (shiftHrsEl) shiftHrsEl.textContent = `${summary.totalDriverHours || '8.28'}h`;
       const shiftRevEl = document.getElementById('cockpit-shift-rev');
-      if (shiftRevEl) shiftRevEl.textContent = `$${summary.totalRevenue || '506.00'}`;
+      if (shiftRevEl) shiftRevEl.innerHTML = `<span class="text-emerald-400 font-bold">$${summary.actualRevenue || '0.00'}</span> <span class="text-slate-400 text-xs font-mono">($${summary.totalRevenue || '0.00'} Est)</span>`;
 
       // 4. Render Leaflet Map in Zone 1
       renderCockpitMap(currentTrip);
@@ -3155,19 +3183,19 @@
 
           // 1. Pickup Pin (Teal)
           L.circleMarker(coords.pu, {
-            radius: 8,
+            radius: 11,
             fillColor: '#14b8a6',
-            color: '#ffffff',
-            weight: 2.5,
+            color: '#090d16',
+            weight: 3.5,
             fillOpacity: 1
           }).addTo(AppState.cockpitMapLayerGroup).bindPopup(`<b>Pickup: ${currentTrip.passenger}</b><br>${currentTrip.puAddress}`);
 
           // 2. Dropoff Pin (Rose)
           L.circleMarker(coords.do, {
-            radius: 8,
+            radius: 11,
             fillColor: '#f43f5e',
-            color: '#ffffff',
-            weight: 2.5,
+            color: '#090d16',
+            weight: 3.5,
             fillOpacity: 1
           }).addTo(AppState.cockpitMapLayerGroup).bindPopup(`<b>Dropoff: ${currentTrip.passenger}</b><br>${currentTrip.doAddress}`);
 
@@ -3182,12 +3210,18 @@
             }).addTo(AppState.cockpitMapLayerGroup).bindPopup('<b>Your Current Location (Van #104)</b>');
           }
 
-          // 4. Connecting Route Line
-          L.polyline([coords.pu, coords.do], {
-            color: '#2dd4bf',
-            weight: 4.5,
-            dashArray: '6, 8',
-            opacity: 0.95
+          // 4. Connecting Route Line - BOLD, SOLID, HIGH-CONTRAST (Dark casing + rich solid line)
+          const corridorPath = getLongIslandCorridorPath(coords.pu, coords.do);
+          L.polyline(corridorPath, {
+            color: '#090d16',
+            weight: 10,
+            opacity: 1.0
+          }).addTo(AppState.cockpitMapLayerGroup);
+
+          L.polyline(corridorPath, {
+            color: '#0d9488',
+            weight: 6,
+            opacity: 1.0
           }).addTo(AppState.cockpitMapLayerGroup);
 
           const bounds = L.latLngBounds([coords.pu, coords.do]);
@@ -3237,11 +3271,10 @@
       document.getElementById('metric-deadhead-miles').textContent = summary.totalDeadheadMiles || '0.0';
       document.getElementById('metric-driver-hours').textContent = summary.totalDriverHours || '0.00';
       document.getElementById('metric-labor-pay').textContent = `$${summary.totalLaborPay || '0.00'}`;
-      document.getElementById('metric-net-margin').textContent = `$${summary.totalRevenue || '0.00'}`;
-      document.getElementById('metric-margin-pct').textContent = 'Gross Earned';
+      document.getElementById('metric-net-margin').textContent = `$${summary.actualRevenue || '0.00'}`;
+      document.getElementById('metric-margin-pct').textContent = 'Closed Out';
       if (document.getElementById('metric-earned-subtext')) {
-        const avgRev = summary.totalRuns > 0 ? (parseFloat(summary.totalRevenue) / summary.totalRuns).toFixed(2) : '0.00';
-        document.getElementById('metric-earned-subtext').textContent = `Total revenue across ${summary.totalRuns || 0} runs • Avg $${avgRev}/run`;
+        document.getElementById('metric-earned-subtext').innerHTML = `Morning Est: <strong class="text-teal-300 font-mono">$${summary.totalRevenue || '0.00'}</strong> &bull; Pending: <strong class="text-amber-400 font-mono">$${summary.pendingRevenue || '0.00'}</strong>`;
       }
       if (document.getElementById('metric-total-rev')) document.getElementById('metric-total-rev').textContent = `$${summary.totalRevenue || '0.00'}`;
       if (document.getElementById('metric-fuel-cost')) document.getElementById('metric-fuel-cost').textContent = '$0.00';
@@ -3429,15 +3462,15 @@
             <div class="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
               <div class="inline-flex items-center space-x-1.5 bg-slate-950/90 border border-slate-800 px-2 py-0.5 rounded-md shadow-sm">
                 <!-- Clickable Phone Number (Direct Dial via Google Voice) -->
-                <a href="${getCallUrl(trip.phone)}" target="_blank" rel="noopener noreferrer" onclick="handlePhoneClick(event, '${trip.phone}', 'call')" class="font-mono text-slate-200 hover:text-teal-300 font-semibold transition" title="Click to open Google Voice dialer (pre-filled ready to call)">
+                <a href="${getCallUrl(trip.phone)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); handlePhoneClick(event, '${trip.phone}', 'call')" class="font-mono text-slate-200 hover:text-teal-300 font-semibold transition" title="Click to open Google Voice dialer (pre-filled ready to call)">
                   ${trip.phone}
                 </a>
                 <!-- 1-Click Call Icon -->
-                <a href="${getCallUrl(trip.phone)}" target="_blank" rel="noopener noreferrer" onclick="handlePhoneClick(event, '${trip.phone}', 'call')" class="text-teal-400 hover:text-teal-300 p-1 rounded hover:bg-teal-950/60 transition" title="Call via Google Voice (LI Res Run)">
+                <a href="${getCallUrl(trip.phone)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); handlePhoneClick(event, '${trip.phone}', 'call')" class="text-teal-400 hover:text-teal-300 p-1 rounded hover:bg-teal-950/60 transition" title="Call via Google Voice (LI Res Run)">
                   <i class="fa-solid fa-phone text-[10px]"></i>
                 </a>
                 <!-- 1-Click SMS Text Icon -->
-                <a href="${getSmsUrl(trip.phone)}" target="_blank" rel="noopener noreferrer" onclick="handlePhoneClick(event, '${trip.phone}', 'sms')" class="text-sky-400 hover:text-sky-300 p-1 rounded hover:bg-sky-950/60 transition" title="Text via Google Voice (LI Res Run - Copies number)">
+                <a href="${getSmsUrl(trip.phone)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); handlePhoneClick(event, '${trip.phone}', 'sms')" class="text-sky-400 hover:text-sky-300 p-1 rounded hover:bg-sky-950/60 transition" title="Text via Google Voice (LI Res Run - Copies number)">
                   <i class="fa-solid fa-comment-sms text-[10px]"></i>
                 </a>
                 <!-- 1-Click Copy Number Icon -->
@@ -3470,13 +3503,13 @@
             ${trip.altPhone ? `
               <div class="mt-0.5 flex items-center space-x-1.5 text-[10px] text-slate-400 font-mono">
                 <span class="text-amber-400/90 text-[9px] font-bold">ALT:</span>
-                <a href="${getCallUrl(trip.altPhone)}" target="_blank" rel="noopener noreferrer" onclick="handlePhoneClick(event, '${trip.altPhone}', 'call')" class="truncate max-w-[140px] text-slate-300 hover:text-teal-300 transition" title="Click to call alternate number via Google Voice">
+                <a href="${getCallUrl(trip.altPhone)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); handlePhoneClick(event, '${trip.altPhone}', 'call')" class="truncate max-w-[140px] text-slate-300 hover:text-teal-300 transition" title="Click to call alternate number via Google Voice">
                   ${trip.altPhone}
                 </a>
-                <a href="${getCallUrl(trip.altPhone)}" target="_blank" rel="noopener noreferrer" onclick="handlePhoneClick(event, '${trip.altPhone}', 'call')" class="text-teal-400 hover:text-teal-300 p-0.5" title="Call Alternate Number (LI Res Run)">
+                <a href="${getCallUrl(trip.altPhone)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); handlePhoneClick(event, '${trip.altPhone}', 'call')" class="text-teal-400 hover:text-teal-300 p-0.5" title="Call Alternate Number (LI Res Run)">
                   <i class="fa-solid fa-phone text-[9px]"></i>
                 </a>
-                <a href="${getSmsUrl(trip.altPhone)}" target="_blank" rel="noopener noreferrer" onclick="handlePhoneClick(event, '${trip.altPhone}', 'sms')" class="text-sky-400 hover:text-sky-300 p-0.5" title="Text Alternate Number via Google Voice">
+                <a href="${getSmsUrl(trip.altPhone)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); handlePhoneClick(event, '${trip.altPhone}', 'sms')" class="text-sky-400 hover:text-sky-300 p-0.5" title="Text Alternate Number via Google Voice">
                   <i class="fa-solid fa-comment-sms text-[9px]"></i>
                 </a>
                 <button type="button" onclick="copyPhoneNumber(event, '${trip.altPhone}')" class="text-slate-400 hover:text-amber-300 p-0.5" title="Copy alternate number">
@@ -4384,26 +4417,37 @@
         .join(' ');
     }
 
+    function getPassengerFirstName(trip) {
+      if (!trip || !trip.passenger) return '';
+      const cleanFull = formatPassengerName(trip.passenger);
+      const parts = cleanFull.split(' ').filter(p => p.length > 0);
+      if (parts.length === 0 || parts[0].toLowerCase() === 'passenger') return '';
+      const first = parts[0];
+      return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+    }
+
     function generateEtaMessage(trip, scenario = '10m') {
       const driver = AppState.driverName || 'Anthony';
       const company = 'Serenity';
       const fullCompany = 'Serenity Medical Transportation';
+      const firstName = getPassengerFirstName(trip);
+      const greeting = firstName ? `Hi ${firstName}` : `Hi`;
 
       if (scenario === 'custom') {
         return trip && trip._customTextDraft !== undefined ? trip._customTextDraft : '';
       } else if (scenario === 'pin' || scenario === 'location') {
         const lat = (GPSManager.currentLat || 40.7521).toFixed(5);
         const lon = (GPSManager.currentLon || -73.2514).toFixed(5);
-        return `Hi, it's ${driver} from ${company}. Here is my exact location so you can easily spot my van: https://maps.google.com/?q=${lat},${lon}`;
+        return `${greeting}, it's ${driver} from ${company}. Here is my exact location so you can easily spot my van: https://maps.google.com/?q=${lat},${lon}`;
       } else if (scenario === 'outside') {
-        return `Hi, it's ${driver} from ${fullCompany}. I just wanted to let you know I'm outside for your pickup, ready anytime you are.`;
+        return `${greeting}, it's ${driver} from ${fullCompany}. I just wanted to let you know I'm outside for your pickup, ready anytime you are.`;
       } else if (scenario === 'early') {
-        return `Hi, it's ${driver} from ${company}. I just wanted to let you know that I arrived a few minutes early for your pickup. There is absolutely no rush at all — ready anytime you are.`;
+        return `${greeting}, it's ${driver} from ${company}. I just wanted to let you know that I arrived a few minutes early for your pickup. There is absolutely no rush at all — ready anytime you are.`;
       } else if (scenario === 'traffic' || scenario === 'delayed') {
-        return `Hi, it's ${driver} from ${company}. I wanted to let you know I'm running into some unexpected traffic on the way, but I'm en route and will be there as soon as possible.`;
+        return `${greeting}, it's ${driver} from ${company}. I wanted to let you know I'm running into some unexpected traffic on the way, but I'm en route and will be there as soon as possible.`;
       } else {
         // Standard 10-minute pre-arrival courtesy message
-        return `Hi, it's ${driver} from ${company}. I just wanted to let you know that I'm on my way and will be arriving in approximately 10 minutes.`;
+        return `${greeting}, it's ${driver} from ${company}. I just wanted to let you know that I'm on my way and will be arriving in approximately 10 minutes.`;
       }
     }
 
@@ -4920,10 +4964,10 @@
 
         // 1. Pickup Pin (Teal with white border)
         const puMarker = L.circleMarker(coords.pu, {
-          radius: 8,
+          radius: 11,
           fillColor: '#14b8a6',
-          color: '#ffffff',
-          weight: 2.5,
+          color: '#090d16',
+          weight: 3.5,
           opacity: 1,
           fillOpacity: 1
         }).addTo(AppState.focusMapLayerGroup);
@@ -4931,10 +4975,10 @@
 
         // 2. Dropoff Pin (Rose with white border)
         const doMarker = L.circleMarker(coords.do, {
-          radius: 8,
+          radius: 11,
           fillColor: '#f43f5e',
-          color: '#ffffff',
-          weight: 2.5,
+          color: '#090d16',
+          weight: 3.5,
           opacity: 1,
           fillOpacity: 1
         }).addTo(AppState.focusMapLayerGroup);
@@ -4953,12 +4997,21 @@
           vanMarker.bindPopup('<b>Your Current Location (Van)</b>');
         }
 
-        // 4. Connecting Route Polyline
-        L.polyline([coords.pu, coords.do], {
-          color: '#2dd4bf',
-          weight: 4,
-          dashArray: '6, 8',
-          opacity: 0.95
+        // 4. Connecting Route Polyline - BOLD, SOLID, HIGH-CONTRAST (Dark outer casing + rich inner line)
+        const corridorPath = getLongIslandCorridorPath(coords.pu, coords.do);
+        
+        // Solid Heavy Dark Navy/Black Casing for sharp road contrast
+        L.polyline(corridorPath, {
+          color: '#090d16',
+          weight: 10,
+          opacity: 1.0
+        }).addTo(AppState.focusMapLayerGroup);
+
+        // Solid Vibrant Teal Line (100% solid, zero transparent dashed lines)
+        L.polyline(corridorPath, {
+          color: '#0d9488',
+          weight: 6,
+          opacity: 1.0
         }).addTo(AppState.focusMapLayerGroup);
 
         // Fit map bounds to show both stops with comfortable padding
@@ -5027,11 +5080,11 @@
       // Primary Telephony Buttons (Large touch friendly)
       const telBar = document.getElementById('focus-telephony-bar');
       telBar.innerHTML = `
-        <a href="${getCallUrl(trip.phone)}" target="_blank" rel="noopener noreferrer" onclick="handlePhoneClick(event, '${trip.phone}', 'call')" class="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs sm:text-sm flex items-center space-x-1.5 shadow-md shadow-teal-950/60 cursor-pointer transition">
+        <a href="${getCallUrl(trip.phone)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); handlePhoneClick(event, '${trip.phone}', 'call')" class="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs sm:text-sm flex items-center space-x-1.5 shadow-md shadow-teal-950/60 cursor-pointer transition">
           <i class="fa-solid fa-phone text-xs"></i>
           <span>Call ${trip.phone}</span>
         </a>
-        <a href="${getSmsUrl(trip.phone)}" target="_blank" rel="noopener noreferrer" onclick="handlePhoneClick(event, '${trip.phone}', 'sms')" class="px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs sm:text-sm flex items-center space-x-1.5 shadow-md shadow-sky-950/60 cursor-pointer transition">
+        <a href="${getSmsUrl(trip.phone)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); handlePhoneClick(event, '${trip.phone}', 'sms')" class="px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs sm:text-sm flex items-center space-x-1.5 shadow-md shadow-sky-950/60 cursor-pointer transition">
           <i class="fa-solid fa-comment-sms text-xs"></i>
           <span>Text</span>
         </a>
@@ -5050,10 +5103,10 @@
         altRow.classList.remove('hidden');
         document.getElementById('focus-alt-phone-val').textContent = trip.altPhone;
         document.getElementById('focus-alt-telephony').innerHTML = `
-          <a href="${getCallUrl(trip.altPhone)}" target="_blank" rel="noopener noreferrer" onclick="handlePhoneClick(event, '${trip.altPhone}', 'call')" class="px-2.5 py-1 rounded-lg bg-teal-900/60 hover:bg-teal-800 text-teal-300 border border-teal-500/40 text-xs font-semibold flex items-center space-x-1 cursor-pointer">
+          <a href="${getCallUrl(trip.altPhone)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); handlePhoneClick(event, '${trip.altPhone}', 'call')" class="px-2.5 py-1 rounded-lg bg-teal-900/60 hover:bg-teal-800 text-teal-300 border border-teal-500/40 text-xs font-semibold flex items-center space-x-1 cursor-pointer">
             <i class="fa-solid fa-phone text-[10px]"></i><span>Call Alt</span>
           </a>
-          <a href="${getSmsUrl(trip.altPhone)}" target="_blank" rel="noopener noreferrer" onclick="handlePhoneClick(event, '${trip.altPhone}', 'sms')" class="px-2.5 py-1 rounded-lg bg-sky-900/60 hover:bg-sky-800 text-sky-300 border border-sky-500/40 text-xs font-semibold flex items-center space-x-1 cursor-pointer">
+          <a href="${getSmsUrl(trip.altPhone)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); handlePhoneClick(event, '${trip.altPhone}', 'sms')" class="px-2.5 py-1 rounded-lg bg-sky-900/60 hover:bg-sky-800 text-sky-300 border border-sky-500/40 text-xs font-semibold flex items-center space-x-1 cursor-pointer">
             <i class="fa-solid fa-comment-sms text-[10px]"></i><span>Text Alt</span>
           </a>
           <button type="button" onclick="copyPhoneNumber(event, '${trip.altPhone}')" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-amber-300 text-xs cursor-pointer" title="Copy Alt Number">
@@ -5079,8 +5132,8 @@
       }
       document.getElementById('focus-pu-lead').textContent = puLeadText;
       document.getElementById('focus-pu-address').textContent = trip.puAddress;
-      if (document.getElementById('btn-focus-ext-pu')) {
-        document.getElementById('btn-focus-ext-pu').href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(trip.puAddress)}`;
+      if (document.getElementById('btn-focus-nav-pu')) {
+        document.getElementById('btn-focus-nav-pu').href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(trip.puAddress)}`;
       }
 
       // Dropoff Card: Display actual dropoff if completed, otherwise estimated dropoff arrival
@@ -5088,8 +5141,8 @@
       document.getElementById('focus-sched-do').textContent = `Sched: ${formatTime12(trip.schedDO)}`;
       document.getElementById('focus-target-do').textContent = formatTime12(targetDO);
       document.getElementById('focus-do-address').textContent = trip.doAddress;
-      if (document.getElementById('btn-focus-ext-do')) {
-        document.getElementById('btn-focus-ext-do').href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(trip.doAddress)}`;
+      if (document.getElementById('btn-focus-nav-do')) {
+        document.getElementById('btn-focus-nav-do').href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(trip.doAddress)}`;
       }
 
       // Trip Specs
@@ -5182,10 +5235,17 @@
                 <i class="fa-solid fa-clipboard-check text-teal-400 text-xs"></i>
                 <span>Auto-copies text & opens Google Voice</span>
               </span>
-              <div class="flex items-center space-x-2">
-                <button type="button" class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-extrabold text-xs flex items-center space-x-1.5 shadow-md shadow-amber-950/60 cursor-pointer transition" onclick="triggerSendEtaWithCustom('${trip.id}', '${currentScenario}')">
+              <div class="flex flex-wrap items-center gap-2">
+                <!-- Option A: Direct SMS / Apple Messages (Pre-fills recipient & text on iPad/iPhone) -->
+                <button type="button" class="px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 active:bg-sky-700 text-white font-extrabold text-xs flex items-center space-x-1.5 shadow-md shadow-sky-950/60 transition cursor-pointer" onclick="triggerDirectDeviceSms('${trip.id}', '${currentScenario}')" title="Opens native iPad/iPhone Messages with recipient and pre-filled text ready to send">
+                  <i class="fa-solid fa-comment text-xs"></i>
+                  <span>Text via Messages (Pre-Filled)</span>
+                </button>
+
+                <!-- Option B: Google Voice Web (Copies text + opens GV) -->
+                <button type="button" class="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-extrabold text-xs flex items-center space-x-1.5 shadow-md shadow-amber-950/60 transition cursor-pointer" onclick="triggerSendEtaWithCustom('${trip.id}', '${currentScenario}')" title="Copies text and launches Google Voice">
                   <i class="fa-solid fa-paper-plane text-xs"></i>
-                  <span>${currentScenario === 'custom' ? 'Send Custom Text via Google Voice' : (currentScenario === 'pin' ? 'Send Location Pin via Google Voice' : 'Send Text via Google Voice')}</span>
+                  <span>Text via Google Voice</span>
                 </button>
               </div>
             </div>
@@ -6498,6 +6558,10 @@ function setupCustomerNotesModal() {
     }
 
     function handlePhoneClick(e, phoneStr, action) {
+      if (e) {
+        if (e.stopPropagation) e.stopPropagation();
+        if (e.cancelBubble !== undefined) e.cancelBubble = true;
+      }
       // Auto-copies the clean number to clipboard so if Google Voice needs paste or focus, it's instant
       const digits = cleanPhone(phoneStr);
       const formatted = phoneStr || digits;
@@ -6540,6 +6604,303 @@ function setupCustomerNotesModal() {
       renderApp();
       toggleViewMode(AppState.viewMode);
     });
-  </script>
+  
+    // ==========================================
+    // IN-CAB HARD REFRESH & CACHE BUSTER
+    // ==========================================
+    function forceHardRefresh() {
+      showToast('Fetching latest Cloudflare build past iPad cache...', 'info');
+      setTimeout(() => {
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.location.href = cleanUrl + '?v=' + Date.now();
+      }, 250);
+    }
+
+    // ==========================================
+    // IN-CAB DRIVING LOCK (ZERO-SWAY KIOSK MODE)
+    // ==========================================
+    function toggleDriveLock() {
+      AppState.driveLockEnabled = !AppState.driveLockEnabled;
+      const body = document.body;
+      const btn = document.getElementById('btn-drive-lock');
+      const label = document.getElementById('label-drive-lock');
+      const icon = document.getElementById('icon-drive-lock');
+
+      if (AppState.driveLockEnabled) {
+        body.classList.add('drive-locked');
+        if (btn) btn.className = 'px-2.5 py-1.5 text-xs font-bold rounded-lg bg-teal-500/25 text-teal-300 border border-teal-400 shadow-md shadow-teal-950/70 transition flex items-center space-x-1.5 cursor-pointer live-pulse';
+        if (label) label.textContent = 'Drive Lock: ON';
+        if (icon) icon.className = 'fa-solid fa-lock text-teal-300';
+        if (AppState.cockpitMapInstance) {
+          AppState.cockpitMapInstance.dragging.disable();
+          AppState.cockpitMapInstance.touchZoom.disable();
+          AppState.cockpitMapInstance.doubleClickZoom.disable();
+          AppState.cockpitMapInstance.scrollWheelZoom.disable();
+        }
+        showToast('In-Cab Driving Lock Activated (Zero Sway & Map Locked)', 'success');
+      } else {
+        body.classList.remove('drive-locked');
+        if (btn) btn.className = 'px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition flex items-center space-x-1.5 cursor-pointer';
+        if (label) label.textContent = 'Drive Lock';
+        if (icon) icon.className = 'fa-solid fa-lock-open text-slate-400';
+        if (AppState.cockpitMapInstance) {
+          AppState.cockpitMapInstance.dragging.enable();
+          AppState.cockpitMapInstance.touchZoom.enable();
+          AppState.cockpitMapInstance.doubleClickZoom.enable();
+          AppState.cockpitMapInstance.scrollWheelZoom.enable();
+        }
+        showToast('Driving Lock Deactivated (Touch & Camera Unlocked)', 'info');
+      }
+    }
+
+    // ==========================================
+    // WRONG LOCATION & ACTUAL LOCATION REPORTER
+    // ==========================================
+    function openLocationCorrectionModal(tripId, target = 'pu') {
+      const trip = AppState.trips.find(t => t.id === tripId);
+      if (!trip) return;
+
+      AppState.activeCorrectionTripId = tripId;
+      AppState.activeCorrectionTarget = target;
+
+      const isPU = target === 'pu';
+      const addr = isPU ? trip.puAddress : trip.doAddress;
+
+      document.getElementById('correct-passenger-tag').textContent = `${formatPassengerName(trip.passenger)} (Run ${trip.id} • ${isPU ? 'Pickup' : 'Dropoff'})`;
+      document.getElementById('correct-manifest-addr').value = addr;
+      document.getElementById('correct-entrance-notes').value = '';
+
+      const lat = (GPSManager.currentLat || 40.7521).toFixed(5);
+      const lon = (GPSManager.currentLon || -73.2514).toFixed(5);
+      document.getElementById('correct-van-gps-display').textContent = `${lat}, ${lon}`;
+
+      document.getElementById('modal-location-correction').classList.remove('hidden');
+    }
+
+    function closeLocationCorrectionModal() {
+      document.getElementById('modal-location-correction').classList.add('hidden');
+      AppState.activeCorrectionTripId = null;
+      AppState.activeCorrectionTarget = null;
+    }
+
+    function snapCorrectionToVanGPS() {
+      const notesBox = document.getElementById('correct-entrance-notes');
+      const lat = (GPSManager.currentLat || 40.7521).toFixed(5);
+      const lon = (GPSManager.currentLon || -73.2514).toFixed(5);
+      if (!notesBox.value.includes('GPS')) {
+        notesBox.value = `Verified at physical location: GPS ${lat}, ${lon}. ` + notesBox.value;
+      }
+      showToast('Snapped van GPS coordinates to correction form!', 'success');
+    }
+
+    function saveAddressCorrection() {
+      const tripId = AppState.activeCorrectionTripId;
+      const target = AppState.activeCorrectionTarget;
+      const trip = AppState.trips.find(t => t.id === tripId);
+      if (!trip) return;
+
+      const notes = document.getElementById('correct-entrance-notes').value.trim();
+      const isPU = target === 'pu';
+      const manifestAddr = isPU ? trip.puAddress : trip.doAddress;
+      const actualLat = GPSManager.currentLat || 40.7521;
+      const actualLon = GPSManager.currentLon || -73.2514;
+
+      // Update waypoint coordinates for this trip
+      if (!GPSManager.waypointCoords[trip.id]) GPSManager.waypointCoords[trip.id] = {};
+      if (isPU) {
+        GPSManager.waypointCoords[trip.id].pu = [actualLat, actualLon];
+      } else {
+        GPSManager.waypointCoords[trip.id].do = [actualLat, actualLon];
+      }
+
+      // Log correction to AppState
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      AppState.addressCorrections.push({
+        tripId: trip.id,
+        passenger: formatPassengerName(trip.passenger),
+        target: isPU ? 'Pickup' : 'Dropoff',
+        manifestAddress: manifestAddr,
+        actualCoordinates: `${actualLat.toFixed(5)}, ${actualLon.toFixed(5)}`,
+        notes: notes || 'Verified on scene via Van GPS',
+        timestamp: timeStr
+      });
+
+      // Update badge count
+      const badge = document.getElementById('corrections-badge-count');
+      if (badge) badge.textContent = AppState.addressCorrections.length;
+
+      showToast(`Address correction saved for ${trip.passenger}!`, 'success');
+      closeLocationCorrectionModal();
+      renderApp();
+    }
+
+    function openCorrectionsReportModal() {
+      const modal = document.getElementById('modal-corrections-report');
+      const textarea = document.getElementById('corrections-report-textarea');
+
+      if (!AppState.addressCorrections || AppState.addressCorrections.length === 0) {
+        textarea.value = `SERENITY MEDICAL TRANSPORT — DISPATCH ADDRESS CORRECTIONS NOTICE\nDate: ${new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} • Driver: Anthony (Van #104)\n\nNo address discrepancies flagged yet today.\n\nWhen a manifest address is inaccurate, tap "Wrong Location?" on the ride card to snap your van's actual GPS and build this report.`;
+      } else {
+        let report = `SERENITY MEDICAL TRANSPORT — DISPATCH ADDRESS CORRECTIONS NOTICE\n`;
+        report += `Date: ${new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} • Base Depot: Bay Shore, NY • Driver: Anthony (Van #104)\n\n`;
+        report += `The following manifest addresses were verified inaccurate on scene today. Please update coordinates and entrance notes in your master dispatch system:\n\n`;
+
+        AppState.addressCorrections.forEach((c, idx) => {
+          report += `${idx + 1}. Run ${c.tripId}: ${c.passenger} (${c.target})\n`;
+          report += `   • Broker Manifest Address: ${c.manifestAddress}\n`;
+          report += `   • Actual Verified Location: GPS ${c.actualCoordinates}\n`;
+          report += `   • Driver Access Notes: ${c.notes}\n`;
+          report += `   • Verified At: ${c.timestamp}\n\n`;
+        });
+
+        report += `Please update in master RoutingBox/dispatch database. Thank you!\n`;
+        textarea.value = report;
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeCorrectionsReportModal() {
+      document.getElementById('modal-corrections-report').classList.add('hidden');
+    }
+
+    function copyCorrectionsReport() {
+      const textarea = document.getElementById('corrections-report-textarea');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textarea.value).then(() => {
+          showToast('Copied address corrections report to clipboard!', 'success');
+        }).catch(() => {
+          textarea.select();
+          document.execCommand('copy');
+          showToast('Copied address corrections report to clipboard!', 'success');
+        });
+      } else {
+        textarea.select();
+        document.execCommand('copy');
+        showToast('Copied address corrections report to clipboard!', 'success');
+      }
+    }
+
+
+    function triggerDirectDeviceSms(tripId, scenario) {
+      const trip = AppState.trips.find(t => t.id === tripId);
+      if (!trip) return;
+
+      const box = document.getElementById('focus-eta-preview-box') || document.getElementById('cockpit-eta-box');
+      const customText = box ? box.value.trim() : null;
+      const msg = customText || generateEtaMessage(trip, scenario);
+      const digits = cleanPhone(trip.phone);
+
+      // Copy text as backup
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(msg).catch(() => {});
+      }
+
+      const now = new Date();
+      trip.etaNoticeSent = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      trip.etaNoticeType = scenario === 'pin' ? 'Location Pin' : (scenario === 'custom' ? 'Custom' : scenario);
+
+      // Native device SMS URI pre-fills both recipient and text body on iOS / iPadOS
+      const smsUri = `sms:${digits}&body=${encodeURIComponent(msg)}`;
+      window.location.href = smsUri;
+
+      showToast(`Launching Messages with pre-filled text for ${trip.passenger}!`, 'success');
+      renderApp();
+    }
+
+</script>
+
+  <!-- MODAL: LOCATION CORRECTION (Wrong Location vs Actual Van GPS) -->
+  <div id="modal-location-correction" class="fixed inset-0 z-[9999] bg-black/85  hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border border-amber-500/50 rounded-2xl p-4 sm:p-5 max-w-lg w-full shadow-2xl space-y-3.5">
+      <div class="flex items-center justify-between pb-2.5 border-b border-slate-800">
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center text-sm font-bold">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white">Report Address Discrepancy</h3>
+            <p class="text-xs text-slate-400 font-mono" id="correct-passenger-tag">Passenger Name</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeLocationCorrectionModal()" class="text-slate-400 hover:text-white p-1 text-base cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-mono uppercase text-slate-400 mb-1">Manifest Address (Wrong Location from Broker)</label>
+        <input id="correct-manifest-addr" type="text" readonly class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-rose-300 font-mono">
+      </div>
+
+      <!-- Action 1: Snap to Van GPS -->
+      <div class="p-3 rounded-xl bg-slate-950 border border-teal-500/40 space-y-2">
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-bold text-teal-300 uppercase tracking-wide text-[11px]">Option A: Snap to My Van GPS</span>
+          <span class="font-mono text-[10px] text-teal-400">Live Sensor</span>
+        </div>
+        <p class="text-xs text-slate-300">
+          Parked at the actual entrance or door right now? Tap to lock this exact spot.
+        </p>
+        <button type="button" onclick="snapCorrectionToVanGPS()" class="w-full py-2.5 px-3 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center justify-center space-x-2 transition cursor-pointer shadow-md">
+          <i class="fa-solid fa-location-crosshairs text-sm"></i>
+          <span>Use Van Coordinates (<span id="correct-van-gps-display">40.7521, -73.2514</span>)</span>
+        </button>
+      </div>
+
+      <!-- Action 2: Driver Access Notes for Dispatch -->
+      <div>
+        <label class="block text-[11px] font-mono uppercase text-slate-400 mb-1">Driver Verification Notes (for Broker Master System)</label>
+        <textarea id="correct-entrance-notes" rows="2" placeholder="e.g. Entrance is around back off Courthouse Dr, Gate B. Front gate is locked." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400 font-sans"></textarea>
+      </div>
+
+      <!-- Save & Log Button -->
+      <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-800">
+        <button type="button" onclick="closeLocationCorrectionModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer">
+          Cancel
+        </button>
+        <button type="button" onclick="saveAddressCorrection()" class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center space-x-1.5 shadow-md transition cursor-pointer">
+          <i class="fa-solid fa-check"></i>
+          <span>Save Correction & Update Map</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: MASTER ADDRESS CORRECTIONS REPORT FOR DISPATCH -->
+  <div id="modal-corrections-report" class="fixed inset-0 z-[9999] bg-black/85  hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl p-4 sm:p-5 max-w-xl w-full shadow-2xl space-y-3.5">
+      <div class="flex items-center justify-between pb-2.5 border-b border-slate-800">
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center text-sm font-bold">
+            <i class="fa-solid fa-file-signature"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white">Master Address Corrections Report</h3>
+            <p class="text-xs text-slate-400 font-mono">Ready to email/text to broker or dispatcher</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeCorrectionsReportModal()" class="text-slate-400 hover:text-white p-1 text-base cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div>
+        <textarea id="corrections-report-textarea" rows="8" readonly class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 font-mono leading-relaxed select-all"></textarea>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800">
+        <span class="text-[11px] text-slate-400">Copies to clipboard for fast dispatch texting or emailing</span>
+        <div class="flex items-center space-x-2">
+          <button type="button" onclick="copyCorrectionsReport()" class="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center space-x-1.5 shadow-md cursor-pointer transition">
+            <i class="fa-regular fa-copy text-xs"></i>
+            <span>Copy Report to Clipboard</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
