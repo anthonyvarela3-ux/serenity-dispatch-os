@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
   <!-- Apple iPadOS & iOS Standalone PWA Tags -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -145,6 +145,106 @@
     #cockpit-leaflet-map, #focus-ride-leaflet-map {
       touch-action: pan-y !important;
     }
+  
+    /* =======================================================
+       UNIVERSAL AUTO-FIT WINDOW ENGINE FOR PIXEL & MOBILE SCREENS
+       Automatically sizes and adapts EVERY modal window to 100% 
+       of the screen on phones (Pixel, iPhone) while maintaining 
+       comfortable, centered floating dialogs on iPads and desktops.
+       ======================================================= */
+    html {
+      width: 100%;
+      max-width: 100vw;
+      overflow-x: hidden;
+      -webkit-text-size-adjust: 100%;
+    }
+    body {
+      width: 100%;
+      max-width: 100vw;
+      overflow-x: hidden;
+      min-height: 100vh;
+      min-height: 100dvh;
+      position: relative;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    main {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+
+    /* Universal Modal Wrapper Rules */
+    div[id^="modal-"] {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      max-width: 100vw !important;
+      max-height: 100vh !important;
+      max-height: 100dvh !important;
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+      overscroll-behavior: contain !important;
+    }
+
+    /* Mobile Phones (< 640px, e.g. Google Pixel in portrait):
+       Auto-fit full screen edge-to-edge like a native mobile app screen */
+    @media (max-width: 640px) {
+      div[id^="modal-"] {
+        padding: 0 !important;
+        align-items: stretch !important;
+        justify-content: stretch !important;
+      }
+
+      div[id^="modal-"] > div {
+        width: 100% !important;
+        max-width: 100vw !important;
+        min-width: 100% !important;
+        min-height: 100vh !important;
+        min-height: 100dvh !important;
+        height: 100% !important;
+        max-height: 100vh !important;
+        max-height: 100dvh !important;
+        border-radius: 0 !important;
+        border: none !important;
+        margin: 0 !important;
+        padding: 1rem 0.875rem !important;
+        box-shadow: none !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+      }
+
+      /* Make modal headers sticky on mobile so close button is always reachable */
+      div[id^="modal-"] > div > div:first-child {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        background-color: inherit;
+        padding-top: 0.25rem;
+        padding-bottom: 0.75rem;
+      }
+    }
+
+    /* Tablets & iPads (641px - 1024px):
+       Centered floating card with maximum screen utilization */
+    @media (min-width: 641px) and (max-width: 1024px) {
+      div[id^="modal-"] {
+        padding: 1rem !important;
+      }
+      div[id^="modal-"] > div {
+        width: 95% !important;
+        max-width: 720px !important;
+        max-height: 94vh !important;
+        max-height: 94dvh !important;
+        border-radius: 1.25rem !important;
+        margin: auto !important;
+      }
+    }
+
   </style>
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased flex flex-col selection:bg-teal-500 selection:text-white pb-14">
@@ -183,9 +283,10 @@
             <span class="text-xs text-slate-300 font-medium">Clock: <strong class="text-teal-300 font-mono" id="clock-display">--:--:--</strong></span>
           </div>
 
-          <div class="text-xs text-slate-400 hidden sm:block">
-            <span class="text-slate-500">Van:</span> <span class="text-slate-200 font-medium">#104</span>
-          </div>
+          <button id="btn-open-driver-profile" type="button" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-950/90 hover:bg-slate-800 border border-teal-500/40 text-xs font-semibold text-teal-300 transition cursor-pointer shadow-sm" onclick="openDriverProfileModal()" title="Driver Profile & Personal Home Address">
+            <i class="fa-solid fa-user-circle text-teal-400 text-sm"></i>
+            <span id="header-driver-label">Anthony &bull; Van #104</span>
+          </button>
         </div>
 
         <!-- Cockpit vs Roster View Mode Toggle -->
@@ -497,6 +598,28 @@
     <!-- TRI-ZONE AVIATION COCKPIT VIEW (Full In-Cab Driver Console) -->
     <section id="section-cockpit-view" class="space-y-3.5">
       
+      <!-- EMPTY BLANK SLATE STATE FOR COCKPIT -->
+      <div id="cockpit-empty-state" class="hidden dispatch-card border border-slate-800 rounded-2xl p-8 sm:p-12 text-center space-y-4 max-w-xl mx-auto my-8 bg-slate-900/90 shadow-2xl">
+        <div class="w-16 h-16 rounded-2xl bg-teal-500/10 text-teal-400 flex items-center justify-center text-3xl mx-auto border border-teal-500/30 shadow-inner">
+          <i class="fa-solid fa-van-shuttle"></i>
+        </div>
+        <div>
+          <h3 class="text-xl font-extrabold text-white tracking-tight">Board Clear — Ready for Today's Runs</h3>
+          <p class="text-xs sm:text-sm text-slate-400 max-w-md mx-auto mt-1.5">Upload your daily RoutingBox screenshots to calculate Long Island corridor routes, target lead times, and courtesy texts.</p>
+        </div>
+        <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+          <button type="button" onclick="document.getElementById('modal-parser').classList.remove('hidden')" class="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-teal-950/60 flex items-center space-x-2 transition cursor-pointer">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+            <span>Upload Manifest Screenshots</span>
+          </button>
+          <button type="button" onclick="loadSampleRoutingBoxManifest()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-300 border border-teal-500/30 font-semibold text-xs sm:text-sm flex items-center space-x-2 transition cursor-pointer">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span>Load Demo / Practice Run</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="cockpit-active-content" class="space-y-3.5">
       <!-- ZONE 1: TACTICAL ROUTE RADAR & NUMBERED RUN SCRUBBER -->
       <div class="dispatch-card border border-slate-800 rounded-2xl shadow-xl overflow-hidden p-3 sm:p-4 bg-slate-900/90">
         
@@ -584,8 +707,10 @@
       <div class="grid grid-cols-1 md:grid-cols-12 gap-3.5">
         
         <!-- ZONE 2: ACTIVE MISSION HUD (Left / Main Column - 7 Cols on Desktop) -->
-        <div class="md:col-span-7 dispatch-card border border-teal-500/40 rounded-2xl p-4 sm:p-5 shadow-2xl bg-gradient-to-br from-slate-900 via-slate-950 to-teal-950/20 flex flex-col justify-between relative">
+        <div id="cockpit-mission-card" class="md:col-span-7 dispatch-card border border-teal-500/40 rounded-2xl p-4 sm:p-5 shadow-2xl bg-gradient-to-br from-slate-900 via-slate-950 to-teal-950/20 flex flex-col justify-between relative transition-all duration-300">
           <div>
+            <!-- Dynamic Status Hero Banner (Transforms with Ride Status) -->
+            <div id="cockpit-status-hero-banner" class="mb-3"></div>
             <!-- Mission Tag & Lead Buffer -->
             <div class="flex items-center justify-between pb-2.5 border-b border-slate-800/80">
               <div class="flex items-center space-x-2">
@@ -618,44 +743,44 @@
             <div class="mt-3.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               
               <!-- Pickup Station -->
-              <div class="p-3 rounded-xl bg-slate-950 border border-teal-500/30 flex flex-col justify-between">
+              <div id="cockpit-pickup-station-card" class="p-4 rounded-2xl bg-slate-950 border border-teal-500/30 flex flex-col justify-between transition-all duration-300 shadow-md">
                 <div>
-                  <div class="flex items-center justify-between text-[11px] text-teal-400 font-bold uppercase font-mono mb-1">
-                    <span class="flex items-center space-x-1"><i class="fa-solid fa-circle-dot text-[9px]"></i><span>Pickup</span></span>
-                    <span class="text-slate-400 font-mono" id="cockpit-sched-pu">Sched: 09:00 AM</span>
+                  <div class="flex items-center justify-between text-xs sm:text-sm text-teal-400 font-black uppercase font-mono mb-1.5">
+                    <span class="flex items-center space-x-1.5"><i class="fa-solid fa-circle-dot text-xs text-teal-300"></i><span>PICKUP LOCATION</span></span>
+                    <span class="text-slate-300 font-mono font-bold" id="cockpit-sched-pu">Sched: 09:00 AM</span>
                   </div>
-                  <div class="text-xl font-black font-mono text-teal-300" id="cockpit-target-pu">08:46 AM</div>
-                  <p class="text-xs text-slate-200 mt-1 truncate" id="cockpit-pu-address">228 Hilltop Dr, Brentwood</p>
-                  <button type="button" onclick="openLocationCorrectionModal(AppState.currentCockpitTripId, 'pu')" class="mt-1 text-[10px] font-mono text-amber-400 hover:text-amber-300 flex items-center space-x-1 cursor-pointer" title="Report wrong address & snap actual van location">
-                    <i class="fa-solid fa-triangle-exclamation text-[9px]"></i>
-                    <span>Wrong Location?</span>
+                  <div class="text-2xl sm:text-3xl font-black font-mono text-teal-300 tracking-tight" id="cockpit-target-pu">08:46 AM</div>
+                  <p class="text-sm sm:text-base font-bold text-white mt-1.5 leading-snug break-words" id="cockpit-pu-address">228 Hilltop Dr, Brentwood</p>
+                  <button type="button" onclick="openLocationCorrectionModal(AppState.currentCockpitTripId, 'pu')" class="mt-1.5 text-xs font-mono text-amber-400 hover:text-amber-300 flex items-center space-x-1 cursor-pointer" title="Report wrong address & snap actual van location">
+                    <i class="fa-solid fa-triangle-exclamation text-xs"></i>
+                    <span>Wrong Location / Snap GPS</span>
                   </button>
                 </div>
-                <div class="mt-2.5">
-                  <a id="btn-cockpit-nav-pu" href="#" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 px-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-extrabold text-xs flex items-center justify-center space-x-1.5 transition cursor-pointer shadow-md shadow-teal-950/60">
-                    <i class="fa-solid fa-location-arrow text-xs"></i>
+                <div class="mt-3.5">
+                  <a id="btn-cockpit-nav-pu" href="#" target="_blank" rel="noopener noreferrer" class="w-full py-3.5 px-4 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-xs sm:text-sm flex items-center justify-center space-x-2 transition cursor-pointer shadow-lg shadow-teal-950/60">
+                    <i class="fa-solid fa-location-arrow text-sm"></i>
                     <span id="label-cockpit-nav-pu">Navigate to Pickup (Google Maps)</span>
                   </a>
                 </div>
               </div>
 
               <!-- Dropoff Station -->
-              <div class="p-3 rounded-xl bg-slate-950 border border-rose-500/30 flex flex-col justify-between">
+              <div id="cockpit-dropoff-station-card" class="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col justify-between transition-all duration-300 shadow-md">
                 <div>
-                  <div class="flex items-center justify-between text-[11px] text-rose-400 font-bold uppercase font-mono mb-1">
-                    <span class="flex items-center space-x-1"><i class="fa-solid fa-location-pin text-[9px]"></i><span>Dropoff</span></span>
-                    <span class="text-slate-400 font-mono" id="cockpit-sched-do">Sched: 10:00 AM</span>
+                  <div class="flex items-center justify-between text-xs sm:text-sm text-rose-400 font-black uppercase font-mono mb-1.5">
+                    <span class="flex items-center space-x-1.5"><i class="fa-solid fa-location-pin text-xs text-rose-300"></i><span>DROPOFF LOCATION</span></span>
+                    <span class="text-slate-300 font-mono font-bold" id="cockpit-sched-do">Sched: 10:00 AM</span>
                   </div>
-                  <div class="text-xl font-black font-mono text-rose-300" id="cockpit-target-do">09:31 AM</div>
-                  <p class="text-xs text-slate-200 mt-1 truncate" id="cockpit-do-address">640 Montauk Hwy, Shirley</p>
-                  <button type="button" onclick="openLocationCorrectionModal(AppState.currentCockpitTripId, 'do')" class="mt-1 text-[10px] font-mono text-amber-400 hover:text-amber-300 flex items-center space-x-1 cursor-pointer" title="Report wrong address & snap actual van location">
-                    <i class="fa-solid fa-triangle-exclamation text-[9px]"></i>
-                    <span>Wrong Location?</span>
+                  <div class="text-2xl sm:text-3xl font-black font-mono text-rose-300 tracking-tight" id="cockpit-target-do">09:31 AM</div>
+                  <p class="text-sm sm:text-base font-bold text-white mt-1.5 leading-snug break-words" id="cockpit-do-address">640 Montauk Hwy, Shirley</p>
+                  <button type="button" onclick="openLocationCorrectionModal(AppState.currentCockpitTripId, 'do')" class="mt-1.5 text-xs font-mono text-amber-400 hover:text-amber-300 flex items-center space-x-1 cursor-pointer" title="Report wrong address & snap actual van location">
+                    <i class="fa-solid fa-triangle-exclamation text-xs"></i>
+                    <span>Wrong Location / Snap GPS</span>
                   </button>
                 </div>
-                <div class="mt-2.5">
-                  <a id="btn-cockpit-nav-do" href="#" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs flex items-center justify-center space-x-1.5 transition cursor-pointer shadow-md shadow-rose-950/60">
-                    <i class="fa-solid fa-location-arrow text-xs"></i>
+                <div class="mt-3.5">
+                  <a id="btn-cockpit-nav-do" href="#" target="_blank" rel="noopener noreferrer" class="w-full py-3.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-black text-xs sm:text-sm flex items-center justify-center space-x-2 transition cursor-pointer shadow-lg shadow-rose-950/60">
+                    <i class="fa-solid fa-location-arrow text-sm"></i>
                     <span id="label-cockpit-nav-do">Navigate to Dropoff (Google Maps)</span>
                   </a>
                 </div>
@@ -701,6 +826,7 @@
           </div>
         </div>
 
+      </div>
       </div>
 
     </section>
@@ -1470,6 +1596,267 @@
     </div>
   </div>
 
+  
+  <!-- MODAL: DRIVER PROFILE & HOME COMMUTE SETTINGS -->
+  <div id="modal-driver-profile" class="fixed inset-0 z-[9999] bg-black/85 hidden overflow-y-auto flex items-start sm:items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-5 sm:p-6 shadow-2xl relative my-auto max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3.5 border-b border-slate-800">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-teal-500/10 text-teal-400 flex items-center justify-center text-lg shadow-inner">
+            <i class="fa-solid fa-id-card-clip"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-extrabold text-white">Driver Profile &amp; Commute Settings</h3>
+            <p class="text-xs text-slate-400">Personalize driver credentials, vehicle assignment, and home-to-work travel</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeDriverProfileModal()" class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition cursor-pointer">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="mt-4 space-y-4 text-xs">
+        <!-- Section 1: Driver Identity & Assigned Vehicle -->
+        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+          <div class="text-[11px] font-mono text-teal-400 uppercase font-bold tracking-wider flex items-center space-x-1.5">
+            <i class="fa-solid fa-user text-xs"></i>
+            <span>Driver Identity &amp; Vehicle Assignment</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-slate-400 font-semibold mb-1">Driver Full Name</label>
+              <input type="text" id="prof-driver-name" value="Anthony Varela" placeholder="e.g. Anthony Varela" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white font-bold focus:outline-none focus:border-teal-500 text-xs">
+            </div>
+            <div>
+              <label class="block text-slate-400 font-semibold mb-1">Driver Phone / Cell</label>
+              <input type="tel" id="prof-driver-phone" value="631-339-0376" placeholder="e.g. 631-339-0376" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-teal-500 text-xs">
+            </div>
+            <div>
+              <label class="block text-slate-400 font-semibold mb-1">Assigned Vehicle / Van #</label>
+              <input type="text" id="prof-vehicle-num" value="104" placeholder="e.g. 104" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white font-mono focus:outline-none focus:border-teal-500 text-xs font-bold">
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: Residential Home Address & Commute Accounting -->
+        <div class="p-3.5 rounded-xl bg-slate-950 border border-teal-500/30 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-mono text-teal-300 uppercase font-bold tracking-wider flex items-center space-x-1.5">
+              <i class="fa-solid fa-house-chimney text-xs text-teal-400"></i>
+              <span>Home Address &amp; Commute Travel Time</span>
+            </span>
+            <span class="px-2 py-0.5 rounded bg-teal-500/10 text-teal-300 border border-teal-500/30 text-[10px] font-mono">Travel Accounting</span>
+          </div>
+
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Driver Residential Home Address</label>
+            <input type="text" id="prof-home-address" value="Suffolk County, NY" placeholder="e.g. 124 Sunrise Hwy, Bay Shore, NY 11706" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-teal-500">
+            <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
+              Your home address is taken into account for travel time from home to the base garage in the morning and from the depot back home at end of shift.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <div>
+              <label class="block text-slate-400 font-semibold mb-1">Home &rarr; Depot Commute (Minutes)</label>
+              <input type="number" id="prof-commute-time" min="0" max="120" value="15" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-teal-300 font-mono font-bold focus:outline-none focus:border-teal-500 text-xs">
+              <p class="text-[10px] text-slate-500 mt-0.5">Average travel time between home and depot</p>
+            </div>
+            <div>
+              <label class="block text-slate-400 font-semibold mb-1">Pre-Trip Vehicle Circle Inspection (Min)</label>
+              <input type="number" id="prof-prep-time" min="0" max="30" value="5" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-teal-300 font-mono font-bold focus:outline-none focus:border-teal-500 text-xs">
+              <p class="text-[10px] text-slate-500 mt-0.5">Morning inspection before rolling to Trip 1</p>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-slate-400 font-semibold mb-1">Base Garage / Operating Depot</label>
+            <input type="text" id="prof-depot-address" value="1480 5th Ave, Bay Shore, NY 11706 (Serenity Depot)" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-slate-300 text-xs focus:outline-none focus:border-teal-500">
+          </div>
+        </div>
+
+        <!-- Section 2.5: Geofence Alarms & Billing Guardrails -->
+        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+          <div class="text-[11px] font-mono text-amber-300 uppercase font-bold tracking-wider flex items-center justify-between">
+            <span class="flex items-center space-x-1.5">
+              <i class="fa-solid fa-bell text-amber-400"></i>
+              <span>Unstatused Departure Alarm &amp; Guardrails</span>
+            </span>
+            <button type="button" onclick="playCabAlertChime('alarm')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-teal-300 font-mono text-[10px] flex items-center space-x-1 cursor-pointer">
+              <i class="fa-solid fa-volume-high text-[9px]"></i>
+              <span>Test Audio Chime</span>
+            </button>
+          </div>
+          <div class="space-y-2">
+            <label class="flex items-start space-x-2.5 cursor-pointer">
+              <input type="checkbox" id="prof-departure-alarm-enabled" checked class="mt-0.5 w-4 h-4 rounded bg-slate-900 border-slate-700 text-teal-500 focus:ring-0">
+              <div>
+                <span class="font-bold text-slate-200">Geofence Departure Cab Alarm</span>
+                <p class="text-[11px] text-slate-400">Sounds an audible alert if van moves away from pickup/dropoff without statusing.</p>
+              </div>
+            </label>
+            <label class="flex items-start space-x-2.5 cursor-pointer">
+              <input type="checkbox" id="prof-next-run-lockout-enabled" checked class="mt-0.5 w-4 h-4 rounded bg-slate-900 border-slate-700 text-teal-500 focus:ring-0">
+              <div>
+                <span class="font-bold text-slate-200">Active Run Payment Guardrail</span>
+                <p class="text-[11px] text-slate-400">Prevents activating Run #2 while Run #1 is open (never blocks addresses or phone numbers).</p>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Section 3: Live Commute & Shift Accounting Preview -->
+        <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+          <div class="text-[11px] font-mono text-slate-400 uppercase font-bold flex items-center justify-between">
+            <span>Shift Travel Schedule Preview</span>
+            <span class="text-teal-400" id="prof-preview-driver-label">Anthony &bull; Van #104</span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-center font-mono">
+            <div class="p-2 rounded-lg bg-slate-950 border border-slate-800">
+              <div class="text-[10px] text-slate-500 uppercase">Depart Home</div>
+              <div class="text-xs sm:text-sm font-bold text-amber-300" id="prof-preview-depart-home">--:--</div>
+              <div class="text-[9px] text-slate-500">Commute start</div>
+            </div>
+            <div class="p-2 rounded-lg bg-slate-950 border border-slate-800">
+              <div class="text-[10px] text-slate-500 uppercase">Depot Clock-In</div>
+              <div class="text-xs sm:text-sm font-bold text-teal-300" id="prof-preview-clockin">--:--</div>
+              <div class="text-[9px] text-slate-500">Pre-trip circle</div>
+            </div>
+            <div class="p-2 rounded-lg bg-slate-950 border border-slate-800">
+              <div class="text-[10px] text-slate-500 uppercase">First Run Roll</div>
+              <div class="text-xs sm:text-sm font-bold text-sky-300" id="prof-preview-roll">--:--</div>
+              <div class="text-[9px] text-slate-500">Transit to PU1</div>
+            </div>
+            <div class="p-2 rounded-lg bg-slate-950 border border-slate-800">
+              <div class="text-[10px] text-slate-500 uppercase">Return Home</div>
+              <div class="text-xs sm:text-sm font-bold text-emerald-300" id="prof-preview-arrive-home">--:--</div>
+              <div class="text-[9px] text-slate-500">End of day</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="mt-5 pt-3.5 border-t border-slate-800 flex flex-col sm:flex-row gap-2 justify-end">
+        <button type="button" onclick="closeDriverProfileModal()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition cursor-pointer">
+          Cancel
+        </button>
+        <button type="button" onclick="saveDriverProfile()" class="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 active:bg-teal-700 text-white text-xs font-bold transition flex items-center justify-center space-x-2 shadow-lg shadow-teal-950/70 cursor-pointer">
+          <i class="fa-solid fa-floppy-disk text-xs"></i>
+          <span>Save Profile &amp; Update Schedule</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  
+  <!-- MODAL: GEOFENCE DEPARTURE CAB ALARM & UNSTATUS STOPPAGE -->
+  <div id="modal-departure-alarm" class="fixed inset-0 z-[10000] bg-black/90 hidden overflow-y-auto flex items-center justify-center p-3 sm:p-4">
+    <div class="my-auto bg-slate-900 border-2 border-rose-500 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative ring-4 ring-rose-500/30">
+      <div class="flex items-start space-x-3 pb-3.5 border-b border-slate-800">
+        <div class="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-2xl shrink-0 live-pulse">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h3 class="text-base sm:text-lg font-black text-white">Cab Stoppage Alert: Unstatused Departure!</h3>
+          </div>
+          <span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-bold uppercase font-mono mt-1 inline-block">Audit &amp; Payment Loss Prevention</span>
+        </div>
+      </div>
+
+      <div class="mt-4 space-y-3.5 text-xs">
+        <div class="p-3.5 rounded-xl bg-rose-950/40 border border-rose-500/50 text-rose-200 font-bold leading-relaxed shadow-inner" id="alarm-stage-desc">
+          You are moving away from the dropoff address without marking Dropoff Complete!
+        </div>
+
+        <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+          <div class="text-[10px] text-slate-500 uppercase font-mono mb-0.5">Active Run Passenger</div>
+          <div class="text-sm font-black text-white" id="alarm-passenger-name">Passenger Name (Run #)</div>
+          <p class="text-[11px] text-slate-400 mt-1">
+            Leaving the scene without statusing logs out-of-geofence coordinates on the highway, causing Medicaid / broker audit clawbacks and non-payment.
+          </p>
+        </div>
+
+        <!-- Audit Defense Anchor Option -->
+        <button type="button" id="btn-alarm-anchor-arrival" class="w-full py-3 px-3 rounded-xl bg-teal-600 hover:bg-teal-500 active:bg-teal-700 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-lg shadow-teal-950/70 transition cursor-pointer">
+          <i class="fa-solid fa-anchor text-sm"></i>
+          <span>Anchor Dropoff to Arrival at Clinic Curb</span>
+        </button>
+
+        <!-- Complete Now at Current Time -->
+        <button type="button" id="btn-alarm-complete-now" class="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center space-x-1.5 transition cursor-pointer">
+          <i class="fa-solid fa-flag-checkered text-xs"></i>
+          <span>Confirm Status Now (Current Time)</span>
+        </button>
+
+        <!-- Dismiss / Snooze -->
+        <button type="button" id="btn-alarm-snooze" class="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-xs font-semibold transition cursor-pointer">
+          Dismiss (Still Maneuvering / False Alarm)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONCURRENT RUNS BILLING WARNING (Zero Unbilled Multi-Load Protection) -->
+  <div id="modal-concurrent-warning" class="fixed inset-0 z-[9999] bg-black/85 hidden overflow-y-auto flex items-center justify-center p-4">
+    <div class="my-auto bg-slate-900 border-2 border-amber-500/70 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
+      <div class="flex items-start space-x-3 pb-3 border-b border-slate-800">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl shrink-0 live-pulse">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h3 class="text-base font-extrabold text-white">Billing Alert: Multiple Runs Open</h3>
+            <span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-bold uppercase font-mono">Unbilled Overlap Risk</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5">Medicaid and brokers do not pay for multiple concurrent runs in the same van unless authorized as a shared group load.</p>
+        </div>
+      </div>
+
+      <div class="mt-4 space-y-3">
+        <!-- Currently Active Run Card -->
+        <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs">
+          <div class="flex items-center justify-between text-[11px] text-slate-500 font-mono uppercase mb-1">
+            <span>Currently Open Active Run</span>
+            <span id="warn-open-run-status" class="text-amber-400 font-bold">Waiting at Pickup</span>
+          </div>
+          <div class="font-bold text-white text-sm" id="warn-open-run-passenger">Passenger Name</div>
+          <div class="text-[11px] text-slate-400 font-mono mt-0.5" id="warn-open-run-meta">Arrived @ --:-- &bull; Dropoff pending</div>
+        </div>
+
+        <!-- New Run Trying to Open -->
+        <div class="p-3 rounded-xl bg-teal-950/30 border border-teal-500/40 text-xs">
+          <div class="text-[11px] text-teal-400 font-mono uppercase mb-1 font-bold">New Run You Are Attempting to Open</div>
+          <div class="font-bold text-white text-sm" id="warn-new-run-passenger">New Passenger Name</div>
+          <div class="text-[11px] text-slate-300 font-mono mt-0.5" id="warn-new-run-meta">Scheduled PU: --:--</div>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-rose-500/15 border-2 border-rose-500/60 text-rose-200 text-xs sm:text-sm font-bold flex items-start space-x-3 shadow-xl">
+          <i class="fa-solid fa-triangle-exclamation text-rose-400 text-xl shrink-0 mt-0.5 live-pulse"></i>
+          <div>
+            <div class="text-rose-300 font-black text-sm sm:text-base mb-1">You're about to start a second run which will possibly end payment for this second run unless overridden!</div>
+            <div class="text-xs font-medium text-rose-200/90 leading-relaxed">There should never be two In Route or open runs at the same time. Medicaid and NEMT brokers bill strictly per vehicle run, so opening a second run without completing the previous run results in an unbilled trip.</div>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="mt-5 pt-3 border-t border-slate-800 flex flex-col sm:flex-row gap-2 justify-end">
+        <button type="button" onclick="closeConcurrentRunWarningModal()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition cursor-pointer">
+          Cancel (Keep Current Run)
+        </button>
+        <button type="button" id="btn-warn-end-prev-start-new" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center justify-center space-x-1.5 shadow-md shadow-emerald-950/60 cursor-pointer">
+          <i class="fa-solid fa-flag-checkered text-xs"></i>
+          <span>End Previous & Start This Run</span>
+        </button>
+        <button type="button" id="btn-warn-proceed-both" class="px-3 py-2 rounded-xl bg-slate-900 hover:bg-amber-950/60 text-amber-300 border border-amber-500/40 text-xs font-semibold transition cursor-pointer">
+          Proceed with Both Runs
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL 8: CLEAR BOARD & NEW DAY CONFIRMATION MODAL -->
   <div id="modal-clear-board" class="fixed inset-0 z-[9999] bg-black/80  hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl relative">
@@ -1733,7 +2120,10 @@
       callingProvider: 'voice',
       googleVoiceAccountIndex: '1', // Index 1 = LI Res Run (/u/1/)
       googleVoiceEmail: 'liresrun@gmail.com',
-      driverName: 'Anthony',
+      driverName: 'Anthony Varela',
+      driverPhone: '631-339-0376',
+      vehicleNumber: '104',
+      driverHomeAddress: 'Suffolk County, NY',
       companyName: 'Serenity Medical Transport',
       etaNoticeMinutes: 10,
       autoTwilioEnabled: false,
@@ -1762,8 +2152,8 @@
       {
         id: "RB-201",
         passenger: "Antonio Marquez",
-        phone: "(631) 555-0145",
-        altPhone: "(631) 555-9012 (Cell)",
+        phone: "Unknown",
+        altPhone: null,
         contactPref: "call",
         mobility: "Amb",
         schedPU: "07:45",
@@ -1786,8 +2176,8 @@
       {
         id: "RB-202",
         passenger: "Azeneth Ramos Bonilla",
-        phone: "(631) 555-0182",
-        altPhone: "(631) 555-3419 (Daughter)",
+        phone: "Unknown",
+        altPhone: null,
         contactPref: "text",
         mobility: "Amb",
         schedPU: "09:00",
@@ -1810,8 +2200,8 @@
       {
         id: "RB-203",
         passenger: "Patricia O'Neill-Lubbe",
-        phone: "(631) 555-0199",
-        altPhone: "(631) 555-7721 (Cell)",
+        phone: "Unknown",
+        altPhone: null,
         contactPref: "call",
         mobility: "Amb",
         schedPU: "10:15",
@@ -1834,8 +2224,8 @@
       {
         id: "RB-204",
         passenger: "Daniel Cotter",
-        phone: "(631) 555-0133",
-        altPhone: "(631) 555-4480 (Case Mgr)",
+        phone: "Unknown",
+        altPhone: null,
         contactPref: "both",
         mobility: "Amb",
         schedPU: "11:30",
@@ -1858,8 +2248,8 @@
       {
         id: "RB-205",
         passenger: "Patricia O'Neill-Lubbe",
-        phone: "(631) 555-0199",
-        altPhone: "(631) 555-7721 (Cell)",
+        phone: "Unknown",
+        altPhone: null,
         contactPref: "call",
         mobility: "Amb",
         schedPU: "12:40",
@@ -1882,8 +2272,8 @@
       {
         id: "RB-206",
         passenger: "Antonio Marquez",
-        phone: "(631) 555-0145",
-        altPhone: "(631) 555-9012 (Cell)",
+        phone: "Unknown",
+        altPhone: null,
         contactPref: "call",
         mobility: "Amb",
         schedPU: "13:00",
@@ -1906,8 +2296,8 @@
       {
         id: "RB-207",
         passenger: "Daniel Cotter",
-        phone: "(631) 555-0133",
-        altPhone: "(631) 555-4480 (Case Mgr)",
+        phone: "Unknown",
+        altPhone: null,
         contactPref: "both",
         mobility: "Amb",
         schedPU: "14:00",
@@ -1930,8 +2320,8 @@
       {
         id: "RB-208",
         passenger: "William Bland",
-        phone: "(631) 555-0166",
-        altPhone: "(631) 555-6623 (Wife)",
+        phone: "Unknown",
+        altPhone: null,
         contactPref: "call",
         mobility: "Amb",
         schedPU: "15:00",
@@ -2128,10 +2518,10 @@
       timelineNodes.push({
         id: 'commute',
         type: 'commute',
-        title: 'Commute Depot',
-        subtitle: `${AppState.commuteTime} min transit`,
+        title: 'Commute to Depot',
+        subtitle: AppState.driverHomeAddress ? `${AppState.driverHomeAddress} → Depot (${AppState.commuteTime}m)` : `${AppState.commuteTime} min transit from home`,
         timeStr: minutesToTime(commuteStartMin),
-        badge: '7 min',
+        badge: `${AppState.commuteTime}m`,
         icon: 'fa-car',
         color: 'indigo'
       });
@@ -2401,11 +2791,11 @@
         id: 'arrive-home',
         type: 'arrive-home',
         title: 'Arrive Home',
-        subtitle: 'Shift complete',
+        subtitle: AppState.driverHomeAddress ? `Depot → ${AppState.driverHomeAddress} (${AppState.commuteTime}m)` : `${AppState.commuteTime}m commute from depot`,
         timeStr: minutesToTime(arriveHomeMin),
-        badge: 'Clock Out',
+        badge: 'Home',
         icon: 'fa-house',
-        color: 'slate'
+        color: 'emerald'
       });
 
       // Shift Metrics
@@ -2535,7 +2925,16 @@
 
     function renderCockpitView() {
       if (AppState.viewMode !== 'cockpit') return;
-      if (!AppState.trips || AppState.trips.length === 0) return;
+      const emptyState = document.getElementById('cockpit-empty-state');
+      const activeContent = document.getElementById('cockpit-active-content');
+
+      if (!AppState.trips || AppState.trips.length === 0) {
+        if (emptyState) emptyState.classList.remove('hidden');
+        if (activeContent) activeContent.classList.add('hidden');
+        return;
+      }
+      if (emptyState) emptyState.classList.add('hidden');
+      if (activeContent) activeContent.classList.remove('hidden');
 
       calculateSchedule();
 
@@ -2573,15 +2972,19 @@
 
         AppState.trips.forEach((t, i) => {
           const isSelected = (!isFullLoop && t.id === currentTrip.id);
-          const isCompleted = t.status === 'Completed';
-          const isLive = t.actualArrival && !t.actualDropoff;
+          const tStatus = getTripStatus(t);
+          const isDroppedOff = (tStatus === 'Dropped Off');
 
-          let btnClass = 'px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition flex items-center space-x-1.5 cursor-pointer shrink-0 ';
+          let btnClass = 'px-4 py-2.5 rounded-xl text-xs sm:text-sm font-mono font-black transition flex items-center space-x-2 cursor-pointer shrink-0 shadow-sm ';
           if (isSelected) {
             btnClass += 'bg-teal-600 text-white shadow-md shadow-teal-950/60 ring-2 ring-teal-400 ';
-          } else if (isLive) {
+          } else if (tStatus === 'Arrived At') {
             btnClass += 'bg-amber-500/20 text-amber-300 border border-amber-500/50 live-pulse ';
-          } else if (isCompleted) {
+          } else if (tStatus === 'In Route') {
+            btnClass += 'bg-sky-500/20 text-sky-300 border border-sky-500/50 live-pulse ';
+          } else if (tStatus === 'Departed At') {
+            btnClass += 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/50 ';
+          } else if (isDroppedOff) {
             btnClass += 'bg-slate-850 text-emerald-400/90 border border-emerald-500/30 ';
           } else {
             btnClass += 'bg-slate-800 text-slate-300 hover:bg-slate-700 ';
@@ -2591,7 +2994,7 @@
             <button type="button" class="${btnClass}" onclick="selectCockpitRun('${t.id}')">
               ${isCompleted ? '<i class="fa-solid fa-check text-[9px] text-emerald-400"></i>' : ''}
               <span>Run ${i + 1}</span>
-              <span class="text-[10px] text-slate-400 font-normal">(${t.passenger.split(' ')[0]})</span>
+              <span class="text-xs text-slate-300 font-semibold">(${t.passenger.split(' ')[0]})</span>
             </button>
           `;
         });
@@ -2610,16 +3013,166 @@
           : (currentTrip.isTargetDelayed ? `(${AppState.targetBuffer}m Lead Squeezed)` : `(-${AppState.targetBuffer}m Target Lead)`);
       }
 
+      const curStatus = getTripStatus(currentTrip);
+
+      // A. Dynamic Card Visual Transformation Based on Ride Status
+      const missionCard = document.getElementById('cockpit-mission-card');
+      if (missionCard) {
+        if (curStatus === 'In Route') {
+          missionCard.className = 'md:col-span-7 dispatch-card border-2 border-sky-500 rounded-2xl p-4 sm:p-5 shadow-2xl shadow-sky-950/70 ring-1 ring-sky-400/40 bg-gradient-to-br from-slate-900 via-slate-950 to-sky-950/35 flex flex-col justify-between relative transition-all duration-300';
+        } else if (curStatus === 'Arrived At') {
+          missionCard.className = 'md:col-span-7 dispatch-card border-2 border-amber-500 rounded-2xl p-4 sm:p-5 shadow-2xl shadow-amber-950/70 ring-1 ring-amber-400/40 bg-gradient-to-br from-slate-900 via-slate-950 to-amber-950/35 flex flex-col justify-between relative transition-all duration-300';
+        } else if (curStatus === 'Departed At') {
+          missionCard.className = 'md:col-span-7 dispatch-card border-2 border-indigo-500 rounded-2xl p-4 sm:p-5 shadow-2xl shadow-indigo-950/70 ring-1 ring-indigo-400/40 bg-gradient-to-br from-slate-900 via-slate-950 to-indigo-950/35 flex flex-col justify-between relative transition-all duration-300';
+        } else if (curStatus === 'Dropped Off') {
+          missionCard.className = 'md:col-span-7 dispatch-card border-2 border-emerald-500/60 rounded-2xl p-4 sm:p-5 shadow-2xl shadow-emerald-950/70 ring-1 ring-emerald-400/30 bg-gradient-to-br from-slate-900 via-slate-950 to-emerald-950/35 flex flex-col justify-between relative transition-all duration-300';
+        } else {
+          missionCard.className = 'md:col-span-7 dispatch-card border border-teal-500/30 rounded-2xl p-4 sm:p-5 shadow-xl bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 flex flex-col justify-between relative transition-all duration-300';
+        }
+      }
+
+      // B. Dynamic Full-Width Hero Status Banner
+      const heroBanner = document.getElementById('cockpit-status-hero-banner');
+      if (heroBanner) {
+        if (curStatus === 'In Route') {
+          heroBanner.innerHTML = `
+            <div class="p-3 rounded-xl bg-sky-500/20 border-2 border-sky-400/70 text-sky-100 text-xs sm:text-sm font-bold flex items-center justify-between shadow-lg shadow-sky-950/50 live-pulse">
+              <div class="flex items-center space-x-2.5">
+                <div class="w-8 h-8 rounded-lg bg-sky-500/30 text-sky-300 flex items-center justify-center text-sm shrink-0">
+                  <i class="fa-solid fa-car-side"></i>
+                </div>
+                <div>
+                  <div class="font-black text-sky-200 uppercase tracking-wide">IN ROUTE TO PICKUP</div>
+                  <div class="text-[11px] text-sky-300 font-normal">Rolling to ${coords.puTown} &bull; Tap Arrived upon on-scene arrival</div>
+                </div>
+              </div>
+              <div class="text-right font-mono">
+                <div class="text-xs font-black text-sky-300">${currentTrip.actualEnRoute ? 'En Route @ ' + formatTime12(currentTrip.actualEnRoute) : 'Rolling'}</div>
+                <div class="text-[10px] text-sky-400/80">PU ETA: ${formatTime12(currentTrip.calculatedPU || currentTrip.schedPU)}</div>
+              </div>
+            </div>
+          `;
+        } else if (curStatus === 'Arrived At') {
+          heroBanner.innerHTML = `
+            <div class="p-3 rounded-xl bg-amber-500/20 border-2 border-amber-400/70 text-amber-100 text-xs sm:text-sm font-bold flex items-center justify-between shadow-lg shadow-amber-950/50 live-pulse">
+              <div class="flex items-center space-x-2.5">
+                <div class="w-8 h-8 rounded-lg bg-amber-500/30 text-amber-300 flex items-center justify-center text-sm shrink-0">
+                  <i class="fa-solid fa-location-dot"></i>
+                </div>
+                <div>
+                  <div class="font-black text-amber-200 uppercase tracking-wide">ARRIVED AT PICKUP &mdash; DWELL TIMER ACTIVE</div>
+                  <div class="text-[11px] text-amber-300 font-normal">Waiting at curb &bull; Tap Depart once passenger is boarded</div>
+                </div>
+              </div>
+              <div class="text-right font-mono">
+                <div class="text-xs font-black text-amber-300">Wait: ${currentTrip.waitTimeMinutes || 0}m</div>
+                <div class="text-[10px] text-amber-400/80">Arrived @ ${formatTime12(currentTrip.actualArrival || '00:00')}</div>
+              </div>
+            </div>
+          `;
+        } else if (curStatus === 'Departed At') {
+          heroBanner.innerHTML = `
+            <div class="p-3 rounded-xl bg-indigo-500/20 border-2 border-indigo-400/70 text-indigo-100 text-xs sm:text-sm font-bold flex items-center justify-between shadow-lg shadow-indigo-950/50">
+              <div class="flex items-center space-x-2.5">
+                <div class="w-8 h-8 rounded-lg bg-indigo-500/30 text-indigo-300 flex items-center justify-center text-sm shrink-0">
+                  <i class="fa-solid fa-van-shuttle"></i>
+                </div>
+                <div>
+                  <div class="font-black text-indigo-200 uppercase tracking-wide">PASSENGER ON BOARD &mdash; IN TRANSIT TO DROPOFF</div>
+                  <div class="text-[11px] text-indigo-300 font-normal">Rolling to ${coords.doTown} &bull; Wait dwell: ${currentTrip.waitTimeMinutes || 0}m</div>
+                </div>
+              </div>
+              <div class="text-right font-mono">
+                <div class="text-xs font-black text-indigo-300">Departed @ ${formatTime12(currentTrip.actualDepart || '00:00')}</div>
+                <div class="text-[10px] text-indigo-400/80">Est DO: ${formatTime12(currentTrip.calculatedDO || currentTrip.schedDO)}</div>
+              </div>
+            </div>
+          `;
+        } else if (curStatus === 'Dropped Off') {
+          heroBanner.innerHTML = `
+            <div class="p-3 rounded-xl bg-emerald-500/20 border-2 border-emerald-400/70 text-emerald-100 text-xs sm:text-sm font-bold flex items-center justify-between shadow-lg shadow-emerald-950/50">
+              <div class="flex items-center space-x-2.5">
+                <div class="w-8 h-8 rounded-lg bg-emerald-500/30 text-emerald-300 flex items-center justify-center text-sm shrink-0">
+                  <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <div>
+                  <div class="font-black text-emerald-200 uppercase tracking-wide">RUN DROPPED OFF &amp; COMPLETED</div>
+                  <div class="text-[11px] text-emerald-300 font-normal">Passenger safely unloaded &bull; Van is available for next run</div>
+                </div>
+              </div>
+              <div class="text-right font-mono">
+                <div class="text-xs font-black text-emerald-300">Dropped @ ${formatTime12(currentTrip.actualDropoff || '00:00')}</div>
+                <div class="text-[10px] text-emerald-400/80">Wait Dwell: ${currentTrip.waitTimeMinutes || 0}m</div>
+              </div>
+            </div>
+          `;
+        } else {
+          const activeOtherTrip = AppState.trips.find(t => t.id !== currentTrip.id && isRunOpen(t));
+          if (activeOtherTrip) {
+            const activeStatus = getTripStatus(activeOtherTrip);
+            heroBanner.innerHTML = `
+              <div class="p-2.5 rounded-xl bg-slate-950 border border-amber-500/40 text-xs flex flex-wrap items-center justify-between gap-2 shadow-sm">
+                <div class="flex items-center space-x-2">
+                  <span class="w-2 h-2 rounded-full bg-amber-400 live-pulse"></span>
+                  <span class="text-amber-300 font-bold uppercase">Viewing Upcoming Run ${currentTrip.id}</span>
+                  <span class="text-slate-400">&bull;</span>
+                  <span class="text-slate-300 font-mono text-[11px]">Active Run: <strong>${formatPassengerName(activeOtherTrip.passenger)}</strong> (${activeStatus})</span>
+                </div>
+                <button type="button" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-teal-300 font-bold text-xs flex items-center space-x-1 cursor-pointer transition" onclick="selectCockpitRun('${activeOtherTrip.id}')">
+                  <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                  <span>Back to Active Run</span>
+                </button>
+              </div>
+            `;
+          } else {
+            heroBanner.innerHTML = `
+              <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 text-xs font-semibold flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                  <i class="fa-regular fa-circle-check text-teal-400 text-sm"></i>
+                  <span>VAN AVAILABLE / SCHEDULED</span>
+                  <span class="text-[10px] font-mono text-slate-500">Ready for dispatch</span>
+                </div>
+                <span class="font-mono text-teal-300 text-xs">Sched PU: ${formatTime12(currentTrip.schedPU)}</span>
+              </div>
+            `;
+          }
+        }
+      }
+
+      // C. Active Station Card Highlighting (Pickup vs Dropoff)
+      const puCard = document.getElementById('cockpit-pickup-station-card');
+      const doCard = document.getElementById('cockpit-dropoff-station-card');
+      if (puCard && doCard) {
+        if (curStatus === 'In Route') {
+          puCard.className = 'p-3.5 rounded-xl bg-sky-950/40 border-2 border-sky-400 shadow-lg shadow-sky-950/50 ring-1 ring-sky-400/40 flex flex-col justify-between transition-all duration-300';
+          doCard.className = 'p-3 rounded-xl bg-slate-950 border border-slate-800 opacity-70 flex flex-col justify-between transition-all duration-300';
+        } else if (curStatus === 'Arrived At') {
+          puCard.className = 'p-3.5 rounded-xl bg-amber-950/40 border-2 border-amber-400 shadow-lg shadow-amber-950/50 ring-1 ring-amber-400/40 flex flex-col justify-between transition-all duration-300';
+          doCard.className = 'p-3 rounded-xl bg-slate-950 border border-slate-800 opacity-70 flex flex-col justify-between transition-all duration-300';
+        } else if (curStatus === 'Departed At') {
+          puCard.className = 'p-3 rounded-xl bg-slate-950 border border-emerald-500/40 opacity-75 flex flex-col justify-between transition-all duration-300';
+          doCard.className = 'p-3.5 rounded-xl bg-indigo-950/40 border-2 border-indigo-400 shadow-lg shadow-indigo-950/50 ring-1 ring-indigo-400/40 flex flex-col justify-between transition-all duration-300';
+        } else if (curStatus === 'Dropped Off') {
+          puCard.className = 'p-3 rounded-xl bg-slate-950 border border-emerald-500/30 opacity-80 flex flex-col justify-between transition-all duration-300';
+          doCard.className = 'p-3 rounded-xl bg-slate-950 border border-emerald-500/40 opacity-80 flex flex-col justify-between transition-all duration-300';
+        } else {
+          puCard.className = 'p-3 rounded-xl bg-slate-950 border border-teal-500/30 flex flex-col justify-between transition-all duration-300';
+          doCard.className = 'p-3 rounded-xl bg-slate-950 border border-slate-800 flex flex-col justify-between transition-all duration-300';
+        }
+      }
+
       const statusTag = document.getElementById('cockpit-status-tag');
       if (statusTag) {
-        if (currentTrip.status === 'Completed') {
-          statusTag.innerHTML = `<span class="px-2.5 py-0.5 rounded-full bg-slate-800 text-emerald-400 border border-slate-700 font-bold text-xs"><i class="fa-solid fa-circle-check mr-1"></i>Completed</span>`;
-        } else if (currentTrip.actualArrival && !currentTrip.actualDepart) {
-          statusTag.innerHTML = `<span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/50 font-bold text-xs live-pulse"><i class="fa-solid fa-stopwatch mr-1"></i>Waiting at PU</span>`;
-        } else if (currentTrip.actualDepart) {
-          statusTag.innerHTML = `<span class="px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/50 font-bold text-xs"><i class="fa-solid fa-van-shuttle mr-1"></i>In Transit</span>`;
+        if (curStatus === 'Dropped Off') {
+          statusTag.innerHTML = `<span class="px-2.5 py-0.5 rounded-full bg-slate-800 text-emerald-400 border border-slate-700 font-bold text-xs"><i class="fa-solid fa-circle-check mr-1"></i>Dropped Off</span>`;
+        } else if (curStatus === 'Departed At') {
+          statusTag.innerHTML = `<span class="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/50 font-bold text-xs"><i class="fa-solid fa-van-shuttle mr-1"></i>Departed At</span>`;
+        } else if (curStatus === 'Arrived At') {
+          statusTag.innerHTML = `<span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/50 font-bold text-xs live-pulse"><i class="fa-solid fa-location-dot mr-1"></i>Arrived At</span>`;
+        } else if (curStatus === 'In Route') {
+          statusTag.innerHTML = `<span class="px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/50 font-bold text-xs live-pulse"><i class="fa-solid fa-car-side mr-1"></i>In Route</span>`;
         } else {
-          statusTag.innerHTML = `<span class="px-2.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 text-xs font-semibold">On Schedule</span>`;
+          statusTag.innerHTML = `<span class="px-2.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 text-xs font-semibold"><i class="fa-regular fa-circle-check mr-1"></i>Available</span>`;
         }
       }
 
@@ -2639,26 +3192,39 @@
         prefEl.textContent = currentTrip.contactPref === 'text' ? 'Text Preferred' : (currentTrip.contactPref === 'both' ? 'Call & Text OK' : 'Call Preferred');
       }
 
-      // Telephony Buttons
+      // Telephony Buttons (with Unknown & Update Phone Support)
       const phoneActions = document.getElementById('cockpit-phone-actions');
       if (phoneActions) {
-        phoneActions.innerHTML = `
-          <a href="${getCallUrl(currentTrip.phone)}" target="_blank" rel="noopener noreferrer" onclick="handlePhoneClick(event, '${currentTrip.phone}', 'call')" class="px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center space-x-1.5 shadow-md transition cursor-pointer">
-            <i class="fa-solid fa-phone text-[10px]"></i>
-            <span>Call ${currentTrip.phone}</span>
-          </a>
-          <a href="${getSmsUrl(currentTrip.phone)}" target="_blank" rel="noopener noreferrer" onclick="handlePhoneClick(event, '${currentTrip.phone}', 'sms')" class="px-2.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center space-x-1 shadow-md transition cursor-pointer">
-            <i class="fa-solid fa-comment-sms text-[10px]"></i>
-            <span>Text</span>
-          </a>
-          <button type="button" onclick="sendLocationPin('${currentTrip.id}')" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-300 hover:text-white font-bold text-xs flex items-center space-x-1 shadow-md transition cursor-pointer" title="Send live Google Maps location pin to passenger via Google Voice">
-            <i class="fa-solid fa-location-dot text-teal-400 text-[10px]"></i>
-            <span>Share Pin</span>
-          </button>
-          <button type="button" onclick="copyPhoneNumber(event, '${currentTrip.phone}')" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-amber-300 text-xs transition cursor-pointer" title="Copy Number">
-            <i class="fa-regular fa-copy text-xs"></i>
-          </button>
-        `;
+        if (isUnknownPhone(currentTrip.phone)) {
+          phoneActions.innerHTML = `
+            <span class="px-3 py-1.5 rounded-xl bg-slate-950 border border-amber-500/40 text-amber-300 font-mono text-xs font-bold flex items-center space-x-1.5 shadow-sm">
+              <i class="fa-solid fa-phone-slash text-amber-400 text-xs"></i>
+              <span>Unknown Phone</span>
+            </span>
+            <button type="button" onclick="openUpdatePhoneModal('${currentTrip.id}')" class="px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs flex items-center space-x-1.5 shadow-lg shadow-amber-950/70 transition cursor-pointer">
+              <i class="fa-solid fa-pen text-xs"></i>
+              <span>Update Phone</span>
+            </button>
+          `;
+        } else {
+          phoneActions.innerHTML = `
+            <a href="${getCallUrl(currentTrip.phone)}" target="_blank" rel="noopener noreferrer" onclick="handlePhoneClick(event, '${currentTrip.phone}', 'call')" class="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-xs sm:text-sm flex items-center space-x-1.5 shadow-md shadow-teal-950/60 transition cursor-pointer">
+              <i class="fa-solid fa-phone text-xs"></i>
+              <span>Call ${currentTrip.phone}</span>
+            </a>
+            <a href="${getSmsUrl(currentTrip.phone)}" target="_blank" rel="noopener noreferrer" onclick="handlePhoneClick(event, '${currentTrip.phone}', 'sms')" class="px-3.5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-black text-xs sm:text-sm flex items-center space-x-1.5 shadow-md shadow-sky-950/60 transition cursor-pointer">
+              <i class="fa-solid fa-comment-sms text-xs"></i>
+              <span>Text</span>
+            </a>
+            <button type="button" onclick="sendLocationPin('${currentTrip.id}')" class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-300 hover:text-white font-bold text-xs sm:text-sm flex items-center space-x-1.5 shadow-md transition cursor-pointer" title="Send live Google Maps location pin to passenger via Google Voice">
+              <i class="fa-solid fa-location-dot text-teal-400 text-xs"></i>
+              <span>Share Pin</span>
+            </button>
+            <button type="button" onclick="openUpdatePhoneModal('${currentTrip.id}')" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-amber-300 text-xs sm:text-sm transition cursor-pointer" title="Update Phone Number">
+              <i class="fa-solid fa-pen text-xs"></i>
+            </button>
+          `;
+        }
       }
 
       // Station Waypoints
@@ -2736,50 +3302,7 @@
       // Giant In-Cab Status Action Button
       const actionContainer = document.getElementById('cockpit-giant-action-container');
       if (actionContainer) {
-        if (currentTrip.status === 'Completed') {
-          actionContainer.innerHTML = `
-            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-emerald-500/40">
-              <div class="flex items-center space-x-2">
-                <i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
-                <div>
-                  <div class="text-xs font-bold text-white">Run Completed Successfully</div>
-                  <div class="text-[10px] text-slate-400 font-mono">Finished @ ${formatTime12(currentTrip.actualDropoff || '00:00')} &bull; Wait: ${currentTrip.waitTimeMinutes || 0}m</div>
-                </div>
-              </div>
-              <button type="button" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-teal-300 font-bold text-xs flex items-center space-x-1 cursor-pointer" onclick="handleReopenRun('${currentTrip.id}'); renderCockpitView();">
-                <i class="fa-solid fa-rotate-left"></i>
-                <span>Reopen</span>
-              </button>
-            </div>
-          `;
-        } else if (!currentTrip.actualArrival) {
-          actionContainer.innerHTML = `
-            <button type="button" class="w-full py-3.5 rounded-xl bg-teal-600 hover:bg-teal-500 active:bg-teal-700 text-white font-black text-base flex items-center justify-center space-x-2 shadow-lg shadow-teal-950/70 transition cursor-pointer" onclick="handleMarkArrived('${currentTrip.id}'); renderCockpitView();">
-              <i class="fa-solid fa-location-dot text-lg"></i>
-              <span>Mark Arrived at Pickup (Start Wait Timer)</span>
-            </button>
-          `;
-        } else if (!currentTrip.actualDepart) {
-          actionContainer.innerHTML = `
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <button type="button" class="py-3 px-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-extrabold text-sm flex items-center justify-center space-x-1.5 shadow-lg shadow-amber-950/70 transition cursor-pointer" onclick="handleMarkDeparted('${currentTrip.id}'); renderCockpitView();">
-                <i class="fa-solid fa-van-shuttle"></i>
-                <span>Depart Pickup</span>
-              </button>
-              <button type="button" class="py-3 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-sm flex items-center justify-center space-x-1.5 shadow-lg shadow-emerald-950/70 transition cursor-pointer" onclick="handleEndRun('${currentTrip.id}'); renderCockpitView();">
-                <i class="fa-solid fa-flag-checkered"></i>
-                <span>Dropoff Complete</span>
-              </button>
-            </div>
-          `;
-        } else {
-          actionContainer.innerHTML = `
-            <button type="button" class="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-black text-base flex items-center justify-center space-x-2 shadow-lg shadow-emerald-950/70 transition cursor-pointer" onclick="handleEndRun('${currentTrip.id}'); renderCockpitView();">
-              <i class="fa-solid fa-flag-checkered text-lg"></i>
-              <span>Dropoff Complete (End Run)</span>
-            </button>
-          `;
-        }
+        actionContainer.innerHTML = renderStatusActionPanel(currentTrip, true);
       }
 
       // 3. Zone 3 Upcoming Runs Queue
@@ -2793,29 +3316,42 @@
 
         queueList.innerHTML = remainingTrips.map((t, idx) => {
           const tCoords = getTripCoordinates(t);
-          const isComp = t.status === 'Completed';
-          const isL = t.actualArrival && !t.actualDropoff;
+          const tStatus = getTripStatus(t);
+          const isComp = (tStatus === 'Dropped Off');
           const isLate = t.isLateRisk;
+          const isEven = (idx % 2 === 0);
 
-          let cardBorder = 'border-slate-800 bg-slate-950/80 hover:bg-slate-800/80 ';
-          if (isComp) cardBorder = 'border-slate-850 bg-slate-950/50 opacity-60 ';
-          else if (isL) cardBorder = 'border-amber-500/50 bg-amber-950/20 ';
-          else if (isLate) cardBorder = 'border-rose-500/40 bg-rose-950/20 ';
+          let cardBorder = '';
+          if (isComp) {
+            cardBorder = 'border-slate-850 bg-slate-950/60 opacity-60 border-l-4 border-l-slate-700 ';
+          } else if (tStatus === 'Arrived At') {
+            cardBorder = 'border-2 border-amber-500 bg-amber-950/30 shadow-lg shadow-amber-950/50 ring-1 ring-amber-400/40 border-l-4 border-l-amber-400 ';
+          } else if (tStatus === 'In Route') {
+            cardBorder = 'border-2 border-sky-500 bg-sky-950/30 shadow-lg shadow-sky-950/50 ring-1 ring-sky-400/40 border-l-4 border-l-sky-400 ';
+          } else if (tStatus === 'Departed At') {
+            cardBorder = 'border-2 border-indigo-500 bg-indigo-950/30 shadow-lg shadow-indigo-950/50 border-l-4 border-l-indigo-400 ';
+          } else if (isLate) {
+            cardBorder = 'border-2 border-rose-500 bg-rose-950/30 shadow-lg shadow-rose-950/50 border-l-4 border-l-rose-500 ';
+          } else if (isEven) {
+            cardBorder = 'border border-slate-700/80 bg-slate-900/95 border-l-4 border-l-teal-400 hover:bg-slate-800 shadow-sm ';
+          } else {
+            cardBorder = 'border border-slate-800 bg-slate-950 border-l-4 border-l-indigo-400 hover:bg-slate-900 shadow-sm ';
+          }
 
           return `
-            <div class="p-2.5 rounded-xl border ${cardBorder} transition cursor-pointer flex items-center justify-between" onclick="selectCockpitRun('${t.id}')">
-              <div class="min-w-0 pr-2">
-                <div class="flex items-center space-x-1.5 text-xs">
-                  <span class="font-bold text-white truncate">${t.passenger}</span>
-                  <span class="text-[9px] font-mono px-1 rounded bg-slate-800 text-slate-400">${t.mobility}</span>
+            <div class="p-3.5 rounded-xl border ${cardBorder} transition cursor-pointer flex items-center justify-between" onclick="selectCockpitRun('${t.id}')">
+              <div class="min-w-0 pr-2.5">
+                <div class="flex items-center space-x-2">
+                  <span class="font-black text-white text-sm sm:text-base truncate">${t.passenger}</span>
+                  <span class="text-xs font-bold font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">${t.mobility}</span>
                 </div>
-                <div class="text-[11px] text-slate-400 truncate mt-0.5 font-mono">
+                <div class="text-xs sm:text-sm text-slate-300 truncate mt-1 font-medium">
                   ${tCoords.puTown} &rarr; ${tCoords.doTown} (${t.miles} mi)
                 </div>
               </div>
               <div class="text-right shrink-0">
-                <div class="text-xs font-mono font-bold ${isLate ? 'text-rose-400' : 'text-teal-300'}">${formatTime12(t.calculatedPU || t.schedPU)}</div>
-                <div class="text-[10px] font-mono text-slate-500 uppercase">${isComp ? 'Completed' : (isL ? 'Waiting' : 'Scheduled')}</div>
+                <div class="text-sm sm:text-base font-mono font-black ${isLate ? 'text-rose-400' : 'text-teal-300'}">${formatTime12(t.calculatedPU || t.schedPU)}</div>
+                <div class="text-xs font-mono font-bold uppercase mt-0.5 ${tStatus === 'Arrived At' ? 'text-amber-400' : (tStatus === 'In Route' ? 'text-sky-400' : (tStatus === 'Departed At' ? 'text-indigo-400' : (isComp ? 'text-emerald-400' : 'text-slate-400')))}">${tStatus}</div>
               </div>
             </div>
           `;
@@ -3360,10 +3896,33 @@
       const tbody = document.getElementById('trip-table-body');
       tbody.innerHTML = '';
 
+      if (!trips || trips.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="py-12 text-center">
+              <div class="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 text-slate-500 flex items-center justify-center text-xl mx-auto mb-3 shadow-inner">
+                <i class="fa-solid fa-table-list"></i>
+              </div>
+              <h4 class="text-sm font-bold text-slate-200">Board Clear — No Runs Loaded</h4>
+              <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Upload today's RoutingBox screenshots to begin your daily shift roster.</p>
+              <div class="flex items-center justify-center gap-2 mt-4">
+                <button type="button" onclick="document.getElementById('modal-parser').classList.remove('hidden')" class="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-md transition cursor-pointer">
+                  <i class="fa-solid fa-cloud-arrow-up mr-1.5"></i>Upload Today's Manifest
+                </button>
+                <button type="button" onclick="loadSampleRoutingBoxManifest()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-300 border border-teal-500/30 font-semibold text-xs transition cursor-pointer">
+                  <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i>Load Demo
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
       const filterTerm = document.getElementById('filter-search').value.toLowerCase().trim();
       const filterRoad = document.getElementById('filter-road-type').value;
 
-      trips.forEach((trip) => {
+      trips.forEach((trip, index) => {
         // Filter checks
         const matchesTerm = !filterTerm || 
           trip.passenger.toLowerCase().includes(filterTerm) ||
@@ -3413,36 +3972,40 @@
 
         // MAIN TRIP ROW - With explicit Late Risk highlighting & iPad Tap-to-Focus
         const tr = document.createElement('tr');
-        const isLive = trip.status === 'Arrived Live';
+        const isLive = (trip.status === 'In Route' || trip.status === 'Arrived At' || trip.status === 'Departed At');
+        const isEven = (index % 2 === 0);
         
         let rowClass = `border-b border-slate-800/80 transition cursor-pointer select-none `;
         if (isLive) {
-          rowClass += `bg-teal-950/30 ring-1 ring-teal-500/50 hover:bg-teal-900/40 `;
+          rowClass += `bg-teal-950/40 ring-1 ring-teal-500/60 hover:bg-teal-900/50 border-l-4 border-l-teal-400 `;
         } else if (trip.isLateRisk) {
-          rowClass += `bg-rose-950/25 border-l-4 border-l-rose-500 hover:bg-rose-950/40 `;
+          rowClass += `bg-rose-950/30 border-l-4 border-l-rose-500 hover:bg-rose-950/40 `;
         } else if (trip.isTargetDelayed) {
-          rowClass += `bg-amber-950/15 border-l-4 border-l-amber-500/70 hover:bg-amber-950/30 `;
+          rowClass += `bg-amber-950/20 border-l-4 border-l-amber-500 hover:bg-amber-950/30 `;
+        } else if (isEven) {
+          rowClass += `bg-slate-900/95 border-l-4 border-l-teal-500/70 hover:bg-slate-850/95 `;
         } else {
-          rowClass += `hover:bg-slate-800/80 active:bg-slate-750 `;
+          rowClass += `bg-slate-950/95 border-l-4 border-l-indigo-500/70 hover:bg-slate-900/95 `;
         }
         tr.className = rowClass;
         tr.setAttribute('data-id', trip.id);
         tr.title = `Tap anywhere on this row to open large iPad Focus Card for ${trip.passenger}`;
 
-        // Status Badge: Remains Live until End Run is clicked
+        // Status Badge: 5-Stage Lifecycle
+        const tripCurStatus = getTripStatus(trip);
         let statusBadge = '';
-        if (trip.status === 'Completed') {
-          statusBadge = `<span class="px-2.5 py-1 rounded-full bg-slate-800 text-emerald-400 border border-slate-700 font-bold text-[10px] flex items-center space-x-1.5 justify-center shadow-sm"><i class="fa-solid fa-circle-check text-emerald-400 text-[10px]"></i><span>Completed</span></span>`;
-        } else if (trip.status === 'In Transit') {
-          statusBadge = `<span class="px-2.5 py-1 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/50 font-bold text-[10px] flex items-center space-x-1.5 justify-center shadow-sm"><span class="w-2 h-2 rounded-full bg-sky-400 live-pulse"></span><span>In Transit</span></span>`;
-        } else if (trip.status === 'Live' || trip.status === 'Arrived Live' || trip.actualArrival) {
-          statusBadge = `<span class="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 font-bold text-[10px] flex items-center space-x-1.5 justify-center shadow-sm shadow-emerald-950/40"><span class="w-2 h-2 rounded-full bg-emerald-400 live-pulse"></span><span>Live</span></span>`;
+        if (tripCurStatus === 'Dropped Off') {
+          statusBadge = `<span class="px-2.5 py-1 rounded-full bg-slate-800 text-emerald-400 border border-slate-700 font-bold text-[10px] flex items-center space-x-1.5 justify-center shadow-sm"><i class="fa-solid fa-circle-check text-emerald-400 text-[10px]"></i><span>Dropped Off</span></span>`;
+        } else if (tripCurStatus === 'Departed At') {
+          statusBadge = `<span class="px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/50 font-bold text-[10px] flex items-center space-x-1.5 justify-center shadow-sm"><span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span><span>Departed At</span></span>`;
+        } else if (tripCurStatus === 'Arrived At') {
+          statusBadge = `<span class="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/50 font-bold text-[10px] flex items-center space-x-1.5 justify-center shadow-sm live-pulse"><span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span><span>Arrived At</span></span>`;
+        } else if (tripCurStatus === 'In Route') {
+          statusBadge = `<span class="px-2.5 py-1 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/50 font-bold text-[10px] flex items-center space-x-1.5 justify-center shadow-sm live-pulse"><span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span><span>In Route</span></span>`;
         } else if (trip.isLateRisk) {
           statusBadge = `<span class="px-2 py-0.5 rounded-full bg-rose-500/25 text-rose-300 border border-rose-500/60 font-bold text-[10px] flex items-center space-x-1 justify-center shadow-sm shadow-rose-900/40"><i class="fa-solid fa-triangle-exclamation text-rose-400 text-[9px]"></i><span>Late (+${Math.round(trip.deltaMinutes)}m)</span></span>`;
-        } else if (trip.isTargetDelayed) {
-          statusBadge = `<span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold text-[10px] flex items-center space-x-1 justify-center"><i class="fa-solid fa-clock-rotate-left text-amber-400 text-[9px]"></i><span>Buffer Squeeze</span></span>`;
         } else {
-          statusBadge = `<span class="px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20 font-semibold text-[10px]">On Schedule</span>`;
+          statusBadge = `<span class="px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20 font-semibold text-[10px]">Available</span>`;
         }
 
         // Road type pill
@@ -3482,26 +4045,38 @@
               </button>
             </div>
 
-            <!-- Primary Phone with Call / Text & Contact Preference Badge -->
+            <!-- Primary Phone with Unknown / Update Logic & Preference Badge -->
             <div class="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
-              <div class="inline-flex items-center space-x-1.5 bg-slate-950/90 border border-slate-800 px-2 py-0.5 rounded-md shadow-sm">
-                <!-- Clickable Phone Number (Direct Dial via Google Voice) -->
-                <a href="${getCallUrl(trip.phone)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); handlePhoneClick(event, '${trip.phone}', 'call')" class="font-mono text-slate-200 hover:text-teal-300 font-semibold transition" title="Click to open Google Voice dialer (pre-filled ready to call)">
-                  ${trip.phone}
-                </a>
-                <!-- 1-Click Call Icon -->
-                <a href="${getCallUrl(trip.phone)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); handlePhoneClick(event, '${trip.phone}', 'call')" class="text-teal-400 hover:text-teal-300 p-1 rounded hover:bg-teal-950/60 transition" title="Call via Google Voice (LI Res Run)">
-                  <i class="fa-solid fa-phone text-[10px]"></i>
-                </a>
-                <!-- 1-Click SMS Text Icon -->
-                <a href="${getSmsUrl(trip.phone)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); handlePhoneClick(event, '${trip.phone}', 'sms')" class="text-sky-400 hover:text-sky-300 p-1 rounded hover:bg-sky-950/60 transition" title="Text via Google Voice (LI Res Run - Copies number)">
-                  <i class="fa-solid fa-comment-sms text-[10px]"></i>
-                </a>
-                <!-- 1-Click Copy Number Icon -->
-                <button type="button" onclick="copyPhoneNumber(event, '${trip.phone}')" class="text-slate-400 hover:text-amber-300 p-1 rounded hover:bg-slate-800 transition" title="Copy ${trip.phone} to clipboard">
-                  <i class="fa-regular fa-copy text-[10px]"></i>
-                </button>
-              </div>
+              ${isUnknownPhone(trip.phone) ? `
+                <div class="inline-flex items-center space-x-1.5 bg-slate-950/90 border border-amber-500/40 px-2 py-0.5 rounded-md shadow-sm">
+                  <span class="font-mono text-amber-300 italic text-[11px] font-semibold flex items-center space-x-1">
+                    <i class="fa-solid fa-phone-slash text-[9px] text-amber-400"></i>
+                    <span>Unknown</span>
+                  </span>
+                  <button type="button" onclick="event.stopPropagation(); openUpdatePhoneModal('${trip.id}')" class="px-2.5 py-1 rounded-md bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-[11px] shadow-md shadow-amber-950/60 transition flex items-center space-x-1 cursor-pointer" title="Enter real customer phone number">
+                    <i class="fa-solid fa-pen text-[10px]"></i>
+                    <span>Update</span>
+                  </button>
+                </div>
+              ` : `
+                <div class="inline-flex items-center space-x-1.5 bg-slate-950/90 border border-slate-800 px-2 py-0.5 rounded-md shadow-sm">
+                  <a href="${getCallUrl(trip.phone)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); handlePhoneClick(event, '${trip.phone}', 'call')" class="font-mono text-slate-200 hover:text-teal-300 font-semibold transition" title="Click to open Google Voice dialer">
+                    ${formatPhoneDisplay(trip.phone)}
+                  </a>
+                  <a href="${getCallUrl(trip.phone)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); handlePhoneClick(event, '${trip.phone}', 'call')" class="text-teal-400 hover:text-teal-300 p-1 rounded hover:bg-teal-950/60 transition" title="Call via Google Voice">
+                    <i class="fa-solid fa-phone text-[10px]"></i>
+                  </a>
+                  <a href="${getSmsUrl(trip.phone)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); handlePhoneClick(event, '${trip.phone}', 'sms')" class="text-sky-400 hover:text-sky-300 p-1 rounded hover:bg-sky-950/60 transition" title="Text via Google Voice">
+                    <i class="fa-solid fa-comment-sms text-[10px]"></i>
+                  </a>
+                  <button type="button" onclick="copyPhoneNumber(event, '${trip.phone}')" class="text-slate-400 hover:text-amber-300 p-1 rounded hover:bg-slate-800 transition" title="Copy number">
+                    <i class="fa-regular fa-copy text-[10px]"></i>
+                  </button>
+                  <button type="button" onclick="event.stopPropagation(); openUpdatePhoneModal('${trip.id}')" class="text-slate-500 hover:text-amber-300 p-1 rounded hover:bg-slate-800 transition" title="Update phone number">
+                    <i class="fa-solid fa-pen text-[9px]"></i>
+                  </button>
+                </div>
+              ` }
 
               <!-- Contact Preference Badge -->
               <span class="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase font-bold ${trip.contactPref === 'text' ? 'bg-sky-500/15 text-sky-300 border border-sky-500/30' : (trip.contactPref === 'both' ? 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/30' : 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30')}" title="Passenger contact preference">
@@ -3626,54 +4201,59 @@
             <div class="text-[10px] text-slate-500">$${(trip.revenue / trip.miles).toFixed(2)}/mi</div>
           </td>
 
-          <!-- Live Dispatch Actions: Arrived -> Departed -> End Run (Completed) -->
+          <!-- Live Dispatch Actions: 5 Status Milestones & Undo -->
           <td class="py-2.5 px-3 text-center">
             <div class="flex flex-col items-center space-y-1">
               <div class="flex items-center space-x-1.5">
-                <!-- 1. Arrived Button -->
-                ${!trip.actualArrival ? `
-                  <button class="px-2.5 py-1 text-[10px] font-bold rounded-md bg-slate-800 text-teal-300 hover:bg-teal-600 hover:text-white border border-teal-500/30 transition flex items-center space-x-1 btn-mark-arrived" data-id="${trip.id}" title="Mark Physical Arrival at Pickup">
+                ${tripCurStatus === 'Available' ? `
+                  <button class="px-2 py-1 text-[10px] font-bold rounded-md bg-sky-600 hover:bg-sky-500 text-white transition flex items-center space-x-1 btn-mark-in-route shadow-sm cursor-pointer" data-id="${trip.id}" title="Mark In Route to Pickup">
+                    <i class="fa-solid fa-car-side text-[9px]"></i>
+                    <span>In Route</span>
+                  </button>
+                  <button class="px-2 py-1 text-[10px] font-bold rounded-md bg-slate-800 text-teal-300 hover:bg-teal-600 hover:text-white border border-teal-500/30 transition flex items-center space-x-1 btn-mark-arrived cursor-pointer" data-id="${trip.id}" title="Mark Physical Arrival at Pickup">
                     <i class="fa-solid fa-location-dot text-[9px]"></i>
                     <span>Arrived</span>
                   </button>
-                ` : `
-                  <span class="px-1.5 py-0.5 text-[9px] font-mono font-bold rounded bg-emerald-950 text-emerald-300 border border-emerald-500/40 flex items-center space-x-1" title="Arrived at Pickup">
-                    <i class="fa-solid fa-check text-[8px] text-emerald-400"></i>
-                    <span>Arr ${formatTime12(trip.actualArrival)}</span>
-                  </span>
-                `}
-
-                <!-- 2. Departed Button -->
-                ${trip.actualArrival && !trip.actualDepart && trip.status !== 'Completed' ? `
-                  <button class="px-2 py-1 text-[10px] font-bold rounded-md bg-amber-600 hover:bg-amber-500 text-white transition flex items-center space-x-1 btn-mark-departed live-pulse border border-amber-400/50 shadow-sm" data-id="${trip.id}" title="Mark Passenger Loaded & Depart Pickup">
+                ` : (tripCurStatus === 'In Route' ? `
+                  <button class="px-2.5 py-1 text-[10px] font-bold rounded-md bg-teal-600 hover:bg-teal-500 text-white transition flex items-center space-x-1 btn-mark-arrived live-pulse border border-teal-400/50 shadow-sm cursor-pointer" data-id="${trip.id}" title="Mark Physical Arrival at Pickup">
+                    <i class="fa-solid fa-location-dot text-[9px]"></i>
+                    <span>Arrived</span>
+                  </button>
+                  <button class="px-1.5 py-1 text-[10px] font-semibold rounded-md bg-slate-900 text-slate-400 hover:text-amber-300 border border-slate-800 transition btn-revert-in-route cursor-pointer" data-id="${trip.id}" title="Undo In Route (Revert to Available)">
+                    <i class="fa-solid fa-rotate-left text-[9px]"></i>
+                  </button>
+                ` : (tripCurStatus === 'Arrived At' ? `
+                  <button class="px-2 py-1 text-[10px] font-bold rounded-md bg-amber-600 hover:bg-amber-500 text-white transition flex items-center space-x-1 btn-mark-departed live-pulse border border-amber-400/50 shadow-sm cursor-pointer" data-id="${trip.id}" title="Mark Passenger Loaded & Depart Pickup">
                     <i class="fa-solid fa-van-shuttle text-[9px]"></i>
                     <span>Depart</span>
                   </button>
-                ` : (trip.actualDepart ? `
-                  <span class="px-1.5 py-0.5 text-[9px] font-mono font-bold rounded bg-indigo-950 text-indigo-300 border border-indigo-500/40 flex items-center space-x-1" title="Departed Pickup">
-                    <i class="fa-solid fa-check text-[8px] text-indigo-400"></i>
-                    <span>Dep ${formatTime12(trip.actualDepart)}</span>
-                  </span>
-                ` : '')}
-
-                <!-- 3. End Run Button (Marks Run as Completed!) -->
-                ${trip.actualArrival && trip.status !== 'Completed' ? `
-                  <button class="px-2.5 py-1 text-[10px] font-bold rounded-md bg-emerald-600 hover:bg-emerald-500 text-white transition flex items-center space-x-1 btn-end-run shadow-md shadow-emerald-950/60" data-id="${trip.id}" title="Drop-off Complete: End Run & Mark Completed">
+                  <button class="px-2 py-1 text-[10px] font-bold rounded-md bg-emerald-600 hover:bg-emerald-500 text-white transition flex items-center space-x-1 btn-end-run shadow-sm cursor-pointer" data-id="${trip.id}" title="Fast Dropoff Complete">
                     <i class="fa-solid fa-flag-checkered text-[9px]"></i>
-                    <span>End Run</span>
+                    <span>Drop</span>
                   </button>
-                ` : (trip.status === 'Completed' ? `
-                  <button class="px-2 py-0.5 text-[9px] font-semibold text-slate-400 hover:text-teal-300 hover:bg-slate-800 rounded transition btn-reopen-run" data-id="${trip.id}" title="Click to reopen run to Live status">
+                  <button class="px-1.5 py-1 text-[10px] font-semibold rounded-md bg-slate-900 text-slate-400 hover:text-amber-300 border border-slate-800 transition btn-revert-arrival cursor-pointer" data-id="${trip.id}" title="Undo Arrived At (Revert to In Route)">
+                    <i class="fa-solid fa-rotate-left text-[9px]"></i>
+                  </button>
+                ` : (tripCurStatus === 'Departed At' ? `
+                  <button class="px-2.5 py-1 text-[10px] font-bold rounded-md bg-emerald-600 hover:bg-emerald-500 text-white transition flex items-center space-x-1 btn-end-run shadow-md shadow-emerald-950/60 cursor-pointer" data-id="${trip.id}" title="Drop-off Complete: End Run">
+                    <i class="fa-solid fa-flag-checkered text-[9px]"></i>
+                    <span>Dropoff</span>
+                  </button>
+                  <button class="px-1.5 py-1 text-[10px] font-semibold rounded-md bg-slate-900 text-slate-400 hover:text-amber-300 border border-slate-800 transition btn-revert-departed cursor-pointer" data-id="${trip.id}" title="Undo Departed At (Revert to Arrived At)">
+                    <i class="fa-solid fa-rotate-left text-[9px]"></i>
+                  </button>
+                ` : `
+                  <button class="px-2 py-0.5 text-[9px] font-semibold text-slate-400 hover:text-teal-300 hover:bg-slate-800 rounded transition btn-revert-dropoff cursor-pointer" data-id="${trip.id}" title="Reopen run to Departed At">
                     <i class="fa-solid fa-rotate-left text-[8px] mr-0.5"></i> Reopen
                   </button>
-                ` : '')}
+                `)))}
 
                 <!-- Utilities -->
                 <div class="flex items-center space-x-0.5 ml-1">
-                  <button class="p-1 text-slate-400 hover:text-teal-400 hover:bg-slate-800 rounded transition btn-edit-trip" data-id="${trip.id}" title="Edit Run">
+                  <button class="p-1 text-slate-400 hover:text-teal-400 hover:bg-slate-800 rounded transition btn-edit-trip cursor-pointer" data-id="${trip.id}" title="Edit Run">
                     <i class="fa-solid fa-pen-to-square text-[10px]"></i>
                   </button>
-                  <button class="p-1 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded transition btn-delete-trip" data-id="${trip.id}" title="Delete Run">
+                  <button class="p-1 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded transition btn-delete-trip cursor-pointer" data-id="${trip.id}" title="Delete Run">
                     <i class="fa-solid fa-trash-can text-[10px]"></i>
                   </button>
                 </div>
@@ -3681,23 +4261,28 @@
 
               <!-- Live Wait Time & Status Details -->
               <div class="w-full text-center">
-                ${trip.status === 'Completed' ? `
+                ${tripCurStatus === 'Dropped Off' ? `
                   <span class="text-[9px] font-mono text-emerald-400/90 font-medium">
                     Finished ${trip.actualDropoff ? '@ ' + formatTime12(trip.actualDropoff) : ''} ${trip.waitTimeMinutes ? `&bull; Wait: ${trip.waitTimeMinutes}m` : ''}
                   </span>
-                ` : (trip.actualDepart ? `
-                  <span class="inline-flex items-center space-x-1 text-[9px] font-mono px-2 py-0.5 rounded bg-sky-950/50 text-sky-300 border border-sky-500/30 font-medium">
-                    <i class="fa-solid fa-road text-[8px] text-sky-400"></i>
-                    <span>Rolling to drop-off &bull; Wait: ${trip.waitTimeMinutes}m</span>
+                ` : (tripCurStatus === 'Departed At' ? `
+                  <span class="inline-flex items-center space-x-1 text-[9px] font-mono px-2 py-0.5 rounded bg-indigo-950/50 text-indigo-300 border border-indigo-500/30 font-medium">
+                    <i class="fa-solid fa-road text-[8px] text-indigo-400"></i>
+                    <span>In Transit to drop-off &bull; Wait: ${trip.waitTimeMinutes || 0}m</span>
                   </span>
-                ` : (trip.actualArrival ? `
-                  <span class="inline-flex items-center space-x-1 text-[9px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold live-pulse">
+                ` : (tripCurStatus === 'Arrived At' ? `
+                  <span class="inline-flex items-center space-x-1 text-[9px] font-mono px-2 py-0.5 rounded bg-amber-950/50 text-amber-300 border border-amber-500/30 font-medium live-pulse">
                     <i class="fa-solid fa-stopwatch text-[8px] text-amber-400"></i>
-                    <span>Waiting at PU &bull; Tap Depart when loaded</span>
+                    <span>Waiting @ Pickup ${trip.actualArrival ? '(' + formatTime12(trip.actualArrival) + ')' : ''}</span>
+                  </span>
+                ` : (tripCurStatus === 'In Route' ? `
+                  <span class="inline-flex items-center space-x-1 text-[9px] font-mono px-2 py-0.5 rounded bg-sky-950/50 text-sky-300 border border-sky-500/30 font-medium live-pulse">
+                    <i class="fa-solid fa-car-side text-[8px] text-sky-400"></i>
+                    <span>In Route to Pickup ${trip.actualEnRoute ? '(' + formatTime12(trip.actualEnRoute) + ')' : ''}</span>
                   </span>
                 ` : `
-                  <span class="text-[9px] font-mono text-slate-500">Ready for pickup</span>
-                `))}
+                  <span class="text-[9px] font-mono text-slate-500">Scheduled PU: ${formatTime12(trip.schedPU)}</span>
+                `)))}
               </div>
             </div>
           </td>
@@ -3717,35 +4302,75 @@
     }
 
     function attachTableEventListeners() {
-      // 1. Arrived Button Handler
+      // 1. In Route Button Handler
+      document.querySelectorAll('.btn-mark-in-route').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const tripId = btn.getAttribute('data-id');
+          handleMarkInRoute(tripId);
+        });
+      });
+
+      // 2. Arrived Button Handler
       document.querySelectorAll('.btn-mark-arrived').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
           const tripId = btn.getAttribute('data-id');
           handleMarkArrived(tripId);
         });
       });
 
-      // 2. Departed Button Handler
+      // 3. Departed Button Handler
       document.querySelectorAll('.btn-mark-departed').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
           const tripId = btn.getAttribute('data-id');
           handleMarkDeparted(tripId);
         });
       });
 
-      // 3. End Run Button Handler (Marks Run as Completed!)
+      // 4. End Run Button Handler (Dropoff Complete)
       document.querySelectorAll('.btn-end-run').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
           const tripId = btn.getAttribute('data-id');
           handleEndRun(tripId);
         });
       });
 
-      // 4. Reopen Run Handler
-      document.querySelectorAll('.btn-reopen-run').forEach(btn => {
-        btn.addEventListener('click', () => {
+      // 5. Reopen Run Handler
+      document.querySelectorAll('.btn-reopen-run, .btn-revert-dropoff').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
           const tripId = btn.getAttribute('data-id');
-          handleReopenRun(tripId);
+          handleRevertDropoff(tripId);
+        });
+      });
+
+      // 6. Undo In Route Handler
+      document.querySelectorAll('.btn-revert-in-route').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const tripId = btn.getAttribute('data-id');
+          handleRevertInRoute(tripId);
+        });
+      });
+
+      // 7. Undo Arrived Handler
+      document.querySelectorAll('.btn-revert-arrival').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const tripId = btn.getAttribute('data-id');
+          handleRevertArrival(tripId);
+        });
+      });
+
+      // 8. Undo Departed Handler
+      document.querySelectorAll('.btn-revert-departed').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const tripId = btn.getAttribute('data-id');
+          handleRevertDeparted(tripId);
         });
       });
 
@@ -3791,18 +4416,561 @@
     }
 
     // TWO-BUTTON LIVE TRACKING & WAIT TIME LOGIC
-    function handleMarkArrived(tripId, customTimeStr = null) {
+    // ==========================================
+    
+    // ==========================================
+    // DRIVER PROFILE & HOME COMMUTE CONTROLLERS
+    // ==========================================
+    function loadDriverProfile() {
+      try {
+        const saved = localStorage.getItem('serenity_driver_profile');
+        if (saved) {
+          const p = JSON.parse(saved);
+          if (p.driverName) AppState.driverName = p.driverName;
+          if (p.driverPhone) AppState.driverPhone = p.driverPhone;
+          if (p.vehicleNumber) AppState.vehicleNumber = p.vehicleNumber;
+          if (p.driverHomeAddress) AppState.driverHomeAddress = p.driverHomeAddress;
+          if (p.commuteTime !== undefined) AppState.commuteTime = Number(p.commuteTime) || 15;
+          if (p.prepTime !== undefined) AppState.prepTime = Number(p.prepTime) || 5;
+          if (p.baseDepotAddress && AppState.baseGarage) AppState.baseGarage.address = p.baseDepotAddress;
+          AppState.departureAlarmEnabled = (p.departureAlarmEnabled !== undefined) ? p.departureAlarmEnabled : true;
+          AppState.nextRunLockoutEnabled = (p.nextRunLockoutEnabled !== undefined) ? p.nextRunLockoutEnabled : true;
+        }
+      } catch (e) {
+        console.error('Error loading driver profile:', e);
+      }
+      updateHeaderDriverLabel();
+    }
+
+    function openDriverProfileModal() {
+      const pName = document.getElementById('prof-driver-name');
+      if (pName) pName.value = AppState.driverName || 'Anthony Varela';
+      
+      const pPhone = document.getElementById('prof-driver-phone');
+      if (pPhone) pPhone.value = AppState.driverPhone || '631-339-0376';
+      
+      const pVan = document.getElementById('prof-vehicle-num');
+      if (pVan) pVan.value = AppState.vehicleNumber || '104';
+      
+      const pHome = document.getElementById('prof-home-address');
+      if (pHome) pHome.value = AppState.driverHomeAddress || 'Suffolk County, NY';
+      
+      const pCommute = document.getElementById('prof-commute-time');
+      if (pCommute) pCommute.value = AppState.commuteTime || 15;
+      
+      const pPrep = document.getElementById('prof-prep-time');
+      if (pPrep) pPrep.value = AppState.prepTime || 5;
+
+      const chkAlarm = document.getElementById('prof-departure-alarm-enabled');
+      if (chkAlarm) chkAlarm.checked = (AppState.departureAlarmEnabled !== false);
+      const chkLock = document.getElementById('prof-next-run-lockout-enabled');
+      if (chkLock) chkLock.checked = (AppState.nextRunLockoutEnabled !== false);
+      const pDepot = document.getElementById('prof-depot-address');
+      if (pDepot && AppState.baseGarage) pDepot.value = AppState.baseGarage.address;
+
+      updateProfilePreviewSchedule();
+
+      const modal = document.getElementById('modal-driver-profile');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeDriverProfileModal() {
+      const modal = document.getElementById('modal-driver-profile');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function updateProfilePreviewSchedule() {
+      const sched = calculateSchedule();
+      const nodes = sched.timelineNodes || [];
+      const commuteNode = nodes.find(n => n.id === 'commute');
+      const clockinNode = nodes.find(n => n.id === 'clockin');
+      const rollNode = nodes.find(n => n.id === 'roll');
+      const homeNode = nodes.find(n => n.id === 'arrive-home');
+
+      if (document.getElementById('prof-preview-depart-home')) {
+        document.getElementById('prof-preview-depart-home').textContent = commuteNode ? formatTime12(commuteNode.timeStr) : '--:--';
+      }
+      if (document.getElementById('prof-preview-clockin')) {
+        document.getElementById('prof-preview-clockin').textContent = clockinNode ? formatTime12(clockinNode.timeStr) : '--:--';
+      }
+      if (document.getElementById('prof-preview-roll')) {
+        document.getElementById('prof-preview-roll').textContent = rollNode ? formatTime12(rollNode.timeStr) : '--:--';
+      }
+      if (document.getElementById('prof-preview-arrive-home')) {
+        document.getElementById('prof-preview-arrive-home').textContent = homeNode ? formatTime12(homeNode.timeStr) : '--:--';
+      }
+      if (document.getElementById('prof-preview-driver-label')) {
+        document.getElementById('prof-preview-driver-label').textContent = `${AppState.driverName || 'Driver'} • Van #${AppState.vehicleNumber || '104'}`;
+      }
+    }
+
+    function saveDriverProfile() {
+      const nameEl = document.getElementById('prof-driver-name');
+      if (nameEl && nameEl.value.trim()) AppState.driverName = nameEl.value.trim();
+      
+      const phoneEl = document.getElementById('prof-driver-phone');
+      if (phoneEl && phoneEl.value.trim()) AppState.driverPhone = phoneEl.value.trim();
+      
+      const vanEl = document.getElementById('prof-vehicle-num');
+      if (vanEl && vanEl.value.trim()) AppState.vehicleNumber = vanEl.value.trim();
+      
+      const homeEl = document.getElementById('prof-home-address');
+      if (homeEl && homeEl.value.trim()) AppState.driverHomeAddress = homeEl.value.trim();
+      
+      const commuteEl = document.getElementById('prof-commute-time');
+      if (commuteEl) AppState.commuteTime = parseInt(commuteEl.value) || 15;
+      
+      const prepEl = document.getElementById('prof-prep-time');
+      if (prepEl) AppState.prepTime = parseInt(prepEl.value) || 5;
+
+      const depotEl = document.getElementById('prof-depot-address');
+      if (depotEl && depotEl.value.trim() && AppState.baseGarage) {
+        AppState.baseGarage.address = depotEl.value.trim();
+      }
+
+      // Persist to localStorage
+      const profileData = {
+        driverName: AppState.driverName,
+        driverPhone: AppState.driverPhone,
+        vehicleNumber: AppState.vehicleNumber,
+        driverHomeAddress: AppState.driverHomeAddress,
+        commuteTime: AppState.commuteTime,
+        prepTime: AppState.prepTime,
+        baseDepotAddress: AppState.baseGarage ? AppState.baseGarage.address : ''
+      };
+      profileData.departureAlarmEnabled = document.getElementById('prof-departure-alarm-enabled') ? document.getElementById('prof-departure-alarm-enabled').checked : true;
+      profileData.nextRunLockoutEnabled = document.getElementById('prof-next-run-lockout-enabled') ? document.getElementById('prof-next-run-lockout-enabled').checked : true;
+      AppState.departureAlarmEnabled = profileData.departureAlarmEnabled;
+      AppState.nextRunLockoutEnabled = profileData.nextRunLockoutEnabled;
+      localStorage.setItem('serenity_driver_profile', JSON.stringify(profileData));
+
+      // Sync to settings inputs if present
+      if (document.getElementById('setting-driver-name')) {
+        document.getElementById('setting-driver-name').value = AppState.driverName;
+      }
+      if (document.getElementById('setting-commute-time')) {
+        document.getElementById('setting-commute-time').value = AppState.commuteTime;
+      }
+      if (document.getElementById('setting-prep-time')) {
+        document.getElementById('setting-prep-time').value = AppState.prepTime;
+      }
+
+      updateHeaderDriverLabel();
+      closeDriverProfileModal();
+      calculateSchedule();
+      renderApp();
+      showToast(`Driver profile saved! Shift travel time updated for ${AppState.driverName}.`, 'success');
+    }
+
+    function updateHeaderDriverLabel() {
+      const lbl = document.getElementById('header-driver-label');
+      if (lbl) {
+        lbl.textContent = `${AppState.driverName || 'Anthony'} • Van #${AppState.vehicleNumber || '104'}`;
+      }
+    }
+
+    // 5-STAGE STATUS LIFECYCLE & BILLING OVERLAP CONTROLLERS
+    // ==========================================
+    let pendingConcurrentArrival = null;
+
+    // Unified Status Helper Functions
+    function getTripStatus(trip) {
+      if (!trip) return 'Available';
+      if (trip.status === 'Dropped Off' || trip.status === 'Completed' || trip.actualDropoff) {
+        return 'Dropped Off';
+      }
+      if (trip.status === 'Departed At' || trip.status === 'In Transit' || trip.actualDepart) {
+        return 'Departed At';
+      }
+      if (trip.status === 'Arrived At' || trip.status === 'Live' || trip.status === 'Arrived Live' || trip.actualArrival) {
+        return 'Arrived At';
+      }
+      if (trip.status === 'In Route' || trip.actualEnRoute) {
+        return 'In Route';
+      }
+      return 'Available';
+    }
+
+    function isRunOpen(trip) {
+      if (!trip) return false;
+      const s = getTripStatus(trip);
+      return s === 'In Route' || s === 'Arrived At' || s === 'Departed At';
+    }
+
+    function isTripCompleted(trip) {
+      if (!trip) return false;
+      return getTripStatus(trip) === 'Dropped Off';
+    }
+
+    function openConcurrentRunWarningModal(openTrip, newTrip, customTimeStr, targetAction = 'arrived') {
+      pendingConcurrentArrival = { openTripId: openTrip.id, newTripId: newTrip.id, customTimeStr, targetAction };
+
+      const openName = document.getElementById('warn-open-run-passenger');
+      if (openName) openName.textContent = `${formatPassengerName(openTrip.passenger)} (${openTrip.id})`;
+      
+      const openStatus = document.getElementById('warn-open-run-status');
+      if (openStatus) {
+        const s = getTripStatus(openTrip);
+        openStatus.textContent = s === 'Departed At' ? 'In Transit to Dropoff' : (s === 'Arrived At' ? 'Waiting at Pickup' : 'In Route to Pickup');
+      }
+
+      const openMeta = document.getElementById('warn-open-run-meta');
+      if (openMeta) {
+        const timeInfo = openTrip.actualDepart 
+          ? `Departed PU @ ${formatTime12(openTrip.actualDepart)}`
+          : (openTrip.actualArrival 
+              ? `Arrived @ ${formatTime12(openTrip.actualArrival)} (Wait: ${openTrip.waitTimeMinutes || 0}m)` 
+              : (openTrip.actualEnRoute ? `In Route @ ${formatTime12(openTrip.actualEnRoute)}` : ''));
+        openMeta.textContent = `${timeInfo} • Destination: ${openTrip.doAddress.split(',')[0]}`;
+      }
+
+      const newName = document.getElementById('warn-new-run-passenger');
+      if (newName) newName.textContent = `${formatPassengerName(newTrip.passenger)} (${newTrip.id})`;
+
+      const newMeta = document.getElementById('warn-new-run-meta');
+      if (newMeta) {
+        newMeta.textContent = `Scheduled PU: ${formatTime12(newTrip.schedPU)} • Pickup: ${newTrip.puAddress.split(',')[0]}`;
+      }
+
+      const btnEndAndStart = document.getElementById('btn-warn-end-prev-start-new');
+      if (btnEndAndStart) {
+        btnEndAndStart.onclick = () => {
+          handleEndRun(openTrip.id);
+          closeConcurrentRunWarningModal();
+          AppState.currentCockpitTripId = newTrip.id;
+          if (targetAction === 'inRoute') {
+            handleMarkInRoute(newTrip.id, customTimeStr, true);
+          } else if (targetAction === 'departed') {
+            handleMarkDeparted(newTrip.id, customTimeStr, true);
+          } else {
+            handleMarkArrived(newTrip.id, customTimeStr, true);
+          }
+          renderApp();
+          showToast(`Dropped off ${formatPassengerName(openTrip.passenger)} & started ${formatPassengerName(newTrip.passenger)}!`, 'success');
+        };
+      }
+
+      const btnProceedBoth = document.getElementById('btn-warn-proceed-both');
+      if (btnProceedBoth) {
+        btnProceedBoth.onclick = () => {
+          closeConcurrentRunWarningModal();
+          if (targetAction === 'inRoute') {
+            handleMarkInRoute(newTrip.id, customTimeStr, true);
+          } else {
+            handleMarkArrived(newTrip.id, customTimeStr, true);
+          }
+          showToast(`Multiple runs active for van! (Ensure shared-load billing authorization)`, 'info');
+        };
+      }
+
+      const modal = document.getElementById('modal-concurrent-warning');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeConcurrentRunWarningModal() {
+      const modal = document.getElementById('modal-concurrent-warning');
+      if (modal) modal.classList.add('hidden');
+      pendingConcurrentArrival = null;
+    }
+
+    // ==========================================
+    
+    // ==========================================
+    // CAB AUDIO CHIMES & GEOFENCE DEPARTURE ALARM ENGINE
+    // ==========================================
+    let pendingLockoutTripId = null;
+
+    function playCabAlertChime(type = 'alarm') {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        if (ctx.state === 'suspended') {
+          ctx.resume();
+        }
+
+        if (type === 'alarm') {
+          // Urgent 2-tone alarm chime (880Hz -> 659Hz -> 880Hz)
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          
+          const now = ctx.currentTime;
+          osc.frequency.setValueAtTime(880, now);
+          osc.frequency.setValueAtTime(659, now + 0.15);
+          osc.frequency.setValueAtTime(880, now + 0.3);
+          osc.frequency.setValueAtTime(659, now + 0.45);
+          
+          gain.gain.setValueAtTime(0.35, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.65);
+          
+          osc.start(now);
+          osc.stop(now + 0.65);
+        } else {
+          // Curbside arrival chime (523Hz -> 659Hz)
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          
+          const now = ctx.currentTime;
+          osc.frequency.setValueAtTime(523.25, now);
+          osc.frequency.setValueAtTime(659.25, now + 0.18);
+          
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+          
+          osc.start(now);
+          osc.stop(now + 0.5);
+        }
+      } catch (e) {
+        console.warn('Audio chime note:', e);
+      }
+    }
+
+    function checkDepartureGeofence(currentLat, currentLon, currentSpeed) {
+      if (AppState.departureAlarmEnabled === false) return;
+      if (!AppState.trips || AppState.trips.length === 0) return;
+
+      const activeTrip = AppState.trips.find(t => isRunOpen(t));
+      if (!activeTrip) return;
+
+      const status = getTripStatus(activeTrip);
+      const coords = getTripCoordinates(activeTrip);
+      const now = new Date();
+      const nowTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      if (status === 'Departed At') {
+        if (coords.do && coords.do[0] && coords.do[1]) {
+          const distToDropoff = GPSManager.calculateDistanceMiles(currentLat, currentLon, coords.do[0], coords.do[1]);
+          
+          // Van pulled up to destination curb (within 0.18 miles)
+          if (distToDropoff <= 0.18 && !activeTrip._arrivedAtDestinationCoords) {
+            activeTrip._arrivedAtDestinationCoords = true;
+            activeTrip._destinationArrivalTime = nowTimeStr;
+            playCabAlertChime('curbside');
+            showToast(`Arrived near ${activeTrip.passenger} dropoff (${coords.doTown}). Remember to complete dropoff!`, 'info');
+          }
+
+          // Van reached curb earlier and is now moving away (> 0.28 mi away or moving speed > 15 mph)
+          if (activeTrip._arrivedAtDestinationCoords && distToDropoff > 0.28 && !activeTrip._alarmDismissed) {
+            openDepartureAlarmModal(activeTrip, 'dropoff', distToDropoff);
+          }
+        }
+      } else if (status === 'Arrived At') {
+        if (coords.pu && coords.pu[0] && coords.pu[1]) {
+          const distToPickup = GPSManager.calculateDistanceMiles(currentLat, currentLon, coords.pu[0], coords.pu[1]);
+          if (distToPickup > 0.32 && !activeTrip._alarmDismissed) {
+            openDepartureAlarmModal(activeTrip, 'pickup', distToPickup);
+          }
+        }
+      }
+    }
+
+    function openDepartureAlarmModal(trip, stage = 'dropoff', distanceMiles = 0.3) {
+      playCabAlertChime('alarm');
+      const modal = document.getElementById('modal-departure-alarm');
+      if (!modal) return;
+
+      const pName = document.getElementById('alarm-passenger-name');
+      if (pName) pName.textContent = `${formatPassengerName(trip.passenger)} (${trip.id})`;
+
+      const stageDesc = document.getElementById('alarm-stage-desc');
+      if (stageDesc) {
+        if (stage === 'dropoff') {
+          stageDesc.textContent = `You are moving away (${distanceMiles.toFixed(2)} mi) from the dropoff address (${trip.doAddress.split(',')[0]}) without marking Dropoff Complete!`;
+        } else {
+          stageDesc.textContent = `You are moving away (${distanceMiles.toFixed(2)} mi) from the pickup address (${trip.puAddress.split(',')[0]}) without marking Departed!`;
+        }
+      }
+
+      const btnAnchor = document.getElementById('btn-alarm-anchor-arrival');
+      if (btnAnchor) {
+        if (stage === 'dropoff' && trip._destinationArrivalTime) {
+          btnAnchor.classList.remove('hidden');
+          btnAnchor.innerHTML = `<i class="fa-solid fa-anchor text-sm mr-1.5"></i><span>Anchor Dropoff to When Van Reached Clinic (${formatTime12(trip._destinationArrivalTime)})</span>`;
+          btnAnchor.onclick = () => {
+            handleEndRun(trip.id, trip._destinationArrivalTime);
+            closeDepartureAlarmModal();
+            showToast(`Audit Protected: Logged compliant dropoff time (${formatTime12(trip._destinationArrivalTime)}) at clinic curb!`, 'success');
+          };
+        } else {
+          btnAnchor.classList.add('hidden');
+        }
+      }
+
+      const btnCompleteNow = document.getElementById('btn-alarm-complete-now');
+      if (btnCompleteNow) {
+        btnCompleteNow.onclick = () => {
+          if (stage === 'dropoff') {
+            handleEndRun(trip.id);
+          } else {
+            handleMarkDeparted(trip.id);
+          }
+          closeDepartureAlarmModal();
+        };
+      }
+
+      const btnSnooze = document.getElementById('btn-alarm-snooze');
+      if (btnSnooze) {
+        btnSnooze.onclick = () => {
+          trip._alarmDismissed = true;
+          setTimeout(() => { trip._alarmDismissed = false; }, 180000); // 3m snooze
+          closeDepartureAlarmModal();
+          showToast('Departure alarm snoozed for 3 minutes.', 'info');
+        };
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeDepartureAlarmModal() {
+      const modal = document.getElementById('modal-departure-alarm');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    
+    // ==========================================
+    // AUTO-FIT WINDOW ENGINE FOR ALL MODALS
+    // ==========================================
+    function autoAdjustModalScreen(modalEl) {
+      if (!modalEl) return;
+      const dialog = modalEl.querySelector(':scope > div');
+      if (!dialog) return;
+
+      const isPhone = window.innerWidth <= 640;
+      if (isPhone) {
+        modalEl.style.padding = '0px';
+        dialog.style.width = '100%';
+        dialog.style.maxWidth = '100vw';
+        dialog.style.minHeight = '100dvh';
+        dialog.style.maxHeight = '100dvh';
+        dialog.style.borderRadius = '0px';
+        dialog.style.margin = '0px';
+      } else if (window.innerWidth <= 1024) {
+        modalEl.style.padding = '16px';
+        dialog.style.width = '95%';
+        dialog.style.maxWidth = '720px';
+        dialog.style.maxHeight = '94dvh';
+        dialog.style.borderRadius = '20px';
+        dialog.style.margin = 'auto';
+      }
+    }
+
+    // Automatically observe when any modal window opens
+    function initModalAutoFitObserver() {
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+            const target = mutation.target;
+            if (target.id && target.id.startsWith('modal-') && !target.classList.contains('hidden')) {
+              autoAdjustModalScreen(target);
+            }
+          }
+        });
+      });
+
+      document.querySelectorAll('div[id^="modal-"]').forEach(modal => {
+        observer.observe(modal, { attributes: true });
+      });
+
+      window.addEventListener('resize', () => {
+        document.querySelectorAll('div[id^="modal-"]:not(.hidden)').forEach(modal => {
+          autoAdjustModalScreen(modal);
+        });
+      });
+      window.addEventListener('orientationchange', () => {
+        setTimeout(() => {
+          document.querySelectorAll('div[id^="modal-"]:not(.hidden)').forEach(modal => {
+            autoAdjustModalScreen(modal);
+          });
+        }, 150);
+      });
+    }
+
+    // 5-STAGE STATUS TRANSITIONS & STEP-BACK UNDO CONTROLLERS
+    // ==========================================
+
+    // Stage 1: Available (Reset/Idle)
+    function handleMarkAvailable(tripId) {
+      const trip = AppState.trips.find(t => t.id === tripId);
+      if (!trip) return;
+      trip.actualEnRoute = null;
+      trip.actualArrival = null;
+      trip.actualDepart = null;
+      trip.actualDropoff = null;
+      trip.waitTimeMinutes = 0;
+      trip.status = 'Available';
+
+      if (AppState.liveOverride && AppState.liveOverride.tripId === tripId) {
+        AppState.liveOverride = null;
+        const banner = document.getElementById('live-banner');
+        if (banner) banner.classList.add('hidden');
+      }
+
+      calculateSchedule();
+      showToast(`Run ${trip.id} reset to Available.`, 'info');
+      renderApp();
+      if (AppState.currentFocusTripId === tripId && !document.getElementById('modal-ride-focus').classList.contains('hidden')) {
+        openRideFocusModal(tripId);
+      }
+    }
+
+    // Stage 2: In Route (Rolling to Pickup)
+    function handleMarkInRoute(tripId, customTimeStr = null, bypassWarning = false) {
+      const trip = AppState.trips.find(t => t.id === tripId);
+      if (!trip) return;
+
+      // Check if there is already an active/open run in progress (Billing Protection)
+      if (!bypassWarning) {
+        const openTrip = AppState.trips.find(t => t.id !== tripId && isRunOpen(t));
+        if (openTrip) {
+          openConcurrentRunWarningModal(openTrip, trip, customTimeStr, 'inRoute');
+          return;
+        }
+      }
+
       let nowTimeStr = customTimeStr;
       if (!nowTimeStr) {
         const now = new Date();
         nowTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       }
 
+      trip.actualEnRoute = nowTimeStr;
+      trip.status = 'In Route';
+
+      showToast(`In Route to ${trip.passenger} pickup (${formatTime12(nowTimeStr)})!`, 'info');
+      renderApp();
+      if (AppState.currentFocusTripId === tripId && !document.getElementById('modal-ride-focus').classList.contains('hidden')) {
+        openRideFocusModal(tripId);
+      }
+    }
+
+    // Stage 3: Arrived At (On scene at Pickup; dwell timer starts)
+    function handleMarkArrived(tripId, customTimeStr = null, bypassWarning = false) {
       const trip = AppState.trips.find(t => t.id === tripId);
       if (!trip) return;
 
+      // Check if there is already an active/open run in progress (Payment Protection)
+      if (!bypassWarning) {
+        const openTrip = AppState.trips.find(t => t.id !== tripId && isRunOpen(t));
+        if (openTrip) {
+          openConcurrentRunWarningModal(openTrip, trip, customTimeStr, 'arrived');
+          return;
+        }
+      }
+
+      let nowTimeStr = customTimeStr;
+      if (!nowTimeStr) {
+        const now = new Date();
+        nowTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      }
+
       trip.actualArrival = nowTimeStr;
-      trip.status = 'Live';
+      trip.status = 'Arrived At';
 
       // Recalculate downstream schedule based on this arrival
       const tripIndex = AppState.trips.findIndex(t => t.id === tripId);
@@ -3817,17 +4985,25 @@
         deltaMinutes: deltaMinutes
       };
 
-      showToast(`Arrived at ${trip.passenger} pickup (${formatTime12(nowTimeStr)}). Run is now LIVE!`, 'info');
+      showToast(`Arrived at ${trip.passenger} pickup (${formatTime12(nowTimeStr)}). Dwell wait timer running!`, 'info');
       renderApp();
+      if (AppState.currentFocusTripId === tripId && !document.getElementById('modal-ride-focus').classList.contains('hidden')) {
+        openRideFocusModal(tripId);
+      }
     }
 
-    function handleMarkDeparted(tripId, customTimeStr = null) {
+    // Stage 4: Departed At (Passenger loaded; rolling to Dropoff)
+    function handleMarkDeparted(tripId, customTimeStr = null, bypassWarning = false) {
       const trip = AppState.trips.find(t => t.id === tripId);
       if (!trip) return;
 
-      if (!trip.actualArrival) {
-        showToast('Please mark Arrived first before marking Departed', 'error');
-        return;
+      // Check if there is already an active/open run in progress (Payment Protection)
+      if (!bypassWarning) {
+        const openTrip = AppState.trips.find(t => t.id !== tripId && isRunOpen(t));
+        if (openTrip) {
+          openConcurrentRunWarningModal(openTrip, trip, customTimeStr, 'departed');
+          return;
+        }
       }
 
       let nowTimeStr = customTimeStr;
@@ -3836,14 +5012,18 @@
         nowTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       }
 
+      if (!trip.actualArrival) {
+        trip.actualArrival = nowTimeStr;
+      }
+
       trip.actualDepart = nowTimeStr;
-      trip.status = 'In Transit';
+      trip.status = 'Departed At';
 
       const arrMin = timeToMinutes(trip.actualArrival);
       const depMin = timeToMinutes(nowTimeStr);
       trip.waitTimeMinutes = Math.max(0, depMin - arrMin);
 
-      // Recalculate downstream schedule anchored to this physical departure!
+      // Recalculate downstream schedule anchored to departure
       const tripIndex = AppState.trips.findIndex(t => t.id === tripId);
       const schedDOMin = timeToMinutes(trip.schedDO);
       const loadedTransit = calculateTransitMinutes(trip.miles, trip.roadType, AppState.expressBuffer);
@@ -3858,14 +5038,22 @@
       };
 
       const banner = document.getElementById('live-banner');
-      banner.classList.remove('hidden');
-      document.getElementById('live-banner-text').textContent = 
-        `Trip ${trip.id} departed at ${formatTime12(nowTimeStr)} (Wait time: ${trip.waitTimeMinutes}m). Run is LIVE in transit!`;
+      if (banner) {
+        banner.classList.remove('hidden');
+        const bText = document.getElementById('live-banner-text');
+        if (bText) {
+          bText.textContent = `Trip ${trip.id} departed at ${formatTime12(nowTimeStr)} (Wait: ${trip.waitTimeMinutes}m). Rolling to dropoff!`;
+        }
+      }
 
-      showToast(`Departed with ${trip.passenger} at ${formatTime12(nowTimeStr)} (Wait: ${trip.waitTimeMinutes}m). Run remains LIVE!`, 'info');
+      showToast(`Departed with ${trip.passenger} at ${formatTime12(nowTimeStr)} (Wait: ${trip.waitTimeMinutes}m).`, 'info');
       renderApp();
+      if (AppState.currentFocusTripId === tripId && !document.getElementById('modal-ride-focus').classList.contains('hidden')) {
+        openRideFocusModal(tripId);
+      }
     }
 
+    // Stage 5: Dropped Off (Dropoff complete; run ended; van returns to Available)
     function handleEndRun(tripId, customTimeStr = null) {
       const trip = AppState.trips.find(t => t.id === tripId);
       if (!trip) return;
@@ -3877,15 +5065,13 @@
       }
 
       trip.actualDropoff = nowTimeStr;
-      trip.status = 'Completed';
+      trip.status = 'Dropped Off';
 
-      // Drop-off physical clear
       const dropMin = timeToMinutes(nowTimeStr);
       const unloadBuffer = getUnloadBuffer(trip.mobility);
       const clearMin = dropMin + unloadBuffer;
       trip.physicalClear = minutesToTime(clearMin);
 
-      // Recalculate downstream arrivals based on physical clear
       const tripIndex = AppState.trips.findIndex(t => t.id === tripId);
       const schedDOMin = timeToMinutes(trip.schedDO);
       const deltaMinutes = clearMin - schedDOMin;
@@ -3897,17 +5083,231 @@
         deltaMinutes: deltaMinutes
       };
 
-      showToast(`Run ${trip.id} (${trip.passenger}) ended at ${formatTime12(nowTimeStr)} & marked Completed!`, 'success');
+      showToast(`Run ${trip.id} (${trip.passenger}) dropped off at ${formatTime12(nowTimeStr)}. Van is now AVAILABLE!`, 'success');
       renderApp();
+      if (AppState.currentFocusTripId === tripId && !document.getElementById('modal-ride-focus').classList.contains('hidden')) {
+        openRideFocusModal(tripId);
+      }
+    }
+
+    // STEP-BACK UNDO & REVERSAL HANDLERS
+    function handleRevertInRoute(tripId) {
+      const trip = AppState.trips.find(t => t.id === tripId);
+      if (!trip) return;
+      trip.actualEnRoute = null;
+      trip.status = 'Available';
+
+      calculateSchedule();
+      showToast(`Reverted Run ${trip.id} back to Available!`, 'info');
+      renderApp();
+      if (AppState.currentFocusTripId === tripId && !document.getElementById('modal-ride-focus').classList.contains('hidden')) {
+        openRideFocusModal(tripId);
+      }
+    }
+
+    function handleRevertArrival(tripId) {
+      const trip = AppState.trips.find(t => t.id === tripId);
+      if (!trip) return;
+      trip.actualArrival = null;
+      trip.waitTimeMinutes = 0;
+      trip.status = trip.actualEnRoute ? 'In Route' : 'Available';
+
+      if (AppState.liveOverride && AppState.liveOverride.tripId === tripId) {
+        AppState.liveOverride = null;
+        const banner = document.getElementById('live-banner');
+        if (banner) banner.classList.add('hidden');
+      }
+
+      calculateSchedule();
+      showToast(`Reverted Run ${trip.id} back to ${trip.status}!`, 'info');
+      renderApp();
+      if (AppState.currentFocusTripId === tripId && !document.getElementById('modal-ride-focus').classList.contains('hidden')) {
+        openRideFocusModal(tripId);
+      }
+    }
+
+    function handleRevertDeparted(tripId) {
+      const trip = AppState.trips.find(t => t.id === tripId);
+      if (!trip) return;
+      trip.actualDepart = null;
+      trip.status = 'Arrived At';
+
+      calculateSchedule();
+      showToast(`Reverted Run ${trip.id} back to Arrived At (Waiting at PU)!`, 'info');
+      renderApp();
+      if (AppState.currentFocusTripId === tripId && !document.getElementById('modal-ride-focus').classList.contains('hidden')) {
+        openRideFocusModal(tripId);
+      }
+    }
+
+    function handleRevertDropoff(tripId) {
+      const trip = AppState.trips.find(t => t.id === tripId);
+      if (!trip) return;
+      trip.actualDropoff = null;
+      trip.status = trip.actualDepart ? 'Departed At' : 'Arrived At';
+
+      calculateSchedule();
+      showToast(`Reopened Run ${trip.id} back to ${trip.status}!`, 'info');
+      renderApp();
+      if (AppState.currentFocusTripId === tripId && !document.getElementById('modal-ride-focus').classList.contains('hidden')) {
+        openRideFocusModal(tripId);
+      }
     }
 
     function handleReopenRun(tripId) {
+      handleRevertDropoff(tripId);
+    }
+
+    function handleSetStatus(tripId, targetStatus) {
       const trip = AppState.trips.find(t => t.id === tripId);
       if (!trip) return;
-      trip.status = trip.actualDepart ? 'In Transit' : (trip.actualArrival ? 'Live' : 'Scheduled');
-      trip.actualDropoff = null;
-      showToast(`Reopened Run ${trip.id} to Live status.`, 'info');
-      renderApp();
+      if (targetStatus === 'Available') {
+        handleMarkAvailable(tripId);
+      } else if (targetStatus === 'In Route') {
+        handleMarkInRoute(tripId);
+      } else if (targetStatus === 'Arrived At') {
+        handleMarkArrived(tripId);
+      } else if (targetStatus === 'Departed At') {
+        handleMarkDeparted(tripId);
+      } else if (targetStatus === 'Dropped Off') {
+        handleEndRun(tripId);
+      }
+    }
+
+    // UNIFIED 5-STATUS RIBBON & CONTEXTUAL ACTION PANEL
+    function renderStatusActionPanel(trip, isCockpit = true) {
+      const status = getTripStatus(trip);
+      const modalSuffix = isCockpit ? 'renderCockpitView();' : `openRideFocusModal('${trip.id}');`;
+
+      const statuses = [
+        { key: 'Available', label: 'Available', icon: 'fa-regular fa-circle-check', activeClass: 'bg-teal-600 text-white ring-2 ring-teal-400 shadow-teal-950/60' },
+        { key: 'In Route', label: 'In Route', icon: 'fa-solid fa-car-side', activeClass: 'bg-sky-600 text-white ring-2 ring-sky-400 shadow-sky-950/60 live-pulse' },
+        { key: 'Arrived At', label: 'Arrived At', icon: 'fa-solid fa-location-dot', activeClass: 'bg-amber-600 text-white ring-2 ring-amber-400 shadow-amber-950/60 live-pulse' },
+        { key: 'Departed At', label: 'Departed At', icon: 'fa-solid fa-van-shuttle', activeClass: 'bg-indigo-600 text-white ring-2 ring-indigo-400 shadow-indigo-950/60' },
+        { key: 'Dropped Off', label: 'Dropped Off', icon: 'fa-solid fa-flag-checkered', activeClass: 'bg-emerald-600 text-white ring-2 ring-emerald-400 shadow-emerald-950/60' }
+      ];
+
+      let ribbonHtml = `
+        <div class="p-1.5 rounded-xl bg-slate-950 border border-slate-800">
+          <div class="text-xs font-mono text-slate-300 font-bold px-2 pb-1.5 flex items-center justify-between">
+            <span class="uppercase tracking-wider">Status Milestones</span>
+            <span class="text-teal-300 font-semibold text-xs">Tap any status to set or reverse</span>
+          </div>
+          <div class="grid grid-cols-5 gap-1">
+      `;
+
+      statuses.forEach((s) => {
+        const isActive = (status === s.key);
+        let btnClass = 'py-2.5 px-2 rounded-xl text-center font-extrabold text-xs sm:text-sm transition flex flex-col items-center justify-center space-y-1 cursor-pointer shadow-sm ';
+        if (isActive) {
+          btnClass += `${s.activeClass} font-black`;
+        } else {
+          btnClass += 'bg-slate-900/90 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800/80';
+        }
+        ribbonHtml += `
+          <button type="button" class="${btnClass}" onclick="handleSetStatus('${trip.id}', '${s.key}'); ${modalSuffix}">
+            <i class="${s.icon} text-xs"></i>
+            <span class="truncate leading-tight">${s.label}</span>
+          </button>
+        `;
+      });
+      ribbonHtml += `</div></div>`;
+
+      let actionHtml = '';
+
+      if (status === 'Available') {
+        actionHtml = `
+          <div class="space-y-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button type="button" class="py-3.5 px-3 rounded-xl bg-gradient-to-r from-sky-600 to-teal-600 hover:from-sky-500 hover:to-teal-500 text-white font-black text-sm sm:text-base flex items-center justify-center space-x-2 shadow-lg shadow-sky-950/70 transition cursor-pointer" onclick="handleMarkInRoute('${trip.id}'); ${modalSuffix}">
+                <i class="fa-solid fa-car-side text-lg"></i>
+                <span>Mark In Route to PU</span>
+              </button>
+              <button type="button" class="py-3.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-300 border border-teal-500/30 font-bold text-xs sm:text-sm flex items-center justify-center space-x-1.5 transition cursor-pointer" onclick="handleMarkArrived('${trip.id}'); ${modalSuffix}">
+                <i class="fa-solid fa-location-dot text-sm text-teal-400"></i>
+                <span>Arrived At Pickup (Direct)</span>
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (status === 'In Route') {
+        actionHtml = `
+          <div class="space-y-2">
+            <button type="button" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-black text-base flex items-center justify-center space-x-2 shadow-lg shadow-teal-950/70 transition cursor-pointer" onclick="handleMarkArrived('${trip.id}'); ${modalSuffix}">
+              <i class="fa-solid fa-location-dot text-lg"></i>
+              <span>Mark Arrived At Pickup (Start Wait Timer)</span>
+            </button>
+            <button type="button" class="w-full py-2 px-3 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-slate-400 hover:text-amber-300 border border-slate-800 text-xs font-semibold flex items-center justify-center space-x-1.5 transition cursor-pointer" onclick="handleRevertInRoute('${trip.id}'); ${modalSuffix}" title="Accidentally pressed In Route? Tap to undo">
+              <i class="fa-solid fa-rotate-left text-amber-400 text-xs"></i>
+              <span>Accidentally Hit In Route? Undo & Revert to Available</span>
+            </button>
+          </div>
+        `;
+      } else if (status === 'Arrived At') {
+        actionHtml = `
+          <div class="space-y-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button type="button" class="py-3.5 px-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-black text-sm sm:text-base flex items-center justify-center space-x-2 shadow-lg shadow-amber-950/70 transition cursor-pointer" onclick="handleMarkDeparted('${trip.id}'); ${modalSuffix}">
+                <i class="fa-solid fa-van-shuttle text-lg"></i>
+                <span>Depart Pickup (Passenger Loaded)</span>
+              </button>
+              <button type="button" class="py-3.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm sm:text-base flex items-center justify-center space-x-2 shadow-lg shadow-emerald-950/70 transition cursor-pointer" onclick="handleEndRun('${trip.id}'); ${modalSuffix}">
+                <i class="fa-solid fa-flag-checkered text-lg"></i>
+                <span>Fast Dropoff Complete</span>
+              </button>
+            </div>
+            <button type="button" class="w-full py-2 px-3 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-slate-400 hover:text-amber-300 border border-slate-800 text-xs font-semibold flex items-center justify-center space-x-1.5 transition cursor-pointer" onclick="handleRevertArrival('${trip.id}'); ${modalSuffix}" title="Accidentally hit arrived? Tap to undo">
+              <i class="fa-solid fa-rotate-left text-amber-400 text-xs"></i>
+              <span>Accidentally Hit Arrived? Undo & Revert to In Route</span>
+            </button>
+          </div>
+        `;
+      } else if (status === 'Departed At') {
+        actionHtml = `
+          <div class="space-y-2">
+            <button type="button" class="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-black text-base flex items-center justify-center space-x-2 shadow-lg shadow-emerald-950/70 transition cursor-pointer" onclick="handleEndRun('${trip.id}'); ${modalSuffix}">
+              <i class="fa-solid fa-flag-checkered text-lg"></i>
+              <span>Mark Dropped Off (Complete Run)</span>
+            </button>
+            <button type="button" class="w-full py-2 px-3 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-slate-400 hover:text-amber-300 border border-slate-800 text-xs font-semibold flex items-center justify-center space-x-1.5 transition cursor-pointer" onclick="handleRevertDeparted('${trip.id}'); ${modalSuffix}" title="Accidentally hit departed? Tap to undo">
+              <i class="fa-solid fa-rotate-left text-amber-400 text-xs"></i>
+              <span>Accidentally Departed? Undo & Revert to Arrived At</span>
+            </button>
+          </div>
+        `;
+      } else { // Dropped Off
+        actionHtml = `
+          <div class="space-y-2">
+            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-emerald-500/40">
+              <div class="flex items-center space-x-2.5">
+                <div class="w-9 h-9 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg">
+                  <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <div>
+                  <div class="text-sm font-bold text-white">Run Dropped Off Successfully</div>
+                  <div class="text-xs text-slate-400 font-mono">Finished @ ${formatTime12(trip.actualDropoff || '00:00')} &bull; Dwell: ${trip.waitTimeMinutes || 0}m</div>
+                </div>
+              </div>
+              <div class="flex items-center space-x-1.5">
+                <button type="button" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-teal-300 font-bold text-xs flex items-center space-x-1 cursor-pointer" onclick="handleRevertDropoff('${trip.id}'); ${modalSuffix}">
+                  <i class="fa-solid fa-rotate-left text-xs"></i>
+                  <span>Reopen</span>
+                </button>
+                <button type="button" class="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold cursor-pointer" onclick="handleMarkAvailable('${trip.id}'); ${modalSuffix}">
+                  <span>Reset</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="space-y-2.5">
+          ${ribbonHtml}
+          ${actionHtml}
+        </div>
+      `;
     }
 
     // LIVE OVERRIDE LOGIC
@@ -4282,7 +5682,7 @@
           trips.push({
             id: `RB-${8401 + trips.length}`,
             passenger: formatPassengerName(passenger),
-            phone: '(631) 555-01' + (10 + trips.length),
+            phone: 'Unknown',
             mobility: 'Amb',
             schedPU: puTime,
             schedDO: doTime,
@@ -4341,8 +5741,16 @@
       document.getElementById('modal-parser').classList.add('hidden');
     }
 
+    function loadSampleRoutingBoxManifest() {
+      loadPresetTrips(initialTripsData, 'RoutingBox Sample Manifest');
+      showToast('Loaded sample manifest demo!', 'info');
+    }
+
     function loadPresetTrips(tripsData, sourceName) {
       AppState.trips = JSON.parse(JSON.stringify(tripsData));
+      try {
+        localStorage.setItem('serenity_active_trips', JSON.stringify(AppState.trips));
+      } catch(e) {}
       AppState.liveOverride = null;
       document.getElementById('live-banner').classList.add('hidden');
       document.getElementById('modal-parser').classList.add('hidden');
@@ -5087,20 +6495,23 @@
       // Header / Run Counter
       document.getElementById('focus-run-counter').textContent = `Run ${tripIndex + 1} of ${AppState.trips.length}`;
       
-      // Status Badge
+      // Status Badge (5-Stage Lifecycle)
       const statusBadgeEl = document.getElementById('focus-status-badge');
-      if (trip.status === 'Completed') {
-        statusBadgeEl.innerHTML = `<span class="px-2.5 py-1 rounded-full bg-slate-800 text-emerald-400 border border-slate-700 font-bold text-xs flex items-center space-x-1.5"><i class="fa-solid fa-circle-check text-emerald-400"></i><span>Completed</span></span>`;
-      } else if (trip.actualArrival && !trip.actualDepart) {
-        statusBadgeEl.innerHTML = `<span class="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/50 font-bold text-xs flex items-center space-x-1.5 live-pulse"><i class="fa-solid fa-stopwatch text-amber-400"></i><span>Waiting at Pickup</span></span>`;
-      } else if (trip.actualDepart) {
-        statusBadgeEl.innerHTML = `<span class="px-3 py-1 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/50 font-bold text-xs flex items-center space-x-1.5"><i class="fa-solid fa-van-shuttle text-sky-400"></i><span>Rolling to Dropoff (Wait: ${trip.waitTimeMinutes || 0}m)</span></span>`;
-      } else if (trip.isLateRisk) {
-        statusBadgeEl.innerHTML = `<span class="px-2.5 py-1 rounded-full bg-rose-500/25 text-rose-300 border border-rose-500/60 font-bold text-xs flex items-center space-x-1.5"><i class="fa-solid fa-triangle-exclamation text-rose-400"></i><span>Late Risk (+${Math.round(trip.deltaMinutes)}m)</span></span>`;
-      } else if (trip.isTargetDelayed) {
-        statusBadgeEl.innerHTML = `<span class="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold text-xs flex items-center space-x-1.5"><i class="fa-solid fa-clock-rotate-left text-amber-400"></i><span>Buffer Squeeze</span></span>`;
-      } else {
-        statusBadgeEl.innerHTML = `<span class="px-2.5 py-1 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 font-semibold text-xs">On Schedule</span>`;
+      if (statusBadgeEl) {
+        const curStatus = getTripStatus(trip);
+        if (curStatus === 'Dropped Off') {
+          statusBadgeEl.innerHTML = `<span class="px-2.5 py-1 rounded-full bg-slate-800 text-emerald-400 border border-slate-700 font-bold text-xs flex items-center space-x-1.5"><i class="fa-solid fa-circle-check text-emerald-400"></i><span>Dropped Off</span></span>`;
+        } else if (curStatus === 'Departed At') {
+          statusBadgeEl.innerHTML = `<span class="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/50 font-bold text-xs flex items-center space-x-1.5"><i class="fa-solid fa-van-shuttle text-indigo-400"></i><span>Departed At (Wait: ${trip.waitTimeMinutes || 0}m)</span></span>`;
+        } else if (curStatus === 'Arrived At') {
+          statusBadgeEl.innerHTML = `<span class="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/50 font-bold text-xs flex items-center space-x-1.5 live-pulse"><i class="fa-solid fa-location-dot text-amber-400"></i><span>Arrived At (Wait Timer Running)</span></span>`;
+        } else if (curStatus === 'In Route') {
+          statusBadgeEl.innerHTML = `<span class="px-3 py-1 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/50 font-bold text-xs flex items-center space-x-1.5 live-pulse"><i class="fa-solid fa-car-side text-sky-400"></i><span>In Route to Pickup</span></span>`;
+        } else if (trip.isLateRisk) {
+          statusBadgeEl.innerHTML = `<span class="px-2.5 py-1 rounded-full bg-rose-500/25 text-rose-300 border border-rose-500/60 font-bold text-xs flex items-center space-x-1.5"><i class="fa-solid fa-triangle-exclamation text-rose-400"></i><span>Late Risk (+${Math.round(trip.deltaMinutes)}m)</span></span>`;
+        } else {
+          statusBadgeEl.innerHTML = `<span class="px-2.5 py-1 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 font-semibold text-xs flex items-center space-x-1.5"><i class="fa-regular fa-circle-check text-teal-400"></i><span>Available</span></span>`;
+        }
       }
 
       // Prev / Next Navigation Buttons
@@ -5131,25 +6542,38 @@
       prefEl.textContent = trip.contactPref === 'text' ? 'TEXT PREFERRED' : (trip.contactPref === 'both' ? 'CALL & TEXT OK' : 'CALL PREFERRED');
       prefEl.className = trip.contactPref === 'text' ? 'text-xs font-mono uppercase text-sky-400 font-semibold' : (trip.contactPref === 'both' ? 'text-xs font-mono uppercase text-indigo-400 font-semibold' : 'text-xs font-mono uppercase text-emerald-400 font-semibold');
 
-      // Primary Telephony Buttons (Large touch friendly)
+      // Primary Telephony Buttons (with Unknown & Update Phone Support)
       const telBar = document.getElementById('focus-telephony-bar');
-      telBar.innerHTML = `
-        <a href="${getCallUrl(trip.phone)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); handlePhoneClick(event, '${trip.phone}', 'call')" class="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs sm:text-sm flex items-center space-x-1.5 shadow-md shadow-teal-950/60 cursor-pointer transition">
-          <i class="fa-solid fa-phone text-xs"></i>
-          <span>Call ${trip.phone}</span>
-        </a>
-        <a href="${getSmsUrl(trip.phone)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); handlePhoneClick(event, '${trip.phone}', 'sms')" class="px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs sm:text-sm flex items-center space-x-1.5 shadow-md shadow-sky-950/60 cursor-pointer transition">
-          <i class="fa-solid fa-comment-sms text-xs"></i>
-          <span>Text</span>
-        </a>
-        <button type="button" onclick="sendLocationPin('${trip.id}')" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-300 hover:text-white font-bold text-xs flex items-center space-x-1.5 shadow-md shadow-slate-950/60 cursor-pointer transition" title="Send live Google Maps location pin to passenger via Google Voice">
-          <i class="fa-solid fa-location-dot text-teal-400 text-xs"></i>
-          <span>Share Pin</span>
-        </button>
-        <button type="button" onclick="copyPhoneNumber(event, '${trip.phone}')" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-amber-300 text-xs flex items-center transition cursor-pointer" title="Copy Number">
-          <i class="fa-regular fa-copy text-sm"></i>
-        </button>
-      `;
+      if (isUnknownPhone(trip.phone)) {
+        telBar.innerHTML = `
+          <span class="px-3.5 py-2 rounded-xl bg-slate-950 border border-amber-500/40 text-amber-300 font-mono text-xs sm:text-sm font-bold flex items-center space-x-1.5 shadow-sm">
+            <i class="fa-solid fa-phone-slash text-amber-400 text-xs"></i>
+            <span>Unknown Phone</span>
+          </span>
+          <button type="button" onclick="openUpdatePhoneModal('${trip.id}')" class="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs sm:text-sm flex items-center space-x-1.5 shadow-lg shadow-amber-950/70 transition cursor-pointer">
+            <i class="fa-solid fa-pen text-xs"></i>
+            <span>Update Phone</span>
+          </button>
+        `;
+      } else {
+        telBar.innerHTML = `
+          <a href="${getCallUrl(trip.phone)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); handlePhoneClick(event, '${trip.phone}', 'call')" class="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs sm:text-sm flex items-center space-x-1.5 shadow-md shadow-teal-950/60 cursor-pointer transition">
+            <i class="fa-solid fa-phone text-xs"></i>
+            <span>Call ${trip.phone}</span>
+          </a>
+          <a href="${getSmsUrl(trip.phone)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); handlePhoneClick(event, '${trip.phone}', 'sms')" class="px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs sm:text-sm flex items-center space-x-1.5 shadow-md shadow-sky-950/60 cursor-pointer transition">
+            <i class="fa-solid fa-comment-sms text-xs"></i>
+            <span>Text</span>
+          </a>
+          <button type="button" onclick="sendLocationPin('${trip.id}')" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-300 hover:text-white font-bold text-xs flex items-center space-x-1.5 shadow-md shadow-slate-950/60 cursor-pointer transition" title="Send live Google Maps location pin to passenger via Google Voice">
+            <i class="fa-solid fa-location-dot text-teal-400 text-xs"></i>
+            <span>Share Pin</span>
+          </button>
+          <button type="button" onclick="openUpdatePhoneModal('${trip.id}')" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-amber-300 text-xs flex items-center transition cursor-pointer" title="Update Phone Number">
+            <i class="fa-solid fa-pen text-sm"></i>
+          </button>
+        `;
+      }
 
       // Alternate Phone
       const altRow = document.getElementById('focus-alt-phone-row');
@@ -5318,57 +6742,8 @@
 
       // Giant In-Cab Action Buttons
       const actionContainer = document.getElementById('focus-action-buttons-container');
-      if (trip.status === 'Completed') {
-        actionContainer.innerHTML = `
-          <div class="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-emerald-500/40">
-            <div class="flex items-center space-x-2.5">
-              <div class="w-9 h-9 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg">
-                <i class="fa-solid fa-circle-check"></i>
-              </div>
-              <div>
-                <div class="text-sm font-bold text-white">Run Completed Successfully</div>
-                <div class="text-xs text-slate-400 font-mono">Finished @ ${formatTime12(trip.actualDropoff || '00:00')} &bull; Dwell Wait: ${trip.waitTimeMinutes || 0}m</div>
-              </div>
-            </div>
-            <button type="button" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-300 font-bold text-xs flex items-center space-x-1.5 transition cursor-pointer" onclick="handleReopenRun('${trip.id}'); openRideFocusModal('${trip.id}');">
-              <i class="fa-solid fa-rotate-left"></i>
-              <span>Reopen Run</span>
-            </button>
-          </div>
-        `;
-      } else {
-        let actionButtonsHtml = '';
-        
-        if (!trip.actualArrival) {
-          actionButtonsHtml = `
-            <button type="button" class="w-full py-3.5 rounded-xl bg-teal-600 hover:bg-teal-500 active:bg-teal-700 text-white font-extrabold text-base flex items-center justify-center space-x-2 shadow-lg shadow-teal-950/70 transition cursor-pointer" onclick="handleMarkArrived('${trip.id}'); openRideFocusModal('${trip.id}');">
-              <i class="fa-solid fa-location-dot text-lg"></i>
-              <span>Mark Arrived at Pickup (Start Wait Timer)</span>
-            </button>
-          `;
-        } else if (!trip.actualDepart) {
-          actionButtonsHtml = `
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <button type="button" class="py-3.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-extrabold text-sm sm:text-base flex items-center justify-center space-x-2 shadow-lg shadow-amber-950/70 transition cursor-pointer" onclick="handleMarkDeparted('${trip.id}'); openRideFocusModal('${trip.id}');">
-                <i class="fa-solid fa-van-shuttle text-lg"></i>
-                <span>Depart Pickup (Passenger Loaded)</span>
-              </button>
-              <button type="button" class="py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-extrabold text-sm sm:text-base flex items-center justify-center space-x-2 shadow-lg shadow-emerald-950/70 transition cursor-pointer" onclick="handleEndRun('${trip.id}'); openRideFocusModal('${trip.id}');">
-                <i class="fa-solid fa-flag-checkered text-lg"></i>
-                <span>Dropoff Complete (End Run)</span>
-              </button>
-            </div>
-          `;
-        } else {
-          actionButtonsHtml = `
-            <button type="button" class="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-extrabold text-base flex items-center justify-center space-x-2 shadow-lg shadow-emerald-950/70 transition cursor-pointer" onclick="handleEndRun('${trip.id}'); openRideFocusModal('${trip.id}');">
-              <i class="fa-solid fa-flag-checkered text-lg"></i>
-              <span>Dropoff Complete (End Run)</span>
-            </button>
-          `;
-        }
-
-        actionContainer.innerHTML = actionButtonsHtml;
+      if (actionContainer) {
+        actionContainer.innerHTML = renderStatusActionPanel(trip, false);
       }
 
       // Render Small Route Preview Map
@@ -5698,6 +7073,9 @@ function setupCustomerNotesModal() {
       // Action 1: Wipe Board
       document.getElementById('btn-action-wipe-board').addEventListener('click', () => {
         AppState.trips = [];
+        try {
+          localStorage.removeItem('serenity_active_trips');
+        } catch(e) {}
         AppState.liveOverride = null;
         document.getElementById('live-banner').classList.add('hidden');
         modalClear.classList.add('hidden');
@@ -6018,7 +7396,7 @@ function setupCustomerNotesModal() {
         const newTrip = {
           id: `RB-${Math.floor(1000 + Math.random() * 9000)}`,
           passenger,
-          phone: '(631) 555-' + Math.floor(1000 + Math.random() * 9000),
+          phone: phone || 'Unknown',
           mobility,
           schedPU,
           schedDO,
@@ -6136,6 +7514,7 @@ function setupCustomerNotesModal() {
                 this.isTracking = true;
                 this.updateHeaderUI();
                 this.updateMapPosition();
+                checkDepartureGeofence(this.currentLat, this.currentLon, this.currentSpeed);
               },
               (err) => {
                 console.warn('Geolocation sensor note: running in Bay Shore corridor default', err);
@@ -6504,6 +7883,77 @@ function setupCustomerNotesModal() {
     };
 
         // PHONE & GOOGLE VOICE CALLING HELPERS
+    // ==========================================
+    // PHONE NUMBER VALIDATION & MODAL CONTROLLER
+    // ==========================================
+    function isUnknownPhone(phoneStr) {
+      if (!phoneStr) return true;
+      const lower = String(phoneStr).toLowerCase().trim();
+      if (lower === 'unknown' || lower === 'none' || lower === 'tbd' || lower === '') return true;
+      // All 555 fictional mock numbers are automatically treated as Unknown
+      if (lower.includes('555-') || lower.includes('55501')) return true;
+      const digits = cleanPhone(phoneStr);
+      if (digits.length < 10) return true;
+      if (digits.slice(3, 6) === '555') return true;
+      return false;
+    }
+
+    function formatPhoneDisplay(phoneStr) {
+      if (isUnknownPhone(phoneStr)) return 'Unknown';
+      const digits = cleanPhone(phoneStr);
+      if (digits.length === 10) {
+        return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+      }
+      return phoneStr;
+    }
+
+    function openUpdatePhoneModal(tripId) {
+      const trip = AppState.trips.find(t => t.id === tripId);
+      if (!trip) return;
+      AppState.activePhoneUpdateTripId = tripId;
+      const label = document.getElementById('update-phone-passenger-label');
+      if (label) label.textContent = `${formatPassengerName(trip.passenger)} (Run ${trip.id})`;
+      const input = document.getElementById('input-update-phone');
+      if (input) {
+        input.value = isUnknownPhone(trip.phone) ? '' : trip.phone;
+        setTimeout(() => input.focus(), 80);
+      }
+      const modal = document.getElementById('modal-update-phone');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeUpdatePhoneModal() {
+      const modal = document.getElementById('modal-update-phone');
+      if (modal) modal.classList.add('hidden');
+      AppState.activePhoneUpdateTripId = null;
+    }
+
+    function saveUpdatedPhone() {
+      const tripId = AppState.activePhoneUpdateTripId;
+      const trip = AppState.trips.find(t => t.id === tripId);
+      if (!trip) return;
+      const input = document.getElementById('input-update-phone');
+      const rawVal = input ? input.value.trim() : '';
+      const digits = cleanPhone(rawVal);
+
+      if (digits.length >= 10) {
+        trip.phone = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+        showToast(`Updated phone for ${formatPassengerName(trip.passenger)} to ${trip.phone}!`, 'success');
+      } else if (rawVal.length === 0 || rawVal.toLowerCase() === 'unknown') {
+        trip.phone = 'Unknown';
+        showToast(`Phone number set to Unknown for ${formatPassengerName(trip.passenger)}.`, 'info');
+      } else {
+        showToast('Please enter a valid 10-digit phone number.', 'error');
+        return;
+      }
+
+      closeUpdatePhoneModal();
+      renderApp();
+      if (AppState.currentFocusTripId === tripId && !document.getElementById('modal-ride-focus').classList.contains('hidden')) {
+        openRideFocusModal(tripId);
+      }
+    }
+
     function cleanPhone(numStr) {
       if (!numStr) return '';
       let d = numStr.replace(/\D/g, '');
@@ -6614,6 +8064,8 @@ function setupCustomerNotesModal() {
     }
 
     window.addEventListener('DOMContentLoaded', () => {
+      loadDriverProfile();
+      initModalAutoFitObserver();
       try {
         const savedIdx = localStorage.getItem('serenity_gvoice_idx');
         if (savedIdx) AppState.googleVoiceAccountIndex = savedIdx;
@@ -6622,7 +8074,17 @@ function setupCustomerNotesModal() {
         const savedProvider = localStorage.getItem('serenity_calling_provider');
         if (savedProvider) AppState.callingProvider = savedProvider;
       } catch(e) {}
-      AppState.trips = JSON.parse(JSON.stringify(initialTripsData));
+      // Default to a 100% clean blank slate on startup (never force old demo manifest)
+      try {
+        const savedTrips = localStorage.getItem('serenity_active_trips');
+        if (savedTrips && JSON.parse(savedTrips).length > 0) {
+          AppState.trips = JSON.parse(savedTrips);
+        } else {
+          AppState.trips = [];
+        }
+      } catch (e) {
+        AppState.trips = [];
+      }
       setupModals();
       setupWeatherCard();
       setupDraggableTiles();
@@ -6843,6 +8305,44 @@ function setupCustomerNotesModal() {
 </script>
 
   <!-- MODAL: LOCATION CORRECTION (Wrong Location vs Actual Van GPS) -->
+    <!-- MODAL: QUICK UPDATE PASSENGER PHONE -->
+  <div id="modal-update-phone" class="fixed inset-0 z-[9999] bg-black/85 hidden overflow-y-auto flex items-center justify-center p-4">
+    <div class="my-auto bg-slate-900 border border-slate-700/80 rounded-2xl max-w-md w-full p-5 shadow-2xl relative">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-300 flex items-center justify-center text-sm font-bold">
+            <i class="fa-solid fa-phone"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-white">Update Passenger Phone</h3>
+            <p class="text-[11px] text-slate-400 font-mono" id="update-phone-passenger-label">Passenger Name</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeUpdatePhoneModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+      </div>
+
+      <div class="mt-4 space-y-3">
+        <div>
+          <label class="text-xs text-slate-300 font-medium block mb-1">Enter Customer Phone Number:</label>
+          <input type="tel" id="input-update-phone" placeholder="(631) 555-1234" class="w-full text-sm bg-slate-950 border border-slate-700 rounded-xl p-3 text-white font-mono placeholder-slate-600 focus:outline-none focus:border-teal-400 transition" autofocus>
+          <p class="text-[10px] text-slate-500 mt-1">Enter a 10-digit number for 1-tap Google Voice calling and text alerts.</p>
+        </div>
+      </div>
+
+      <div class="mt-5 pt-3 border-t border-slate-800 flex items-center justify-end space-x-2">
+        <button type="button" onclick="closeUpdatePhoneModal()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition cursor-pointer">
+          Cancel
+        </button>
+        <button type="button" onclick="saveUpdatedPhone()" class="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition flex items-center space-x-1.5 shadow-md shadow-teal-950/60 cursor-pointer">
+          <i class="fa-solid fa-check text-xs"></i>
+          <span>Save Phone Number</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div id="modal-location-correction" class="fixed inset-0 z-[9999] bg-black/85 hidden overflow-y-auto flex items-start sm:items-center justify-center p-3 sm:p-4">
     <div class="bg-slate-900 border border-amber-500/50 rounded-2xl p-4 sm:p-5 max-w-lg w-full shadow-2xl space-y-3.5">
       <div class="flex items-center justify-between pb-2.5 border-b border-slate-800">
