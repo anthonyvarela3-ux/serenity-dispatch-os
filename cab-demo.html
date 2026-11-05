@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Serenity Dispatch OS - Cab Cockpit Demo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body { background: #0b0f19; color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+    
+    /* Cockpit Frame Layout */
+    .cockpit-view { position: relative; width: 100vw; height: 100vh; background: radial-gradient(circle at 50% 30%, #1e293b 0%, #090d16 80%); display: flex; align-items: center; justify-content: center; }
+    .windshield-horizon { position: absolute; top: 0; left: 0; right: 0; height: 35%; background: linear-gradient(180deg, #1e3a5f 0%, #334155 100%); opacity: 0.4; border-bottom: 3px solid rgba(255,255,255,0.1); }
+    .rearview-mirror { position: absolute; top: 12px; width: 140px; height: 32px; background: #111; border-radius: 12px; border: 2px solid #334155; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #64748b; font-weight: 700; letter-spacing: 1px; }
+
+    /* iPad Display Frame */
+    .tablet-chassis { position: relative; width: 92vw; max-width: 680px; height: 82vh; max-height: 520px; background: #000; border: 12px solid #1e293b; border-radius: 28px; box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.1); display: flex; flex-direction: column; overflow: hidden; }
+    
+    /* App Header */
+    .app-topbar { height: 52px; background: #0f172a; border-bottom: 2px solid #334155; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; }
+    .driver-badge { background: #1e293b; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 14px; color: #38bdf8; border: 1px solid #38bdf8; }
+    .clock-badge { font-family: monospace; font-size: 15px; font-weight: 700; color: #94a3b8; }
+
+    /* Active Run Card */
+    .active-run-card { background: #182234; border: 2px solid #0284c7; border-radius: 16px; margin: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; position: relative; }
+    .run-badge { display: inline-block; align-self: flex-start; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+    .badge-blue { background: #0284c7; color: #fff; }
+    .badge-amber { background: #d97706; color: #fff; }
+    .badge-indigo { background: #4f46e5; color: #fff; }
+    .badge-green { background: #059669; color: #fff; }
+
+    .address-hero { font-size: 20px; font-weight: 800; line-height: 1.3; color: #f8fafc; }
+    .address-dest { font-size: 15px; font-weight: 600; color: #94a3b8; }
+
+    /* In-Cab Large Action Buttons */
+    .action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+    .btn-action { height: 54px; border-radius: 12px; border: none; font-size: 15px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: transform 0.1s; }
+    .btn-action:active { transform: scale(0.97); }
+    .btn-curbside { background: #d97706; color: #fff; border: 2px solid #f59e0b; }
+    .btn-stage { background: #0284c7; color: #fff; border: 2px solid #38bdf8; }
+
+    /* Manifest Queue */
+    .manifest-box { flex: 1; overflow-y: auto; padding: 0 12px 12px 12px; display: flex; flex-direction: column; gap: 8px; }
+    .queue-item { background: #0f172a; border: 1px solid #1e293b; padding: 10px 14px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+    .queue-time { font-weight: 800; color: #38bdf8; font-size: 14px; }
+    .queue-name { font-weight: 700; font-size: 15px; color: #e2e8f0; }
+
+    /* COMIC CARTOON CLOUD BUBBLES */
+    .comic-cloud {
+      position: absolute;
+      background: #ffffff;
+      color: #0f172a;
+      border: 3px solid #000;
+      border-radius: 35px;
+      padding: 16px 20px;
+      width: 290px;
+      box-shadow: 6px 6px 0px rgba(0,0,0,0.9), 0 15px 30px rgba(0,0,0,0.5);
+      z-index: 9999;
+      pointer-events: auto;
+      transform-origin: bottom center;
+      animation: popBounce 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    .comic-cloud::before {
+      content: "";
+      position: absolute;
+      bottom: -16px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 16px 14px 0 14px;
+      border-style: solid;
+      border-color: #000 transparent transparent transparent;
+    }
+    .comic-cloud::after {
+      content: "";
+      position: absolute;
+      bottom: -11px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 13px 11px 0 11px;
+      border-style: solid;
+      border-color: #ffffff transparent transparent transparent;
+    }
+    .comic-title { font-size: 15px; font-weight: 900; color: #0284c7; text-transform: uppercase; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+    .comic-text { font-size: 13px; font-weight: 700; line-height: 1.4; color: #1e293b; }
+    .comic-close { position: absolute; top: 6px; right: 12px; font-size: 16px; font-weight: 900; color: #64748b; cursor: pointer; }
+
+    @keyframes popBounce {
+      0% { opacity: 0; transform: scale(0.3) translateY(20px); }
+      70% { transform: scale(1.08) translateY(-4px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cockpit-view" id="cockpit">
+    <div class="windshield-horizon"></div>
+    <div class="rearview-mirror">VAN #104 CAB</div>
+
+    <div class="tablet-chassis" id="tablet">
+      <div class="app-topbar">
+        <div class="driver-badge" onclick="triggerCloud(event, 'DRIVER PROFILE', 'Locks Anthony to Van #104 and applies your Suffolk County depot commute buffers.')">👤 Anthony • Van #104</div>
+        <div class="clock-badge" id="liveClock">07:50 PM</div>
+      </div>
+
+      <div class="active-run-card" id="activeCard">
+        <div class="run-badge badge-blue" id="stageBadge">IN ROUTE TO PICKUP</div>
+        <div class="address-hero" id="pickupAddr">320 Carlton Ave, Central Islip</div>
+        <div class="address-dest">To: South Shore University Hospital, Bay Shore</div>
+
+        <div class="action-row">
+          <button class="btn-action btn-curbside" onclick="triggerCurbside(event)">
+            📍 Curbside Anchor
+          </button>
+          <button class="btn-action btn-stage" id="mainStageBtn" onclick="advanceStage(event)">
+            ✅ Mark Arrived
+          </button>
+        </div>
+      </div>
+
+      <div class="manifest-box">
+        <div style="font-size: 12px; font-weight: 800; color: #64748b; margin-top: 4px;">UPCOMING SUFFOLK RUNS</div>
+        <div class="queue-item" onclick="triggerGuardrail(event, 'Harold Jenkins', '08:30 AM')">
+          <div>
+            <div class="queue-name">Harold Jenkins</div>
+            <div style="font-size: 12px; color: #64748b;">Brentwood ➔ Dialysis Center</div>
+          </div>
+          <div class="queue-time">08:30 AM</div>
+        </div>
+        <div class="queue-item" onclick="triggerGuardrail(event, 'Maria Santos', '09:15 AM')">
+          <div>
+            <div class="queue-name">Maria Santos</div>
+            <div style="font-size: 12px; color: #64748b;">Bay Shore ➔ Good Samaritan</div>
+          </div>
+          <div class="queue-time">09:15 AM</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="cloudPortal"></div>
+
+  <script>
+    let stage = 0; // 0: In Route, 1: Arrived, 2: Departed, 3: Dropped Off
+    const stages = [
+      { badge: 'IN ROUTE TO PICKUP', class: 'badge-blue', nextText: '✅ Mark Arrived', title: 'IN ROUTE ACTIVATED', desc: 'Alerts dispatch that Van #104 is rolling. Locks GPS telemetry and prepares 10-minute courtesy alert.' },
+      { badge: 'ARRIVED AT CURBSIDE', class: 'badge-amber', nextText: '🚀 Mark Departed', title: 'ARRIVED AT PICKUP', desc: 'Starts dwell stopwatch automatically to track curb boarding time and defend against broker no-show penalties.' },
+      { badge: 'DEPARTED WITH RIDER', class: 'badge-indigo', nextText: '🏁 Mark Dropped Off', title: 'TRANSIT COMMENCED', desc: 'Passenger is secured onboard. Deterministic Long Island corridor routing tracks ETA to South Shore Univ Hospital.' },
+      { badge: 'RUN COMPLETED', class: 'badge-green', nextText: '🔄 Reopen / Reset', title: 'DROPPED OFF & BILLED', desc: 'Trip stamped and sent to ledger. Safe from audit clawbacks with zero historical trip data loss.' }
+    ];
+
+    function showCloud(x, y, title, text) {
+      const portal = document.getElementById('cloudPortal');
+      portal.innerHTML = '';
+      const cloud = document.createElement('div');
+      cloud.className = 'comic-cloud';
+      cloud.style.left = Math.max(16, Math.min(window.innerWidth - 310, x - 145)) + 'px';
+      cloud.style.top = Math.max(20, y - 130) + 'px';
+      cloud.innerHTML = `
+        <div class="comic-close" onclick="this.parentElement.remove()">✕</div>
+        <div class="comic-title">🗯️ ${title}</div>
+        <div class="comic-text">${text}</div>
+      `;
+      portal.appendChild(cloud);
+      setTimeout(() => { if (cloud.parentElement) cloud.remove(); }, 4500);
+    }
+
+    function triggerCloud(e, title, text) {
+      e.stopPropagation();
+      const rect = e.currentTarget.getBoundingClientRect();
+      showCloud(rect.left + rect.width / 2, rect.top, title, text);
+    }
+
+    function triggerCurbside(e) {
+      triggerCloud(e, 'CURBSIDE ANCHOR', 'Captures immediate physical GPS coordinates and device timestamp at the door to eliminate out-of-geofence audit clawbacks.');
+    }
+
+    function advanceStage(e) {
+      const current = stages[stage];
+      triggerCloud(e, current.title, current.desc);
+      stage = (stage + 1) % stages.length;
+      const next = stages[stage];
+      const badgeEl = document.getElementById('stageBadge');
+      badgeEl.className = 'run-badge ' + next.class;
+      badgeEl.innerText = next.badge;
+      document.getElementById('mainStageBtn').innerText = next.nextText;
+    }
+
+    function triggerGuardrail(e, name, time) {
+      triggerCloud(e, 'BILLING GUARDRAIL', `BLOCKED: You cannot start ${name}'s ${time} run while an active run is open! Prevents accidental double-run Medicaid payment clawbacks.`);
+    }
+
+    setInterval(() => {
+      const d = new Date();
+      document.getElementById('liveClock').innerText = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }, 1000);
+  </script>
+</body>
+</html>
