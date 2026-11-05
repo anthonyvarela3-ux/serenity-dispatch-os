@@ -3,58 +3,151 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Serenity Medical Transport & Taxi Fleet - Tactical Dispatch OS</title>
+  <title>Serenity Dispatch OS</title>
   <style>
-    :root {
-      --bg-base: #04070f;
-      --bg-panel: #0d162d;
-      --bg-card: #121e3a;
-      --border-panel: #1e315e;
-      --accent-blue: #0ea5e9;
-      --accent-amber: #f59e0b;
-      --accent-indigo: #6366f1;
-      --accent-emerald: #10b981;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
     body {
-      background: var(--bg-base);
-      color: var(--text-main);
+      background: #04070f;
+      color: #f8fafc;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      overflow-x: hidden;
+      padding: 16px;
+      gap: 16px;
     }
-
-    /* TOP HEADER & TELEMETRY CLUSTER */
-    .top-header {
+    .header {
       background: #070d1d;
-      border-bottom: 2px solid var(--border-panel);
-      padding: 10px 16px;
+      border: 2px solid #1e315e;
+      border-radius: 14px;
+      padding: 16px;
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      position: sticky;
-      top: 0;
-      z-index: 100;
+      align-items: center;
     }
-    .brand-block { display: flex; flex-direction: column; }
-    .brand-title { font-size: 15px; font-weight: 900; letter-spacing: 0.6px; color: #38bdf8; }
-    .brand-sub { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
-
-    .header-center-controls { display: flex; align-items: center; gap: 8px; }
-    .btn-tour-pill {
+    .title { font-size: 18px; font-weight: 900; color: #38bdf8; }
+    .sub { font-size: 12px; color: #94a3b8; font-weight: 700; }
+    .btn-tour {
       background: #fbbf24;
       color: #000;
       border: 2px solid #f59e0b;
+      padding: 8px 16px;
       border-radius: 20px;
-      padding: 6px 14px;
-      font-size: 13px;
       font-weight: 900;
       cursor: pointer;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .card {
+      background: #0d162d;
+      border: 1px solid #1e315e;
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+    }
+    .card-title { font-size: 11px; color: #94a3b8; font-weight: 800; text-transform: uppercase; }
+    .card-val { font-size: 14px; font-weight: 900; color: #fff; margin-top: 4px; }
+    .active-run {
+      background: #121e3a;
+      border: 2px solid #0ea5e9;
+      border-radius: 16px;
+      padding: 20px;
       display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .stage-pill {
+      background: #0ea5e9;
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 900;
+      align-self: flex-start;
+      text-transform: uppercase;
+    }
+    .address { font-size: 24px; font-weight: 900; color: #fff; }
+    .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .btn-action {
+      height: 60px;
+      border-radius: 14px;
+      border: none;
+      font-size: 15px;
+      font-weight: 900;
+      cursor: pointer;
+      color: #fff;
+    }
+    .btn-amber { background: #d97706; border: 2px solid #fbbf24; }
+    .btn-blue { background: #0284c7; border: 2px solid #38bdf8; }
+    .manifest {
+      background: #0d162d;
+      border: 2px solid #1e315e;
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .manifest-row {
+      background: #0a1124;
+      border: 1px solid #1e315e;
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      justify-content: space-between;
       align-items: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div>
+      <div class="title">SERENITY DISPATCH OS</div>
+      <div class="sub">Suffolk County NEMT &amp; Private Fleet</div>
+    </div>
+    <button class="btn-tour" onclick="alert('Tour Mode Active!')">💡 Start Tour</button>
+  </div>
+
+  <div class="grid">
+    <div class="card"><div class="card-title">Corridor</div><div class="card-val">NY-27 Clear</div></div>
+    <div class="card"><div class="card-title">Corridor ETA</div><div class="card-val">8m to Curb</div></div>
+    <div class="card"><div class="card-title">Geofence</div><div class="card-val">75ft Radius</div></div>
+    <div class="card"><div class="card-title">Rider Phone</div><div class="card-val">1-Tap Connect</div></div>
+  </div>
+
+  <div class="active-run">
+    <div class="stage-pill">STAGE 1: IN ROUTE TO PICKUP</div>
+    <div>
+      <div class="address">320 Carlton Ave, Central Islip, NY</div>
+      <div style="color: #94a3b8; font-size: 14px; margin-top: 4px;">Dropoff: South Shore University Hospital, Bay Shore</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-action btn-amber" onclick="alert('Curbside Anchor Logged!')">📍 Curbside Anchor</button>
+      <button class="btn-action btn-blue" onclick="alert('Stage Advanced!')">✅ Mark Arrived</button>
+    </div>
+  </div>
+
+  <div class="manifest">
+    <div style="font-weight: 900; color: #38bdf8; text-transform: uppercase; font-size: 13px;">Suffolk Today Slate (5 Runs Queued)</div>
+    <div class="manifest-row">
+      <div>
+        <div style="font-weight: 900; font-size: 14px;">1. Harold Jenkins (MAS Medicaid)</div>
+        <div style="font-size: 12px; color: #94a3b8;">Pickup: Brentwood ➔ South Shore Hospital</div>
+      </div>
+      <div style="font-weight: 900; color: #0ea5e9; text-align: right;">08:45 AM<br>ACTIVE</div>
+    </div>
+    <div class="manifest-row">
+      <div>
+        <div style="font-weight: 900; font-size: 14px;">2. Maria Santos (Serenity Taxi Livery)</div>
+        <div style="font-size: 12px; color: #94a3b8;">Pickup: North Bay Shore ➔ Good Samaritan</div>
+      </div>
+      <div style="font-weight: 900; color: #94a3b8; text-align: right;">10:15 AM<br>QUEUED</div>
+    </div>
+  </div>
+
+</body>
+</html>
