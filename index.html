@@ -11,9 +11,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Serenity OS">
   <meta name="theme-color" content="#020617">
-  <!-- Apple Touch Icon -->
+  <!-- Apple Touch Icon (Dark Teal NEMT Van SVG) -->
   <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='110' fill='%230f172a'/%3E%3Crect x='16' y='16' width='480' height='480' rx='96' fill='%23134e4a' stroke='%232dd4bf' stroke-width='16'/%3E%3Cpath fill='%232dd4bf' d='M96 160c0-35.3 28.7-64 64-64h192c35.3 0 64 28.7 64 64v192h16c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16h-16v16c0 17.7-14.3 32-32 32h-32c-17.7 0-32-14.3-32-32v-16H184v16c0 17.7-14.3 32-32 32h-32c-17.7 0-32-14.3-32-32v-16H72c-8.8 0-16-7.2-16-16v-32c0-8.8 7.2-16 16-16h16V160zm64 32v64h96v-64H160zm160 0v64h64v-64h-64zM144 384a32 32 0 1 0 0-64 32 32 0 1 0 0 64zm224 0a32 32 0 1 0 0-64 32 32 0 1 0 0 64z'/%3E%3C/svg%3E">
-  <title>Serenity Dispatch OS - Commercial v6</title>
+  <title>Serenity Dispatch OS - Independent NEMT Operations</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <!-- FontAwesome Icons -->
@@ -22,7 +22,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Leaflet Map -->
+  <!-- Leaflet Interactive Map for Live Vehicle Telematics & Route Radar -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <!-- Tesseract.js for Client-Side OCR -->
@@ -52,33 +52,117 @@
     }
   </script>
   <style>
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #090d16; }
-    ::-webkit-scrollbar-thumb { background: #253347; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #3b4e68; }
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090d16;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #253347;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3b4e68;
+    }
+    /* Pulsing radar for Live status */
     @keyframes pulse-ring {
       0% { transform: scale(0.95); opacity: 0.85; }
       50% { transform: scale(1.2); opacity: 0.25; }
       100% { transform: scale(0.95); opacity: 0.85; }
     }
-    .live-pulse { animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-    .dispatch-card { background: linear-gradient(180deg, rgba(22, 30, 46, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%); }
-    html, body { -webkit-text-size-adjust: 100%; -webkit-overflow-scrolling: touch; min-height: 100vh; position: relative; }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    input, textarea, [contenteditable="true"] { user-select: text !important; -webkit-user-select: text !important; }
-    body.drive-locked { height: 100vh !important; max-height: 100vh !important; overflow: hidden !important; touch-action: none !important; user-select: none !important; -webkit-user-select: none !important; }
-    #cockpit-map-wrapper { isolation: isolate; position: relative; z-index: 1; contain: layout style; }
-    #cockpit-leaflet-map, #focus-ride-leaflet-map, #correction-picker-map { touch-action: pan-y !important; }
+    .live-pulse {
+      animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    /* Subtle neon scanline for dispatch terminal feel */
+    .dispatch-card {
+      background: linear-gradient(180deg, rgba(22, 30, 46, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%);
+    }
+
+    /* =======================================================
+       IN-CAB TABLET APP LOCK (Zero Screen Jiggle & Static Lock)
+       Eliminates iOS / Android rubber-band bounce, horizontal sway,
+       and accidental blue text-selection boxes on touch.
+       ======================================================= */
+    /* High-Performance Mobile & Tablet Native Momentum Scrolling */
+    html {
+      -webkit-text-size-adjust: 100%;
+      -webkit-overflow-scrolling: touch;
+    }
+    body {
+      min-height: 100vh;
+      position: relative;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-overflow-scrolling: touch;
+    }
+    /* Hide scrollbar for clean horizontal toolbars while keeping them fully scrollable */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    input, textarea, [contenteditable="true"] {
+      user-select: text !important;
+      -webkit-user-select: text !important;
+    }
+
+    /* Isolated Stacking Context for Leaflet Map
+       Traps Leaflet internal z-indices (z-400 to z-1000) inside level 1,
+       guaranteeing modals (z-9999) ALWAYS sit cleanly on top without bleeding through. */
+    /* Mobile GPU & Native Hardware Scrolling */
+    html, body {
+      -webkit-overflow-scrolling: touch;
+    }
+    /* Fluid modal scrolling */
+    #modal-ride-focus, #modal-parser, #modal-settings, #modal-location-correction, #modal-corrections-report, #modal-gps-radar {
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+    #modal-ride-focus > div, #modal-parser > div, #modal-settings > div, #modal-location-correction > div, #modal-corrections-report > div {
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* In-Cab Driving Lock (Rigid Viewport Kiosk Mode) */
+    body.drive-locked {
+      height: 100vh !important;
+      max-height: 100vh !important;
+      overflow: hidden !important;
+      touch-action: none !important;
+      user-select: none !important;
+      -webkit-user-select: none !important;
+    }
+
+    #cockpit-map-wrapper {
+      isolation: isolate;
+      position: relative;
+      z-index: 1;
+      contain: layout style;
+    }
+    #cockpit-leaflet-map, #focus-ride-leaflet-map {
+      touch-action: pan-y !important;
+    }
   </style>
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased flex flex-col selection:bg-teal-500 selection:text-white pb-14">
+  <!-- Full-Page Drag & Drop Overlay (Allows dropping manifest screenshots directly onto the live site) -->
+  <div id="fullpage-drop-overlay" class="fixed inset-0 z-[9998] bg-slate-950/90  border-4 border-dashed border-teal-400 hidden flex flex-col items-center justify-center p-6 text-center pointer-events-none">
+    <div class="w-20 h-20 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-4xl mb-4 animate-bounce">
+      <i class="fa-solid fa-cloud-arrow-up"></i>
+    </div>
+    <h2 class="text-2xl font-black text-white tracking-tight">Drop Manifest Screenshots Here</h2>
+    <p class="text-sm text-teal-300 mt-2 max-w-md">Release 1, 2, or multiple RoutingBox screenshots to automatically parse today's daily dispatch roster.</p>
+  </div>
 
   <!-- TOP DISPATCH CONTROL BAR -->
   <header class="border-b border-slate-800/90 bg-slate-900/95 sticky top-0 z-40 shadow-md">
     <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2">
-      <!-- Row 1: Logo & Branding, Live Clock & Status, View Mode Toggles -->
+      <!-- Row 1: Logo & Branding, Live Clock & Status, Cockpit vs Roster Toggle -->
       <div class="flex items-center justify-between gap-2 pb-2 border-b border-slate-800/60 flex-wrap">
+        <!-- Logo & Branding -->
         <div class="flex items-center space-x-3">
           <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-teal-600 via-teal-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-teal-500/20 text-slate-950 font-black text-lg">
             <i class="fa-solid fa-van-shuttle"></i>
@@ -86,23 +170,25 @@
           <div>
             <div class="flex items-center space-x-2">
               <span class="text-base sm:text-lg font-extrabold tracking-tight text-white">Serenity <span class="text-teal-400">Dispatch OS</span></span>
-              <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/30">COMMERCIAL v6</span>
+              <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/30">NEMT PRO</span>
             </div>
             <p class="text-[10px] sm:text-[11px] text-slate-400">Independent NEMT Operations &bull; Long Island, NY (Suffolk County)</p>
           </div>
         </div>
 
+        <!-- Center Status & Clock -->
         <div class="flex items-center space-x-2.5 text-sm">
           <div class="flex items-center space-x-2 bg-slate-950/80 px-2.5 py-1 rounded-lg border border-slate-800">
             <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 live-pulse"></span>
             <span class="text-xs text-slate-300 font-medium">Clock: <strong class="text-teal-300 font-mono" id="clock-display">--:--:--</strong></span>
           </div>
+
           <div class="text-xs text-slate-400 hidden sm:block">
-            <span class="text-slate-500">Van:</span> <span class="text-slate-200 font-medium" id="header-van-id">#104</span>
+            <span class="text-slate-500">Van:</span> <span class="text-slate-200 font-medium">#104</span>
           </div>
         </div>
 
-        <!-- Cockpit vs Roster vs Settings Deck Toggle -->
+        <!-- Cockpit vs Roster View Mode Toggle -->
         <div class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 shadow-inner">
           <button id="btn-mode-cockpit" type="button" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 bg-teal-600 text-white shadow-md shadow-teal-950/60 cursor-pointer" onclick="toggleViewMode('cockpit')">
             <i class="fa-solid fa-plane-up text-xs"></i>
@@ -112,71 +198,134 @@
             <i class="fa-solid fa-table-list text-xs"></i>
             <span>Classic Roster</span>
           </button>
-          <button id="btn-mode-settings" type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-amber-300 hover:text-white transition flex items-center space-x-1.5 cursor-pointer" onclick="toggleViewMode('settings')">
-            <i class="fa-solid fa-gear text-xs"></i>
-            <span>Settings Deck</span>
-          </button>
         </div>
       </div>
 
-      <!-- Row 2: Action Toolbar -->
+      <!-- Row 2: Tactical Action Toolbar (Smooth horizontal scroll strip on tablet/mobile with zero overflow clipping) -->
       <div class="flex items-center space-x-2 overflow-x-auto no-scrollbar pt-2 pb-0.5 text-xs">
-        <button id="btn-clock-toggle" onclick="ClockManager.toggleClock()" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-md transition flex items-center space-x-1.5 cursor-pointer shrink-0">
+        <!-- Hidden Mobile Compatibility Hooks -->
+        <button id="btn-clock-mobile" class="hidden"><span id="clock-btn-mobile-label">Clock In</span></button>
+        <button id="btn-gps-mobile" class="hidden"></button>
+
+        <!-- DRIVER CLOCK IN / CLOCK OUT BUTTON -->
+        <button id="btn-clock-toggle" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-950/60 transition flex items-center space-x-1.5 cursor-pointer shrink-0" title="Tap to Clock In / Out (Times driver pay @ $22.50/hr)">
           <i class="fa-solid fa-business-time text-xs" id="clock-btn-icon"></i>
           <span id="clock-btn-label">Clock In</span>
           <span id="clock-elapsed-badge" class="hidden text-[10px] font-mono px-1.5 py-0.2 rounded bg-black/40 text-emerald-200 font-bold ml-1">0.0h</span>
         </button>
 
-        <button id="btn-open-gemini" onclick="toggleGeminiDrawer()" class="px-2.5 py-1.5 text-xs rounded-lg bg-purple-950/80 border border-purple-500/40 text-purple-200 hover:text-white hover:bg-purple-900 transition flex items-center space-x-1.5 cursor-pointer shrink-0">
-          <i class="fa-solid fa-wand-magic-sparkles text-purple-400 text-xs"></i>
-          <span>Ask Gemini</span>
-        </button>
-
-        <button id="btn-open-gps-map" onclick="GPSManager.openMapModal()" class="px-2.5 py-1.5 text-xs rounded-lg bg-slate-950/90 border border-slate-800 hover:border-teal-500/50 flex items-center space-x-1.5 text-slate-300 hover:text-teal-300 transition cursor-pointer shrink-0">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 live-pulse"></span>
+        <!-- LIVE GPS RADAR TELEMATICS BADGE -->
+        <button id="btn-open-gps-map" class="px-2.5 py-1.5 text-xs rounded-lg bg-slate-950/90 border border-slate-800 hover:border-teal-500/50 flex items-center space-x-1.5 text-slate-300 hover:text-teal-300 transition cursor-pointer shrink-0" title="Open Live GPS Route Radar & Vehicle Tracker">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 live-pulse" id="gps-pulse-dot"></span>
           <span class="text-[11px] font-mono text-slate-300" id="gps-header-label">GPS: Live</span>
           <i class="fa-solid fa-map-location-dot text-teal-400 text-xs ml-0.5"></i>
         </button>
 
-        <button type="button" onclick="forceHardRefresh()" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-teal-300 border border-teal-500/30 transition flex items-center space-x-1 cursor-pointer shrink-0">
+        <!-- 1-Tap Hard Refresh / Cache Buster -->
+        <button id="btn-force-refresh" type="button" onclick="forceHardRefresh()" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-teal-300 border border-teal-500/30 transition flex items-center space-x-1 cursor-pointer shrink-0" title="Force iPad to reload latest Cloudflare build past cache">
           <i class="fa-solid fa-rotate text-teal-400 text-xs"></i>
           <span>Refresh App</span>
         </button>
 
-        <button type="button" onclick="toggleDriveLock()" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition flex items-center space-x-1 cursor-pointer shrink-0">
+        <!-- In-Cab Driving Lock Toggle -->
+        <button id="btn-drive-lock" type="button" onclick="toggleDriveLock()" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition flex items-center space-x-1 cursor-pointer shrink-0" title="Lock screen & map camera for steady driving without jiggle">
           <i class="fa-solid fa-lock text-slate-400 text-xs" id="icon-drive-lock"></i>
           <span id="label-drive-lock">Drive Lock</span>
         </button>
 
-        <button type="button" onclick="openCorrectionsReportModal()" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 transition flex items-center space-x-1 cursor-pointer shrink-0">
+        <!-- Address Corrections Report Badge -->
+        <button id="btn-open-corrections-report" type="button" onclick="openCorrectionsReportModal()" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 transition flex items-center space-x-1 cursor-pointer shrink-0" title="View & Export Address Corrections Report for Dispatch Master System">
           <i class="fa-solid fa-file-signature text-amber-400 text-xs"></i>
           <span>Corrections</span>
           <span class="px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 font-mono text-[10px] font-bold" id="corrections-badge-count">0</span>
         </button>
 
-        <button onclick="openClearBoardModal()" class="px-2.5 py-1.5 text-xs font-bold rounded-lg bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-500/50 transition flex items-center space-x-1.5 cursor-pointer shrink-0">
+        <!-- Clear Manifest / Start New Day Button in Header -->
+        <button id="btn-clear-manifest-header" class="px-2.5 py-1.5 text-xs font-bold rounded-lg bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-500/50 shadow-md shadow-rose-950/60 transition flex items-center space-x-1.5 cursor-pointer shrink-0" title="Wipe out old runs and clear board for a new day">
           <i class="fa-solid fa-trash-can text-xs text-rose-400"></i>
           <span>Clear Manifest</span>
         </button>
 
-        <button onclick="document.getElementById('modal-parser').classList.remove('hidden')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-teal-600 hover:bg-teal-500 text-white transition flex items-center space-x-1.5 cursor-pointer shrink-0">
+        <button id="btn-open-parser" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-teal-600 hover:bg-teal-500 text-white shadow-md shadow-teal-600/20 transition flex items-center space-x-1.5 cursor-pointer shrink-0">
           <i class="fa-solid fa-file-invoice"></i>
           <span>Upload Manifest</span>
+        </button>
+        <button id="btn-quick-sample" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-teal-300 border border-teal-500/30 transition flex items-center space-x-1.5 shrink-0">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          <span>Load RoutingBox Demo</span>
+        </button>
+        <button id="btn-open-settings" class="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition shrink-0" title="Routing & Labor Settings">
+          <i class="fa-solid fa-sliders"></i>
+        </button>
+        <button id="btn-reset-schedule" class="p-2 text-slate-400 hover:text-amber-400 rounded-lg hover:bg-slate-800 transition cursor-pointer shrink-0" title="Reset Schedule / Clear Board for New Day">
+          <i class="fa-solid fa-calendar-xmark text-sm"></i>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- ASK GEMINI INTELLIGENT DISPATCH DRAWER -->
-  <div id="gemini-drawer" class="hidden bg-slate-900 border-b border-purple-500/40 p-4 shadow-2xl transition-all">
-    <div class="max-w-7xl mx-auto space-y-3">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-2">
-          <span class="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-300 flex items-center justify-center text-sm font-bold">
-            <i class="fa-solid fa-brain"></i>
-          </span>
-          <span class="font-extrabold text-sm text-white">Ask Gemini Dispatch AI</span>
-          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">Active Assistant</span>
+  <!-- LIVE OVERRIDE BANNER<!-- LIVE OVERRIDE BANNER (Active when Live Arrival is triggered) -->
+  <div id="live-banner" class="hidden bg-gradient-to-r from-emerald-950 via-teal-900 to-slate-900 border-b border-teal-500/50 px-4 py-2.5 text-xs text-teal-200">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+      <div class="flex items-center space-x-2.5">
+        <span class="flex h-2.5 w-2.5 relative">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+        </span>
+        <span class="font-bold text-white uppercase tracking-wider text-[11px]">LIVE OVERRIDE ACTIVE:</span>
+        <span id="live-banner-text" class="text-teal-200 font-medium">Downstream timestamps recalculated dynamically from real-time physical clear.</span>
+      </div>
+      <div class="flex items-center space-x-3">
+        <button id="btn-simulate-time" class="px-2 py-0.5 rounded bg-teal-800/60 hover:bg-teal-700 text-[11px] text-teal-200 border border-teal-500/40 transition">
+          <i class="fa-solid fa-clock-rotate-left mr-1"></i> Adjust Live Time
+        </button>
+        <button id="btn-dismiss-override" class="underline text-teal-300 hover:text-white text-[11px]">Revert to Scheduled Baseline</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-6 flex-1">
+
+    <!-- HEADER QUICK METRICS CARDS (Draggable & Relocatable 6-Tile Grid) -->
+    <section aria-label="Operational Metrics">
+      <div id="metrics-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+        <!-- Tile 1: Total Runs -->
+        <div id="tile-runs" data-tile-id="runs" draggable="true" class="dispatch-card border border-slate-800 rounded-xl p-4 shadow-sm hover:border-slate-700 transition cursor-grab active:cursor-grabbing select-none relative group" title="Drag to reorder tile">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-1.5">
+              <span class="text-slate-600 group-hover:text-teal-400 text-[10px] cursor-grab"><i class="fa-solid fa-grip-vertical"></i></span>
+              <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Runs</span>
+            </div>
+            <div class="w-7 h-7 rounded-lg bg-teal-500/10 text-teal-400 flex items-center justify-center text-xs">
+              <i class="fa-solid fa-route"></i>
+            </div>
+          </div>
+          <div class="mt-2 flex items-baseline space-x-2">
+            <span class="text-2xl font-bold font-mono text-white" id="metric-total-runs">8</span>
+            <span class="text-xs text-teal-400 font-medium" id="metric-completed-runs">0 Done</span>
+          </div>
+          <p class="text-[11px] text-slate-500 mt-1">NEMT manifests loaded</p>
         </div>
-        <button type="button"
+
+        <!-- Tile 2: Expected Miles -->
+        <div id="tile-miles" data-tile-id="miles" draggable="true" class="dispatch-card border border-slate-800 rounded-xl p-4 shadow-sm hover:border-slate-700 transition cursor-grab active:cursor-grabbing select-none relative group" title="Drag to reorder tile">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-1.5">
+              <span class="text-slate-600 group-hover:text-indigo-400 text-[10px] cursor-grab"><i class="fa-solid fa-grip-vertical"></i></span>
+              <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Expected Miles</span>
+            </div>
+            <div class="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-xs">
+              <i class="fa-solid fa-gauge-high"></i>
+            </div>
+          </div>
+          <div class="mt-2 flex items-baseline space-x-2">
+            <span class="text-2xl font-bold font-mono text-white" id="metric-total-miles">187.7</span>
+            <span class="text-xs text-slate-400 font-mono">mi</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1"><span id="metric-loaded-miles" class="text-slate-200 font-medium">72.9</span> loaded &bull; <span id="metric-deadhead-miles" class="text-slate-400">94.7</span> deadhead</p>
+        </div>
+
+        <!-- Tile 3: Driver Hours -->
+        <div id="tile-hours" data-tile-id="hours" draggable="true" class="dispatch-card border border-slate-800 rounded-xl p-4 shadow-sm hover:border-slate-700 transition cursor-grab active:cursor-grabbing select-none relative group" title="Drag to reorder tile">
+          <div class="flex items-center justify-between">
           
