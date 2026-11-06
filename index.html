@@ -204,8 +204,16 @@
             min-height: 36px;
             line-height: 22px;
         }
-        .flag-toggle:hover {
-            background: rgba(239, 68, 68, 0.35);
+        .phone-badge {
+            background: rgba(14, 165, 233, 0.15);
+            color: var(--accent-blue);
+            border: 1px solid var(--accent-blue);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            display: inline-block;
+            margin-top: 4px;
         }
         button {
             background: var(--bg-base);
@@ -297,7 +305,7 @@
 
         <!-- Run Selector Bar -->
         <div class="panel" style="padding: 12px;">
-            <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">Active Fleet Manifest Runs (LocalStorage Synced)</div>
+            <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">Active Fleet Manifest Runs (Locked Phone Directory)</div>
             <div class="runs-bar">
                 <div class="run-tab active" onclick="switchRun(1)">Run 1 (Michelle)</div>
                 <div class="run-tab" onclick="switchRun(2)">Run 2 (Walter)</div>
@@ -339,13 +347,29 @@
         let currentRun = 1;
         let clockedIn = false;
         
-        let manifestData = JSON.parse(localStorage.getItem('serenity_manifest')) || [
+        // Permanent phone directory mapping
+        const phoneDirectory = {
+            "Michelle Harrell": "(516) 375-6525",
+            "Walter Molina": "(516) 878-6692",
+            "Nicole Bishop": "(516) 555-0192",
+            "Julian Menorvazquez": "(516) 555-0144"
+        };
+
+        let defaultManifest = [
             { id: "DISPATCH-101", run: 1, passenger: "Michelle Harrell", mobility: "Ambulatory", pickup: "8:00 AM", corridor: "Suffolk County Corridor", flag: "🚨 URGENT: Gate Code #4092", status: "Active" },
             { id: "DISPATCH-102", run: 2, passenger: "Walter Molina", mobility: "Wheelchair", pickup: "9:00 AM", corridor: "Long Island Expressway", flag: "Normal", status: "Queued" },
             { id: "DISPATCH-103", run: 3, passenger: "Nicole Bishop", mobility: "Ambulatory", pickup: "10:00 AM", corridor: "LIE I-495 / Northern State", flag: "⚠️ Oxygen Tank Required", status: "Queued" },
             { id: "DISPATCH-104", run: 4, passenger: "Julian Menorvazquez", mobility: "Ambulatory", pickup: "11:15 AM", corridor: "LIE I-495 / Northern State", flag: "Normal", status: "Queued" },
             { id: "DISPATCH-105", run: 5, passenger: "Michelle Harrell", mobility: "Ambulatory", pickup: "12:45 PM", corridor: "Suffolk County Corridor", flag: "Normal", status: "Queued" }
         ];
+
+        // Ensure phone numbers are permanently bound on load
+        let manifestData = JSON.parse(localStorage.getItem('serenity_manifest_v3')) || defaultManifest;
+        manifestData.forEach(item => {
+            if (phoneDirectory[item.passenger]) {
+                item.phone = phoneDirectory[item.passenger];
+            }
+        });
 
         function initDashboard() {
             renderTable();
@@ -369,7 +393,11 @@
 
                 tr.innerHTML = `
                     <td><span class="status-badge">${item.status}</span></td>
-                    <td><strong>${item.passenger}</strong><br><small style="color:var(--text-muted);">${item.mobility}</small></td>
+                    <td>
+                        <strong>${item.passenger}</strong><br>
+                        <span class="phone-badge">${item.phone || '(516) 000-0000'}</span><br>
+                        <small style="color:var(--text-muted);">${item.mobility}</small>
+                    </td>
                     <td><strong>${item.pickup}</strong> <span style="font-size:10px; color:var(--accent-emerald);">[Locked PU]</span></td>
                     <td>${item.corridor}</td>
                     <td>${flagCell}</td>
@@ -379,7 +407,7 @@
                 `;
                 tbody.appendChild(tr);
             });
-            localStorage.setItem('serenity_manifest', JSON.stringify(manifestData));
+            localStorage.setItem('serenity_manifest_v3', JSON.stringify(manifestData));
         }
 
         function switchRun(runNum) {
@@ -440,8 +468,8 @@
         }
 
         function clearManifestData() {
-            localStorage.removeItem('serenity_manifest');
-            showToast("Manifest Cache Purged Clean");
+            localStorage.removeItem('serenity_manifest_v3');
+            showToast("Cache Cleared — Reloaded Defaults");
             window.location.reload();
         }
 
