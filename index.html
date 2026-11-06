@@ -1,179 +1,284 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Serenity Dispatch OS - Master Fleet Deck</title>
-  <style>
-    :root {
-      --bg-base: #050810;
-      --bg-panel: #0b1325;
-      --bg-card: #101b33;
-      --border-panel: #1b2c4f;
-      --accent-blue: #0ea5e9;
-      --accent-amber: #f59e0b;
-      --accent-emerald: #10b981;
-      --accent-red: #ef4444;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Serenity Dispatch OS - Master Fleet Deck</title>
+    <style>
+        :root {
+            --bg-base: #050810;
+            --bg-panel: #0b1325;
+            --bg-card: #101b33;
+            --border-panel: #1b2c4f;
+            --accent-blue: #0ea5e9;
+            --accent-amber: #f59e0b;
+            --accent-emerald: #10b981;
+            --accent-red: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background: var(--bg-base);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .top-bar {
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border-panel);
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .brand-title {
+            font-size: 16px;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: 0.5px;
+        }
+        .status-badge {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent-emerald);
+            border: 1px solid var(--accent-emerald);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .dashboard-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            padding: 16px;
+        }
+        @media (min-width: 768px) {
+            .dashboard-container {
+                grid-template-columns: 350px 1fr;
+            }
+        }
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-panel);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .panel-header {
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--border-panel);
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .scroll-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+        .dispatch-item, .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-panel);
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+        .dispatch-item:last-child {
+            margin-bottom: 0;
+        }
+        .dispatch-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .dispatch-id {
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+        .dispatch-status {
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        .status-active { background: rgba(14, 165, 233, 0.1); color: var(--accent-blue); }
+        .status-warning { background: rgba(245, 158, 11, 0.1); color: var(--accent-amber); }
+        .dispatch-details {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+        .dispatch-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        button {
+            background: var(--bg-base);
+            border: 1px solid var(--border-panel);
+            color: var(--text-main);
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        button:hover {
+            border-color: var(--accent-blue);
+            color: #fff;
+        }
+        button.btn-primary {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: #050810;
+        }
+        button.btn-primary:hover {
+            background: #0284c7;
+        }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .stat-card .value {
+            font-size: 24px;
+            font-weight: 800;
+            color: #fff;
+            margin-top: 4px;
+        }
+        .stat-card.alert .value { color: var(--accent-red); }
+        #toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #fff;
+            color: #050810;
+            padding: 12px 24px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 14px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+            z-index: 1000;
+        }
+        #toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+<body>
 
-    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
-    body {
-      background: var(--bg-base);
-      color: var(--text-main);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      padding: 8px;
-      gap: 8px;
-    }
+    <div class="top-bar">
+        <span class="brand-title">SERENITY DISPATCH OS</span>
+        <span class="status-badge" id="system-status">SYSTEM OPERATIONAL</span>
+    </div>
 
-    /* TOP DISPATCH HEADER BAR */
-    .top-bar {
-      background: var(--bg-panel);
-      border: 1px solid var(--border-panel);
-      border-radius: 10px;
-      padding: 8px 12px;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-    }
-    .brand-col { display: flex; flex-direction: column; }
-    .brand-title { font-size: 15px; font-weight: 900; color: #38bdf8; display: flex; align-items: center; gap: 6px; }
-    .brand-badge { background: #0369a1; color: #fff; font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 800; }
-    .brand-sub { font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+    <div class="dashboard-container">
+        <div class="panel">
+            <div class="panel-header">
+                <span>Fleet Metrics</span>
+                <span id="update-indicator">●</span>
+            </div>
+            <div class="scroll-area">
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div style="font-size: 11px; color: var(--text-muted);">Active Units</div>
+                        <div class="value" id="active-units-val">0</div>
+                    </div>
+                    <div class="stat-card alert">
+                        <div style="font-size: 11px; color: var(--text-muted);">Critical Alerts</div>
+                        <div class="value" id="critical-alerts-val">0</div>
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">System Integrity</div>
+                    <div style="background: var(--bg-card); height: 8px; border-radius: 4px; overflow: hidden;">
+                        <div style="background: var(--accent-emerald); height: 100%; width: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    .control-pills { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
-    .pill {
-      background: #172544; border: 1px solid var(--border-panel); border-radius: 6px;
-      padding: 5px 8px; font-size: 10px; font-weight: 800; color: #cbd5e1; cursor: pointer;
-    }
-    .pill-green { background: #064e3b; border-color: #059669; color: #34d399; }
-    .pill-amber { background: #78350f; border-color: #d97706; color: #fbbf24; }
-    .pill-gemini { background: #3b82f6; border-color: #60a5fa; color: #fff; }
+        <div class="panel">
+            <div class="panel-header">
+                <span>Active Dispatches</span>
+                <button onclick="clearManifestData()" style="padding: 2px 8px; font-size: 10px;">Purge Manifest</button>
+            </div>
+            <div class="scroll-area" id="dispatch-list">
+            </div>
+        </div>
+    </div>
 
-    /* FINANCIAL METRICS ROW */
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-    }
-    @media(max-width: 768px) { .metrics-grid { grid-template-columns: 1fr; } }
-    .metric-card {
-      background: var(--bg-panel);
-      border: 1px solid var(--border-panel);
-      border-radius: 10px;
-      padding: 10px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-    .metric-label { font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; }
-    .metric-val { font-size: 20px; font-weight: 900; color: #fff; }
-    .metric-sub { font-size: 10px; font-weight: 700; color: var(--text-muted); }
+    <div id="toast">Manifest Cache Purged Clean</div>
 
-    /* SHIFT BANNER */
-    .shift-banner {
-      background: #090e1a; border: 1px solid var(--border-panel); border-radius: 8px;
-      padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;
-      flex-wrap: wrap; font-size: 11px; font-weight: 800; color: #cbd5e1; gap: 6px;
-    }
+    <script>
+        const initialDispatches = [
+            { id: "DISPATCH-101", priority: "active", client: "St. Jude Medical", details: "Patient Transport Scheduled. ETA 15 mins." },
+            { id: "DISPATCH-102", priority: "warning", client: "Mercy General", details: "Urgent Courier Request. Route recalculating." },
+            { id: "DISPATCH-103", priority: "active", client: "Oakridge Senior Living", details: "Routine Transfer. Driver en route." }
+        ];
 
-    /* MANIFEST & ROUTE TABLE (MASTER OVERVIEW) */
-    .manifest-section {
-      background: var(--bg-panel);
-      border: 2px solid var(--border-panel);
-      border-radius: 12px;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .section-header {
-      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;
-    }
-    .section-title { font-size: 13px; font-weight: 900; color: #38bdf8; text-transform: uppercase; }
+        function initDashboard() {
+            const list = document.getElementById('dispatch-list');
+            list.innerHTML = '';
+            
+            document.getElementById('active-units-val').innerText = initialDispatches.length;
+            document.getElementById('critical-alerts-val').innerText = initialDispatches.filter(d => d.priority === 'warning').length;
 
-    .table-container { display: flex; flex-direction: column; gap: 6px; }
-    .manifest-row {
-      background: var(--bg-card);
-      border: 1px solid var(--border-panel);
-      border-radius: 10px;
-      padding: 10px;
-      display: grid;
-      grid-template-columns: 100px 1fr 100px 1.4fr 100px 120px;
-      align-items: center;
-      gap: 10px;
-      cursor: pointer;
-      transition: border-color 0.15s, background 0.15s;
-    }
-    .manifest-row.completed { opacity: 0.5; border-color: #064e3b; background: #061a14; }
-    .manifest-row.active-run {
-      border: 2px solid #38bdf8;
-      background: #0f1d36;
-      box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
-    }
-    .manifest-row:hover { border-color: #38bdf8; }
-    @media(max-width: 950px) {
-      .manifest-row { grid-template-columns: 1fr; gap: 6px; }
-    }
+            initialDispatches.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'dispatch-item';
+                card.innerHTML = `
+                    <div class="dispatch-header">
+                        <span class="dispatch-id">${item.id}</span>
+                        <span class="dispatch-status status-${item.priority}">${item.priority.toUpperCase()}</span>
+                    </div>
+                    <div class="dispatch-details">
+                        <strong>${item.client}</strong><br>${item.details}
+                    </div>
+                    <div class="dispatch-actions">
+                        <button onclick="triggerAction('${item.id}', 'route')">View Route</button>
+                        <button class="btn-primary" onclick="triggerAction('${item.id}', 'update')">Update Status</button>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
 
-    .status-badge {
-      background: #064e3b; color: #34d399; border: 1px solid #059669; border-radius: 5px;
-      padding: 3px 6px; font-size: 10px; font-weight: 900; text-align: center; text-transform: uppercase;
-    }
-    .status-badge.done { background: #1e293b; color: var(--text-muted); border-color: #334155; }
-    .status-badge.active { background: #0369a1; color: #e0f2fe; border-color: #0ea5e9; }
-    
-    .btn-call {
-      background: #0284c7; color: #fff; border: none; border-radius: 5px;
-      padding: 4px; font-size: 10px; font-weight: 900; cursor: pointer; text-align: center; text-decoration: none; margin-top: 3px; display: block;
-    }
-    .p-name { font-size: 14px; font-weight: 900; color: #fff; }
-    .p-phone { font-size: 11px; color: var(--text-muted); font-weight: 700; }
-    .sched-pu { color: #38bdf8; font-size: 13px; font-weight: 900; }
-    .corr-title { font-weight: 900; color: #cbd5e1; font-size: 11px; }
-    .corr-addr { color: var(--text-muted); font-size: 10px; font-weight: 700; line-height: 1.2; }
-    .rev-amount { font-size: 15px; font-weight: 900; color: #34d399; text-align: right; }
-    .rev-rate { font-size: 10px; color: var(--text-muted); font-weight: 700; text-align: right; }
-    .action-pills-row { display: flex; gap: 4px; justify-content: flex-end; }
-    .action-btn {
-      background: #1e293b; border: 1px solid #334155; border-radius: 5px;
-      padding: 5px 8px; font-size: 10px; font-weight: 900; color: #cbd5e1; cursor: pointer;
-    }
-    .action-btn.active { background: #059669; border-color: #10b981; color: #fff; }
+        function triggerAction(id, action) {
+            console.log(`Action ${action} triggered for ${id}`);
+        }
 
-    /* DOWNTIME BANNER */
-    .downtime-banner {
-      background: #78350f; border: 1px solid #d97706; border-radius: 8px;
-      padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;
-      font-size: 11px; font-weight: 900; color: #fef3c7; flex-wrap: wrap; gap: 6px;
-    }
+        function clearManifestData() {
+            console.log('Purging manifest data...');
+            const toast = document.getElementById('toast');
+            toast.className = 'show';
+            setTimeout(() => {
+                toast.className = '';
+            }, 3000);
+        }
 
-    /* MODALS & DRAWERS */
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(6px); z-index: 200; display: none; }
-    .modal-sheet {
-      position: fixed; bottom: 0; left: 0; width: 100%; max-height: 92vh;
-      background: var(--bg-panel); border-top: 2px solid var(--border-panel); border-radius: 18px 18px 0 0;
-      z-index: 210; display: flex; flex-direction: column; transform: translateY(100%); transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1); padding: 16px;
-    }
-    .modal-sheet.open { transform: translateY(0); }
-    
-    .drill-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--border-panel); padding-bottom: 8px; }
-    .drill-nav-controls { display: flex; align-items: center; gap: 8px; }
-    .btn-nav-jump { background: #1e293b; border: 1px solid #334155; color: #38bdf8; padding: 4px 10px; border-radius: 6px; font-weight: 900; font-size: 12px; cursor: pointer; }
-    .btn-drill-close { background: #1e293b; border: none; color: #fff; width: 32px; height: 32px; border-radius: 16px; font-size: 14px; font-weight: 900; cursor: pointer; }
-
-    /* PING TOOLBAR */
-    .ping-card {
-      background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 10px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px;
-    }
-    .ping-toolbar { display: flex; gap: 6px; }
-    .btn-ping { flex: 1; background: #1e293b; border: 1px solid #475569; border-radius: 6px; padding: 6px; font-size: 10px; font-weight: 900; color: #cbd5e1; cursor: pointer; text-align: center; }
-    .btn-ping.selected { background: #d97706; border-color: #fbbf24; color: #000; }
-    .ping-textbox { width: 100%; background: #020617; border: 1px solid #1e293b; border-radius: 6px; color: #fff; padding: 8px; font-size: 11px; resize: none; height: 50px; font-family: inherit; }
-    .btn-send-sms { background: #d97706; border: 1px solid #fbbf24; border-radius: 6px; padding: 8px; font-
+        window.onload = initDashboard;
+    </script>
+</body>
+</html>
