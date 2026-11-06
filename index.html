@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Serenity Dispatch OS - Master Fleet Deck</title>
+    <title>Serenity Dispatch OS - Master Fleet Deck v6</title>
     <style>
         :root {
             --bg-base: #050810;
@@ -105,7 +105,7 @@
         button.btn-primary:hover { background: #0284c7; }
         button.btn-danger { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); border-color: var(--accent-red); }
         
-        /* Modal Window */
+        /* Comprehensive In-Cab Modal Window with Full Operational Options */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(5, 8, 16, 0.85); backdrop-filter: blur(4px);
@@ -114,8 +114,11 @@
         .modal-overlay.active { display: flex; }
         .modal-card {
             background: var(--bg-panel); border: 1px solid var(--border-panel); border-radius: 12px;
-            width: 100%; max-width: 600px; padding: 24px; display: flex; flex-direction: column; gap: 16px;
+            width: 100%; max-width: 650px; padding: 24px; display: flex; flex-direction: column; gap: 16px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.6); max-height: 90vh; overflow-y: auto;
+        }
+        .modal-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
         }
         
         /* Ask Gemini Drawer */
@@ -138,7 +141,7 @@
 
     <div class="top-bar">
         <div class="brand-title">
-            SERENITY DISPATCH OS <span class="badge-pro">NEMT PRO v5</span>
+            SERENITY DISPATCH OS <span class="badge-pro">NEMT PRO v6</span>
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">
             <div class="status-badge" id="clock-display">Clock: --:--:-- PM</div>
@@ -199,7 +202,7 @@
             <!-- Master Manifest Table -->
             <div class="panel">
                 <div class="panel-header">
-                    <span>Continuous Interactive Manifest & Route Table (Tap row for Driver Card)</span>
+                    <span>Continuous Interactive Manifest & Route Table (Tap row for Comprehensive Driver Card)</span>
                     <span id="active-run-indicator">Active Run: 1</span>
                 </div>
                 <div class="table-wrapper">
@@ -257,7 +260,7 @@
 
     </div>
 
-    <!-- IN-CAB DRIVER CARD MODAL POP-UP -->
+    <!-- COMPREHENSIVE IN-CAB DRIVER CARD MODAL POP-UP -->
     <div class="modal-overlay" id="driver-modal" onclick="closeModal(event)">
         <div class="modal-card" onclick="event.stopPropagation()">
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -267,9 +270,13 @@
             <div style="background: var(--bg-base); padding: 12px; border-radius: 6px; border: 1px solid var(--border-panel);" id="modal-details">
                 <!-- Populated dynamically -->
             </div>
-            <div style="display: flex; gap: 8px;">
-                <button class="btn-primary" style="flex: 1;" onclick="callPassengerModal()">📞 Call Passenger</button>
-                <button style="flex: 1;" onclick="toggleStatusModal()">Toggle Status</button>
+            <div class="modal-grid">
+                <button class="btn-primary" onclick="callPassengerModal()">📞 Call Passenger</button>
+                <button onclick="triggerModalAction('gps')">🗺️ GPS Route Navigation</button>
+                <button onclick="triggerModalAction('deadhead')">📊 Deadhead Tracking</button>
+                <button onclick="triggerModalAction('ping')">📡 Send 10m ETA Ping</button>
+                <button onclick="toggleStatusModal()">🔄 Toggle Status</button>
+                <button class="btn-danger" onclick="closeModal()">Close Card</button>
             </div>
         </div>
     </div>
@@ -296,7 +303,7 @@
             { id: "DISPATCH-105", run: 5, passenger: "Michelle Harrell", mobility: "Ambulatory", pickup: "12:45 PM", corridor: "Suffolk County Corridor", flag: "Normal", status: "Queued" }
         ];
 
-        let manifestData = JSON.parse(localStorage.getItem('serenity_manifest_v5')) || defaultManifest;
+        let manifestData = JSON.parse(localStorage.getItem('serenity_manifest_v6')) || defaultManifest;
         
         // Enforce phone directory on load
         manifestData.forEach(item => {
@@ -307,6 +314,7 @@
 
         function initDashboard() {
             renderTable();
+            renderRoster();
             renderSettingsDirectory();
             updateClock();
             setInterval(updateClock, 1000);
@@ -315,8 +323,10 @@
         function renderTable() {
             const tbody = document.getElementById('manifest-body');
             tbody.innerHTML = '';
+            let doneCount = 0;
             
             manifestData.forEach((item, index) => {
+                if(item.status === 'Completed') doneCount++;
                 const tr = document.createElement('tr');
                 if (item.run === currentRun) tr.className = 'active-run';
                 
@@ -342,7 +352,16 @@
                 `;
                 tbody.appendChild(tr);
             });
-            localStorage.setItem('serenity_manifest_v5', JSON.stringify(manifestData));
+            document.getElementById('done-count').innerText = `${doneCount} Done`;
+            localStorage.setItem('serenity_manifest_v6', JSON.stringify(manifestData));
+        }
+
+        function renderRoster() {
+            const rosterContainer = document.getElementById('roster-content');
+            if(!rosterContainer) return;
+            rosterContainer.innerHTML = '<ul style="margin:0; padding-left:20px; line-height:1.8;">' + 
+                Object.entries(phoneDirectory).map(([name, phone]) => `<li><strong>${name}</strong> — Phone: <a href="tel:${phone}" style="color:var(--accent-blue);">${phone}</a></li>`).join('') + 
+                '</ul>';
         }
 
         function renderSettingsDirectory() {
@@ -400,6 +419,15 @@
             }
         }
 
+        function triggerModalAction(actionType) {
+            if (activeModalIndex !== null) {
+                const item = manifestData[activeModalIndex];
+                if(actionType === 'gps') showToast(`GPS Navigation active for corridor: ${item.corridor}`);
+                if(actionType === 'deadhead') showToast(`Deadhead mileage logged for run ${item.run}`);
+                if(actionType === 'ping') showToast(`10m ETA Ping sent for ${item.passenger}`);
+            }
+        }
+
         function toggleStatusModal() {
             if (activeModalIndex !== null) {
                 updateStatus(activeModalIndex);
@@ -429,7 +457,7 @@
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(manifestData));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", "serenity_dispatch_backup.json");
+            downloadAnchor.setAttribute("download", "serenity_dispatch_v6_backup.json");
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
@@ -461,7 +489,7 @@
         }
 
         function clearManifestData() {
-            localStorage.removeItem('serenity_manifest_v5');
+            localStorage.removeItem('serenity_manifest_v6');
             showToast("Cache Cleared — Reloaded Defaults");
             window.location.reload();
         }
