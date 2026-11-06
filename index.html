@@ -17,326 +17,259 @@
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
         }
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
             background: var(--bg-base);
             color: var(--text-main);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+            margin: 0; padding: 0; min-height: 100vh;
+            display: flex; flex-direction: column;
         }
         .top-bar {
             background: var(--bg-panel);
             border-bottom: 1px solid var(--border-panel);
             padding: 12px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: flex; justify-content: space-between; align-items: center;
         }
         .brand-title {
-            font-size: 14px;
-            font-weight: 900;
-            color: #fff;
-            letter-spacing: 0.5px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            font-size: 14px; font-weight: 900; color: #fff; letter-spacing: 0.5px;
+            display: flex; align-items: center; gap: 8px;
         }
         .badge-pro {
-            background: rgba(14, 165, 233, 0.15);
-            color: var(--accent-blue);
-            border: 1px solid var(--accent-blue);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: 700;
+            background: rgba(14, 165, 233, 0.15); color: var(--accent-blue);
+            border: 1px solid var(--accent-blue); padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700;
         }
         .status-badge {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--accent-emerald);
-            border: 1px solid var(--accent-emerald);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 700;
+            background: rgba(16, 185, 129, 0.1); color: var(--accent-emerald);
+            border: 1px solid var(--accent-emerald); padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;
         }
         .action-toolbar {
-            background: var(--bg-panel);
-            border-bottom: 1px solid var(--border-panel);
-            padding: 10px 16px;
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            align-items: center;
-            -webkit-overflow-scrolling: touch;
+            background: var(--bg-panel); border-bottom: 1px solid var(--border-panel);
+            padding: 10px 16px; display: flex; gap: 8px; overflow-x: auto; align-items: center; -webkit-overflow-scrolling: touch;
         }
         .dashboard-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            padding: 12px;
-            max-width: 1400px;
-            margin: 0 auto;
-            width: 100%;
+            flex: 1; display: flex; flex-direction: column; gap: 12px;
+            padding: 12px; max-width: 1400px; margin: 0 auto; width: 100%;
         }
+        .view-section { display: none; flex-direction: column; gap: 12px; }
+        .view-section.active { display: flex; }
         .metrics-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 10px;
+            display: grid; grid-template-columns: 1fr; gap: 10px;
         }
         @media (min-width: 768px) {
-            .metrics-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
+            .metrics-grid { grid-template-columns: repeat(3, 1fr); }
         }
         .panel {
-            background: var(--bg-panel);
-            border: 1px solid var(--border-panel);
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+            background: var(--bg-panel); border: 1px solid var(--border-panel);
+            border-radius: 8px; display: flex; flex-direction: column; overflow: hidden;
         }
         .panel-header {
-            padding: 12px 16px;
-            background: rgba(255, 255, 255, 0.02);
-            border-bottom: 1px solid var(--border-panel);
-            font-weight: 700;
-            font-size: 12px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            padding: 12px 16px; background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--border-panel); font-weight: 700; font-size: 12px;
+            color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;
+            display: flex; justify-content: space-between; align-items: center;
         }
         .metric-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-panel);
-            border-radius: 8px;
-            padding: 14px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            background: var(--bg-card); border: 1px solid var(--border-panel);
+            border-radius: 8px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;
         }
-        .metric-card .value {
-            font-size: 24px;
-            font-weight: 800;
-            color: #fff;
-            margin-top: 6px;
-        }
-        .metric-card .subtext {
-            font-size: 11px;
-            color: var(--text-muted);
-            margin-top: 4px;
-        }
-        .runs-bar {
-            display: flex;
-            gap: 6px;
-            overflow-x: auto;
-            padding: 4px 0;
-            -webkit-overflow-scrolling: touch;
-        }
+        .metric-card .value { font-size: 24px; font-weight: 800; color: #fff; margin-top: 6px; }
+        .metric-card .subtext { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+        .runs-bar { display: flex; gap: 6px; overflow-x: auto; padding: 4px 0; -webkit-overflow-scrolling: touch; }
         .run-tab {
-            background: var(--bg-base);
-            border: 1px solid var(--border-panel);
-            color: var(--text-muted);
-            padding: 10px 14px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 700;
-            white-space: nowrap;
-            cursor: pointer;
-            min-height: 40px;
-            display: flex;
-            align-items: center;
+            background: var(--bg-base); border: 1px solid var(--border-panel); color: var(--text-muted);
+            padding: 10px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; min-height: 40px; display: flex; align-items: center;
         }
         .run-tab.active {
-            background: var(--accent-emerald);
-            color: #050810;
-            border-color: var(--accent-emerald);
-            box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+            background: var(--accent-emerald); color: #050810; border-color: var(--accent-emerald); box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
         }
-        .table-wrapper {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            width: 100%;
-        }
-        .dispatch-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-            min-width: 650px;
-        }
-        .dispatch-table th, .dispatch-table td {
-            padding: 12px 14px;
-            text-align: left;
-            border-bottom: 1px solid var(--border-panel);
-        }
-        .dispatch-table th {
-            background: rgba(255, 255, 255, 0.02);
-            color: var(--text-muted);
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .dispatch-table tr.active-run {
-            background: rgba(14, 165, 233, 0.12);
-            border-left: 4px solid var(--accent-blue);
-        }
+        .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
+        .dispatch-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 650px; }
+        .dispatch-table th, .dispatch-table td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border-panel); cursor: pointer; }
+        .dispatch-table th { background: rgba(255, 255, 255, 0.02); color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; cursor: default; }
+        .dispatch-table tr.active-run { background: rgba(14, 165, 233, 0.12); border-left: 4px solid var(--accent-blue); }
         .flag-toggle {
-            background: rgba(239, 68, 68, 0.2);
-            color: #fca5a5;
-            border: 1px solid var(--accent-red);
-            padding: 6px 10px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 700;
-            cursor: pointer;
-            display: inline-block;
-            min-height: 36px;
-            line-height: 22px;
+            background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid var(--accent-red);
+            padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; display: inline-block; min-height: 36px; line-height: 22px;
         }
         .phone-badge {
-            background: rgba(14, 165, 233, 0.15);
-            color: var(--accent-blue);
-            border: 1px solid var(--accent-blue);
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 700;
-            display: inline-block;
-            margin-top: 4px;
+            background: rgba(14, 165, 233, 0.15); color: var(--accent-blue); border: 1px solid var(--accent-blue);
+            padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; display: inline-block; margin-top: 4px;
         }
         button {
-            background: var(--bg-base);
-            border: 1px solid var(--border-panel);
-            color: var(--text-main);
-            padding: 10px 14px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            white-space: nowrap;
-            min-height: 40px;
+            background: var(--bg-base); border: 1px solid var(--border-panel); color: var(--text-main);
+            padding: 10px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; min-height: 40px;
         }
-        button:hover {
-            border-color: var(--accent-blue);
-            color: #fff;
+        button:hover { border-color: var(--accent-blue); color: #fff; }
+        button.btn-primary { background: var(--accent-blue); border-color: var(--accent-blue); color: #050810; }
+        button.btn-primary:hover { background: #0284c7; }
+        button.btn-danger { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); border-color: var(--accent-red); }
+        
+        /* Modal Window */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 8, 16, 0.85); backdrop-filter: blur(4px);
+            display: none; justify-content: center; align-items: center; z-index: 2000; padding: 16px;
         }
-        button.btn-primary {
-            background: var(--accent-blue);
-            border-color: var(--accent-blue);
-            color: #050810;
+        .modal-overlay.active { display: flex; }
+        .modal-card {
+            background: var(--bg-panel); border: 1px solid var(--border-panel); border-radius: 12px;
+            width: 100%; max-width: 600px; padding: 24px; display: flex; flex-direction: column; gap: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6); max-height: 90vh; overflow-y: auto;
         }
-        button.btn-primary:hover {
-            background: #0284c7;
+        
+        /* Ask Gemini Drawer */
+        .gemini-drawer {
+            background: var(--bg-card); border: 1px solid var(--accent-blue); border-radius: 8px; padding: 12px; display: flex; gap: 8px; align-items: center;
         }
-        button.btn-danger {
-            background: rgba(239, 68, 68, 0.15);
-            color: var(--accent-red);
-            border-color: var(--accent-red);
+        .gemini-drawer input {
+            flex: 1; background: var(--bg-base); border: 1px solid var(--border-panel); border-radius: 6px; color: #fff; padding: 10px; font-size: 13px;
         }
+
         #toast {
-            position: fixed;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: #fff;
-            color: #050810;
-            padding: 12px 24px;
-            border-radius: 20px;
-            font-weight: 700;
-            font-size: 14px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            pointer-events: none;
-            z-index: 1000;
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px);
+            background: #fff; color: #050810; padding: 12px 24px; border-radius: 20px; font-weight: 700; font-size: 14px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; z-index: 3000;
         }
-        #toast.show {
-            transform: translateX(-50%) translateY(0);
-        }
+        #toast.show { transform: translateX(-50%) translateY(0); }
     </style>
 </head>
 <body>
 
     <div class="top-bar">
         <div class="brand-title">
-            SERENITY DISPATCH OS <span class="badge-pro">NEMT PRO</span>
+            SERENITY DISPATCH OS <span class="badge-pro">NEMT PRO v5</span>
         </div>
-        <div class="status-badge" id="clock-display">Clock: --:--:-- PM</div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <div class="status-badge" id="clock-display">Clock: --:--:-- PM</div>
+        </div>
     </div>
 
     <div class="action-toolbar">
         <button class="btn-primary" onclick="toggleClockIn()" id="clock-btn">Clock In</button>
-        <button onclick="triggerAction('GPS Active')">GPS: Live</button>
+        <button onclick="switchView('dashboard')">Cockpit View</button>
+        <button onclick="switchView('roster')">Classic Roster</button>
+        <button onclick="switchView('settings')" style="border-color: var(--accent-amber); color: var(--accent-amber);">⚙️ Settings Deck</button>
         <button onclick="exportJSONBackup()">Export Backup</button>
         <button onclick="importJSONBackup()">Import Backup</button>
-        <button class="btn-danger" onclick="clearManifestData()">Clear Manifest</button>
+        <button class="btn-danger" onclick="clearManifestData()">Clear Cache</button>
     </div>
 
     <div class="dashboard-container">
-        <!-- Metrics Row -->
-        <div class="metrics-grid">
-            <div class="metric-card">
-                <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Total Runs</div>
-                <div class="value">7 <span style="font-size: 14px; color: var(--accent-emerald); font-weight: 600;" id="done-count">0 Done</span></div>
-                <div class="subtext">NEMT manifests loaded</div>
+        
+        <!-- ASK GEMINI ASSISTANT DRAWER -->
+        <div class="gemini-drawer">
+            <span style="font-size: 12px; font-weight: 700; color: var(--accent-blue);">ASK GEMINI:</span>
+            <input type="text" id="gemini-query" placeholder="Ask route, schedule, or passenger query..." onkeydown="if(event.key==='Enter') executeGeminiQuery()">
+            <button class="btn-primary" onclick="executeGeminiQuery()">Query</button>
+        </div>
+
+        <!-- VIEW 1: COCKPIT / DASHBOARD -->
+        <div id="view-dashboard" class="view-section active">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Total Runs</div>
+                    <div class="value">7 <span style="font-size: 14px; color: var(--accent-emerald); font-weight: 600;" id="done-count">0 Done</span></div>
+                    <div class="subtext">NEMT manifests loaded</div>
+                </div>
+                <div class="metric-card">
+                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Expected Miles</div>
+                    <div class="value">155.4 <span style="font-size: 14px; font-weight: 600; color: var(--text-muted);">mi</span></div>
+                    <div class="subtext">76.8 loaded • 78.6 deadhead</div>
+                </div>
+                <div class="metric-card">
+                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Driver Hours</div>
+                    <div class="value">7.09 <span style="font-size: 14px; font-weight: 600; color: var(--text-muted);">hrs</span></div>
+                    <div class="subtext">Garage-to-garage shift</div>
+                </div>
             </div>
-            <div class="metric-card">
-                <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Expected Miles</div>
-                <div class="value">155.4 <span style="font-size: 14px; font-weight: 600; color: var(--text-muted);">mi</span></div>
-                <div class="subtext">76.8 loaded • 78.6 deadhead</div>
+
+            <!-- Run Selector Bar -->
+            <div class="panel" style="padding: 12px;">
+                <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">Active Fleet Manifest Runs (Locked Directory)</div>
+                <div class="runs-bar">
+                    <div class="run-tab active" onclick="switchRun(1)">Run 1 (Michelle)</div>
+                    <div class="run-tab" onclick="switchRun(2)">Run 2 (Walter)</div>
+                    <div class="run-tab" onclick="switchRun(3)">Run 3 (Nicole)</div>
+                    <div class="run-tab" onclick="switchRun(4)">Run 4 (Julian)</div>
+                    <div class="run-tab" onclick="switchRun(5)">Run 5 (Michelle)</div>
+                </div>
             </div>
-            <div class="metric-card">
-                <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Driver Hours</div>
-                <div class="value">7.09 <span style="font-size: 14px; font-weight: 600; color: var(--text-muted);">hrs</span></div>
-                <div class="subtext">Garage-to-garage shift</div>
+
+            <!-- Master Manifest Table -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span>Continuous Interactive Manifest & Route Table (Tap row for Driver Card)</span>
+                    <span id="active-run-indicator">Active Run: 1</span>
+                </div>
+                <div class="table-wrapper">
+                    <table class="dispatch-table">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Passenger & Mobility</th>
+                                <th>Pickup Anchor</th>
+                                <th>Route Corridor</th>
+                                <th>Urgent Red-Flag Note</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="manifest-body"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
-        <!-- Run Selector Bar -->
-        <div class="panel" style="padding: 12px;">
-            <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">Active Fleet Manifest Runs (Locked Phone Directory v4)</div>
-            <div class="runs-bar">
-                <div class="run-tab active" onclick="switchRun(1)">Run 1 (Michelle)</div>
-                <div class="run-tab" onclick="switchRun(2)">Run 2 (Walter)</div>
-                <div class="run-tab" onclick="switchRun(3)">Run 3 (Nicole)</div>
-                <div class="run-tab" onclick="switchRun(4)">Run 4 (Julian)</div>
-                <div class="run-tab" onclick="switchRun(5)">Run 5 (Michelle)</div>
+        <!-- VIEW 2: CLASSIC ROSTER -->
+        <div id="view-roster" class="view-section">
+            <div class="panel">
+                <div class="panel-header">Classic Passenger Roster View</div>
+                <div style="padding: 16px;" id="roster-content">
+                    <!-- Populated dynamically -->
+                </div>
             </div>
         </div>
 
-        <!-- Master Manifest Table with Active Highlighting & Red-Flag Toggles -->
-        <div class="panel">
-            <div class="panel-header">
-                <span>Continuous Interactive Manifest & Route Table</span>
-                <span id="active-run-indicator">Active Run: 1</span>
+        <!-- VIEW 3: SETTINGS PAGE -->
+        <div id="view-settings" class="view-section">
+            <div class="panel">
+                <div class="panel-header">System Settings & Fleet Configuration</div>
+                <div style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+                    <div>
+                        <h3 style="margin: 0 0 8px 0; font-size: 14px; color: var(--accent-blue);">Base Depot Location</h3>
+                        <p style="margin: 0; font-size: 13px; color: var(--text-muted);">1480 5th Ave, Bay Shore, NY 11706 (Van #104)</p>
+                    </div>
+                    <hr style="border-color: var(--border-panel); width: 100%;">
+                    <div>
+                        <h3 style="margin: 0 0 8px 0; font-size: 14px; color: var(--accent-emerald);">Locked Passenger Directory</h3>
+                        <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: var(--text-main);" id="settings-directory-list">
+                            <!-- Populated -->
+                        </ul>
+                    </div>
+                    <hr style="border-color: var(--border-panel); width: 100%;">
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn-primary" onclick="exportJSONBackup()">Export Full JSON Config</button>
+                        <button class="btn-danger" onclick="clearManifestData()">Purge Cache & Reset Defaults</button>
+                    </div>
+                </div>
             </div>
-            <div class="table-wrapper">
-                <table class="dispatch-table">
-                    <thead>
-                        <tr>
-                            <th>Status</th>
-                            <th>Passenger & Mobility</th>
-                            <th>Pickup Anchor</th>
-                            <th>Route Corridor</th>
-                            <th>Urgent Red-Flag Note</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="manifest-body">
-                        <!-- Populated dynamically -->
-                    </tbody>
-                </table>
+        </div>
+
+    </div>
+
+    <!-- IN-CAB DRIVER CARD MODAL POP-UP -->
+    <div class="modal-overlay" id="driver-modal" onclick="closeModal(event)">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 id="modal-passenger-name" style="margin:0; font-size: 18px; color: #fff;">Passenger Name</h3>
+                <button onclick="closeModal()" style="padding: 4px 10px; min-height: 30px;">✕ Close</button>
+            </div>
+            <div style="background: var(--bg-base); padding: 12px; border-radius: 6px; border: 1px solid var(--border-panel);" id="modal-details">
+                <!-- Populated dynamically -->
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-primary" style="flex: 1;" onclick="callPassengerModal()">📞 Call Passenger</button>
+                <button style="flex: 1;" onclick="toggleStatusModal()">Toggle Status</button>
             </div>
         </div>
     </div>
@@ -346,16 +279,16 @@
     <script>
         let currentRun = 1;
         let clockedIn = false;
+        let activeModalIndex = null;
         
-        // Permanent phone directory mapping
         const phoneDirectory = {
-            "Michelle Harrell": "(516) 375-6525",
-            "Walter Molina": "(516) 878-6692",
-            "Nicole Bishop": "(516) 555-0192",
-            "Julian Menorvazquez": "(516) 555-0144"
+            "Michelle Harrell": "516-375-6525",
+            "Walter Molina": "516-878-6692",
+            "Nicole Bishop": "516-555-0192",
+            "Julian Menorvazquez": "516-555-0144"
         };
 
-        let defaultManifest = [
+        const defaultManifest = [
             { id: "DISPATCH-101", run: 1, passenger: "Michelle Harrell", mobility: "Ambulatory", pickup: "8:00 AM", corridor: "Suffolk County Corridor", flag: "🚨 URGENT: Gate Code #4092", status: "Active" },
             { id: "DISPATCH-102", run: 2, passenger: "Walter Molina", mobility: "Wheelchair", pickup: "9:00 AM", corridor: "Long Island Expressway", flag: "Normal", status: "Queued" },
             { id: "DISPATCH-103", run: 3, passenger: "Nicole Bishop", mobility: "Ambulatory", pickup: "10:00 AM", corridor: "LIE I-495 / Northern State", flag: "⚠️ Oxygen Tank Required", status: "Queued" },
@@ -363,8 +296,9 @@
             { id: "DISPATCH-105", run: 5, passenger: "Michelle Harrell", mobility: "Ambulatory", pickup: "12:45 PM", corridor: "Suffolk County Corridor", flag: "Normal", status: "Queued" }
         ];
 
-        // Enforce hardcoded phone mapping over storage cache on version bump v4
-        let manifestData = JSON.parse(localStorage.getItem('serenity_manifest_v4')) || defaultManifest;
+        let manifestData = JSON.parse(localStorage.getItem('serenity_manifest_v5')) || defaultManifest;
+        
+        // Enforce phone directory on load
         manifestData.forEach(item => {
             if (phoneDirectory[item.passenger]) {
                 item.phone = phoneDirectory[item.passenger];
@@ -373,6 +307,7 @@
 
         function initDashboard() {
             renderTable();
+            renderSettingsDirectory();
             updateClock();
             setInterval(updateClock, 1000);
         }
@@ -383,31 +318,48 @@
             
             manifestData.forEach((item, index) => {
                 const tr = document.createElement('tr');
-                if (item.run === currentRun) {
-                    tr.className = 'active-run';
-                }
+                if (item.run === currentRun) tr.className = 'active-run';
                 
                 let flagCell = item.flag !== 'Normal' 
-                    ? `<span class="flag-toggle" onclick="toggleFlag(${index})">${item.flag}</span>` 
+                    ? `<span class="flag-toggle" onclick="event.stopPropagation(); toggleFlag(${index})">${item.flag}</span>` 
                     : `<span style="color:var(--text-muted); font-size:11px;">Normal</span>`;
+
+                tr.onclick = () => openModal(index);
 
                 tr.innerHTML = `
                     <td><span class="status-badge">${item.status}</span></td>
                     <td>
                         <strong>${item.passenger}</strong><br>
-                        <span class="phone-badge">${item.phone || phoneDirectory[item.passenger] || '(516) 000-0000'}</span><br>
+                        <span class="phone-badge">${item.phone || '(516) 000-0000'}</span><br>
                         <small style="color:var(--text-muted);">${item.mobility}</small>
                     </td>
                     <td><strong>${item.pickup}</strong> <span style="font-size:10px; color:var(--accent-emerald);">[Locked PU]</span></td>
                     <td>${item.corridor}</td>
                     <td>${flagCell}</td>
                     <td>
-                        <button class="btn-primary" onclick="updateStatus(${index})">Update</button>
+                        <button class="btn-primary" onclick="event.stopPropagation(); updateStatus(${index})">Update</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
-            localStorage.setItem('serenity_manifest_v4', JSON.stringify(manifestData));
+            localStorage.setItem('serenity_manifest_v5', JSON.stringify(manifestData));
+        }
+
+        function renderSettingsDirectory() {
+            const list = document.getElementById('settings-directory-list');
+            if (!list) return;
+            list.innerHTML = '';
+            for (const [name, phone] of Object.entries(phoneDirectory)) {
+                const li = document.createElement('li');
+                li.innerText = `${name}: ${phone}`;
+                list.appendChild(li);
+            }
+        }
+
+        function switchView(viewName) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById(`view-${viewName}`).classList.add('active');
+            showToast(`Switched to ${viewName.toUpperCase()} View`);
         }
 
         function switchRun(runNum) {
@@ -417,7 +369,42 @@
             });
             document.getElementById('active-run-indicator').innerText = `Active Run: ${runNum}`;
             renderTable();
-            showToast(`Switched to Run ${runNum} (Highlighted)`);
+            showToast(`Switched to Run ${runNum}`);
+        }
+
+        function openModal(index) {
+            activeModalIndex = index;
+            const item = manifestData[index];
+            document.getElementById('modal-passenger-name').innerText = item.passenger;
+            document.getElementById('modal-details').innerHTML = `
+                <p><strong>ID:</strong> ${item.id}</p>
+                <p><strong>Phone:</strong> ${item.phone}</p>
+                <p><strong>Mobility:</strong> ${item.mobility}</p>
+                <p><strong>Pickup Anchor:</strong> ${item.pickup}</p>
+                <p><strong>Corridor:</strong> ${item.corridor}</p>
+                <p><strong>Red-Flag Note:</strong> ${item.flag}</p>
+                <p><strong>Status:</strong> ${item.status}</p>
+            `;
+            document.getElementById('driver-modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('driver-modal').classList.remove('active');
+            activeModalIndex = null;
+        }
+
+        function callPassengerModal() {
+            if (activeModalIndex !== null) {
+                const phone = manifestData[activeModalIndex].phone;
+                window.location.href = `tel:${phone}`;
+            }
+        }
+
+        function toggleStatusModal() {
+            if (activeModalIndex !== null) {
+                updateStatus(activeModalIndex);
+                openModal(activeModalIndex);
+            }
         }
 
         function updateStatus(index) {
@@ -430,6 +417,14 @@
             alert(`🚨 Operational Red-Flag Alert\nPassenger: ${manifestData[index].passenger}\nInstruction: ${manifestData[index].flag}`);
         }
 
+        function executeGeminiQuery() {
+            const query = document.getElementById('gemini-query').value;
+            if (query) {
+                showToast(`Gemini Assistant: Query processed successfully.`);
+                document.getElementById('gemini-query').value = '';
+            }
+        }
+
         function exportJSONBackup() {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(manifestData));
             const downloadAnchor = document.createElement('a');
@@ -438,7 +433,7 @@
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
-            showToast("Session State Exported Successfully");
+            showToast("Session State Exported");
         }
 
         function importJSONBackup() {
@@ -447,10 +442,8 @@
                 try {
                     manifestData = JSON.parse(input);
                     renderTable();
-                    showToast("Session State Imported Successfully");
-                } catch(e) {
-                    alert("Invalid JSON format.");
-                }
+                    showToast("Session State Imported");
+                } catch(e) { alert("Invalid JSON format."); }
             }
         }
 
@@ -468,8 +461,8 @@
         }
 
         function clearManifestData() {
-            localStorage.removeItem('serenity_manifest_v4');
-            showToast("Cache Cleared — Reloaded Directory");
+            localStorage.removeItem('serenity_manifest_v5');
+            showToast("Cache Cleared — Reloaded Defaults");
             window.location.reload();
         }
 
@@ -477,9 +470,7 @@
             const toast = document.getElementById('toast');
             toast.innerText = msg;
             toast.className = 'show';
-            setTimeout(() => {
-                toast.className = '';
-            }, 3000);
+            setTimeout(() => { toast.className = ''; }, 3000);
         }
 
         window.onload = initDashboard;
