@@ -305,7 +305,7 @@
 
         <!-- Run Selector Bar -->
         <div class="panel" style="padding: 12px;">
-            <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">Active Fleet Manifest Runs (Locked Phone Directory)</div>
+            <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">Active Fleet Manifest Runs (Locked Phone Directory v4)</div>
             <div class="runs-bar">
                 <div class="run-tab active" onclick="switchRun(1)">Run 1 (Michelle)</div>
                 <div class="run-tab" onclick="switchRun(2)">Run 2 (Walter)</div>
@@ -363,8 +363,8 @@
             { id: "DISPATCH-105", run: 5, passenger: "Michelle Harrell", mobility: "Ambulatory", pickup: "12:45 PM", corridor: "Suffolk County Corridor", flag: "Normal", status: "Queued" }
         ];
 
-        // Ensure phone numbers are permanently bound on load
-        let manifestData = JSON.parse(localStorage.getItem('serenity_manifest_v3')) || defaultManifest;
+        // Enforce hardcoded phone mapping over storage cache on version bump v4
+        let manifestData = JSON.parse(localStorage.getItem('serenity_manifest_v4')) || defaultManifest;
         manifestData.forEach(item => {
             if (phoneDirectory[item.passenger]) {
                 item.phone = phoneDirectory[item.passenger];
@@ -395,7 +395,7 @@
                     <td><span class="status-badge">${item.status}</span></td>
                     <td>
                         <strong>${item.passenger}</strong><br>
-                        <span class="phone-badge">${item.phone || '(516) 000-0000'}</span><br>
+                        <span class="phone-badge">${item.phone || phoneDirectory[item.passenger] || '(516) 000-0000'}</span><br>
                         <small style="color:var(--text-muted);">${item.mobility}</small>
                     </td>
                     <td><strong>${item.pickup}</strong> <span style="font-size:10px; color:var(--accent-emerald);">[Locked PU]</span></td>
@@ -407,7 +407,7 @@
                 `;
                 tbody.appendChild(tr);
             });
-            localStorage.setItem('serenity_manifest_v3', JSON.stringify(manifestData));
+            localStorage.setItem('serenity_manifest_v4', JSON.stringify(manifestData));
         }
 
         function switchRun(runNum) {
@@ -468,8 +468,8 @@
         }
 
         function clearManifestData() {
-            localStorage.removeItem('serenity_manifest_v3');
-            showToast("Cache Cleared — Reloaded Defaults");
+            localStorage.removeItem('serenity_manifest_v4');
+            showToast("Cache Cleared — Reloaded Directory");
             window.location.reload();
         }
 
