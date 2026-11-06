@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Serenity Dispatch OS - Master Fleet Deck</title>
     <style>
         :root {
@@ -87,13 +87,8 @@
         }
         .metrics-grid {
             display: grid;
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(3, 1fr);
             gap: 12px;
-        }
-        @media (min-width: 768px) {
-            .metrics-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
         }
         .panel {
             background: var(--bg-panel);
@@ -157,41 +152,38 @@
             background: var(--accent-emerald);
             color: #050810;
             border-color: var(--accent-emerald);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
         }
-        .dispatch-item {
-            background: var(--bg-card);
-            border: 1px solid var(--border-panel);
-            border-radius: 6px;
-            padding: 14px;
-            margin-bottom: 12px;
-        }
-        .dispatch-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-        }
-        .dispatch-id {
-            font-weight: 700;
-            color: var(--accent-blue);
-        }
-        .dispatch-status {
-            font-size: 11px;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-weight: 700;
-        }
-        .status-active { background: rgba(14, 165, 233, 0.15); color: var(--accent-blue); }
-        .status-warning { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); }
-        .dispatch-details {
+        .dispatch-table {
+            width: 100%;
+            border-collapse: collapse;
             font-size: 13px;
-            color: var(--text-muted);
-            margin-bottom: 12px;
-            line-height: 1.4;
         }
-        .dispatch-actions {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
+        .dispatch-table th, .dispatch-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-panel);
+        }
+        .dispatch-table th {
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-muted);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .dispatch-table tr.active-run {
+            background: rgba(14, 165, 233, 0.12);
+            border-left: 4px solid var(--accent-blue);
+        }
+        .flag-toggle {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--accent-red);
+            border: 1px solid var(--accent-red);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            cursor: pointer;
         }
         button {
             background: var(--bg-base);
@@ -255,7 +247,8 @@
     <div class="action-toolbar">
         <button class="btn-primary" onclick="toggleClockIn()" id="clock-btn">Clock In</button>
         <button onclick="triggerAction('GPS Active')">GPS: Live</button>
-        <button onclick="triggerAction('App Refreshed')">Refresh App</button>
+        <button onclick="exportJSONBackup()">Export Backup</button>
+        <button onclick="importJSONBackup()">Import Backup</button>
         <button class="btn-danger" onclick="clearManifestData()">Clear Manifest</button>
     </div>
 
@@ -264,7 +257,7 @@
         <div class="metrics-grid">
             <div class="metric-card">
                 <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Total Runs</div>
-                <div class="value">7 <span style="font-size: 14px; color: var(--accent-emerald); font-weight: 600;">0 Done</span></div>
+                <div class="value">7 <span style="font-size: 14px; color: var(--accent-emerald); font-weight: 600;" id="done-count">0 Done</span></div>
                 <div class="subtext">NEMT manifests loaded</div>
             </div>
             <div class="metric-card">
@@ -281,7 +274,7 @@
 
         <!-- Run Selector Bar -->
         <div class="panel" style="padding: 12px;">
-            <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">Active Fleet Manifest Runs</div>
+            <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">Active Fleet Manifest Runs (LocalStorage Synced)[span_5](start_span)[span_5](end_span)</div>
             <div class="runs-bar">
                 <div class="run-tab active" onclick="switchRun(1)">Run 1 (Michelle)</div>
                 <div class="run-tab" onclick="switchRun(2)">Run 2 (Walter)</div>
@@ -291,55 +284,118 @@
             </div>
         </div>
 
-        <!-- Active Dispatches Panel -->
+        <!-- Master Manifest Table with Active Highlighting & Red-Flag Toggles -->
         <div class="panel">
             <div class="panel-header">
-                <span>Active Dispatches Queue</span>
-                <span id="active-count">3 Active</span>
+                <span>Continuous Interactive Manifest & Route Table</span>
+                <span id="active-run-indicator">Active Run: 1</span>
             </div>
-            <div style="padding: 16px;" id="dispatch-list">
+            <div style="overflow-x: auto;">
+                <table class="dispatch-table">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Passenger & Mobility</th>
+                            <th>Pickup Anchor[span_6](start_span)[span_6](end_span)</th>
+                            <th>Route Corridor</th>
+                            <th>Red-Flag Note[span_7](start_span)[span_7](end_span)</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="manifest-body">
+                        <!-- Populated dynamically -->
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 
-    <div id="toast">Manifest Cache Cleared</div>
+    <div id="toast">Manifest Synchronized</div>
 
     <script>
-        const dispatches = [
-            { id: "DISPATCH-101", priority: "active", client: "St. Jude Medical", details: "Patient Transport Scheduled. ETA 15 mins." },
-            { id: "DISPATCH-102", priority: "warning", client: "Mercy General", details: "Urgent Courier Request. Route recalculating." },
-            { id: "DISPATCH-103", priority: "active", client: "Oakridge Senior Living", details: "Routine Transfer. Driver en route." }
+        let currentRun = 1;
+        let clockedIn = false;
+        
+        let manifestData = JSON.parse(localStorage.getItem('serenity_manifest')) || [
+            { id: "DISPATCH-101", run: 1, passenger: "Michelle Harrell", mobility: "Ambulatory", pickup: "8:00 AM", corridor: "Suffolk County Corridor", flag: "Urgent Gate Code #4092", status: "Active" },
+            { id: "DISPATCH-102", run: 2, passenger: "Walter Molina", mobility: "Wheelchair", pickup: "9:00 AM", corridor: "Long Island Expressway", flag: "None", status: "Queued" },
+            { id: "DISPATCH-103", run: 3, passenger: "Nicole Bishop", mobility: "Ambulatory", pickup: "10:00 AM", corridor: "LIE I-495 / Northern State", flag: "Oxygen Tank Required", status: "Queued" },
+            { id: "DISPATCH-104", run: 4, passenger: "Julian Menorvazquez", mobility: "Ambulatory", pickup: "11:15 AM", corridor: "LIE I-495 / Northern State", flag: "None", status: "Queued" },
+            { id: "DISPATCH-105", run: 5, passenger: "Michelle Harrell", mobility: "Ambulatory", pickup: "12:45 PM", corridor: "Suffolk County Corridor", flag: "None", status: "Queued" }
         ];
 
-        let clockedIn = false;
-
         function initDashboard() {
-            renderDispatches();
+            renderTable();
             updateClock();
             setInterval(updateClock, 1000);
         }
 
-        function renderDispatches() {
-            const list = document.getElementById('dispatch-list');
-            list.innerHTML = '';
-            dispatches.forEach(item => {
-                const card = document.createElement('div');
-                card.className = 'dispatch-item';
-                card.innerHTML = `
-                    <div class="dispatch-header">
-                        <span class="dispatch-id">${item.id}</span>
-                        <span class="dispatch-status status-${item.priority}">${item.priority.toUpperCase()}</span>
-                    </div>
-                    <div class="dispatch-details">
-                        <strong>${item.client}</strong><br>${item.details}
-                    </div>
-                    <div class="dispatch-actions">
-                        <button onclick="triggerAction('Route loaded for ${item.id}')">View Route</button>
-                        <button class="btn-primary" onclick="triggerAction('Status updated: ${item.id}')">Update Status</button>
-                    </div>
+        function renderTable() {
+            const tbody = document.getElementById('manifest-body');
+            tbody.innerHTML = '';
+            
+            manifestData.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                if (item.run === currentRun) {
+                    tr.className = 'active-run';
+                }
+                tr.innerHTML = `
+                    <td><span class="status-badge">${item.status}</span></td>
+                    <td><strong>${item.passenger}</strong><br><small style="color:var(--text-muted);">${item.mobility}</small></td>
+                    <td><strong>${item.pickup}</strong> <span style="font-size:10px; color:var(--accent-emerald);">[Locked PU]</span></td>
+                    <td>${item.corridor}</td>
+                    <td>${item.flag !== 'None' ? `<span class="flag-toggle" onclick="toggleFlag(${index})">${item.flag}</span>` : '<span style="color:var(--text-muted); font-size:11px;">Normal</span>'}</td>
+                    <td>
+                        <button class="btn-primary" onclick="updateStatus(${index})">Update</button>
+                    </td>
                 `;
-                list.appendChild(card);
+                tbody.appendChild(tr);
             });
+            localStorage.setItem('serenity_manifest', JSON.stringify(manifestData));
+        }
+
+        function switchRun(runNum) {
+            currentRun = runNum;
+            document.querySelectorAll('.run-tab').forEach((tab, idx) => {
+                tab.className = idx + 1 === runNum ? 'run-tab active' : 'run-tab';
+            });
+            document.getElementById('active-run-indicator').innerText = `Active Run: ${runNum}`;
+            renderTable();
+            showToast(`Switched to Run ${runNum} (Highlighted)`);
+        }
+
+        function updateStatus(index) {
+            manifestData[index].status = manifestData[index].status === 'Active' ? 'Completed' : 'Active';
+            renderTable();
+            showToast(`Status updated for ${manifestData[index].passenger}`);
+        }
+
+        function toggleFlag(index) {
+            alert(`Red-Flag Details for ${manifestData[index].passenger}:\n${manifestData[index].flag}`);
+        }
+
+        function exportJSONBackup() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(manifestData));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "serenity_dispatch_backup.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast("Session State Exported Successfully");
+        }
+
+        function importJSONBackup() {
+            const input = prompt("Paste your JSON backup string below:");
+            if (input) {
+                try {
+                    manifestData = JSON.parse(input);
+                    renderTable();
+                    showToast("Session State Imported Successfully");
+                } catch(e) {
+                    alert("Invalid JSON format.");
+                }
+            }
         }
 
         function updateClock() {
@@ -355,19 +411,10 @@
             showToast(clockedIn ? "Clock-In Timestamp Recorded" : "Shift Closed Out");
         }
 
-        function switchRun(runNum) {
-            document.querySelectorAll('.run-tab').forEach((tab, idx) => {
-                tab.className = idx + 1 === runNum ? 'run-tab active' : 'run-tab';
-            });
-            showToast(`Loaded Run ${runNum} Manifest`);
-        }
-
-        function triggerAction(msg) {
-            showToast(msg);
-        }
-
         function clearManifestData() {
+            localStorage.removeItem('serenity_manifest');
             showToast("Manifest Cache Purged Clean");
+            window.location.reload();
         }
 
         function showToast(msg) {
