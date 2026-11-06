@@ -6,54 +6,23 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <!-- Apple iPadOS & iOS Standalone PWA Tags -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Serenity OS">
   <meta name="theme-color" content="#020617">
-  <!-- Apple Touch Icon (Dark Teal NEMT Van SVG) -->
   <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='110' fill='%230f172a'/%3E%3Crect x='16' y='16' width='480' height='480' rx='96' fill='%23134e4a' stroke='%232dd4bf' stroke-width='16'/%3E%3Cpath fill='%232dd4bf' d='M96 160c0-35.3 28.7-64 64-64h192c35.3 0 64 28.7 64 64v192h16c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16h-16v16c0 17.7-14.3 32-32 32h-32c-17.7 0-32-14.3-32-32v-16H184v16c0 17.7-14.3 32-32 32h-32c-17.7 0-32-14.3-32-32v-16H72c-8.8 0-16-7.2-16-16v-32c0-8.8 7.2-16 16-16h16V160zm64 32v64h96v-64H160zm160 0v64h64v-64h-64zM144 384a32 32 0 1 0 0-64 32 32 0 1 0 0 64zm224 0a32 32 0 1 0 0-64 32 32 0 1 0 0 64z'/%3E%3C/svg%3E">
   <title>Serenity Dispatch OS - Independent NEMT Operations</title>
-  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <!-- Google Fonts: Inter & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Leaflet Interactive Map for Live Vehicle Telematics & Route Radar -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            mono: ['JetBrains Mono', 'monospace'],
-          },
-          colors: {
-            serenity: {
-              50: '#f0fdfa',
-              100: '#ccfbf1',
-              400: '#2dd4bf',
-              500: '#14b8a6',
-              600: '#0d9488',
-              900: '#134e4a',
-              950: '#042f2e',
-            }
-          }
-        }
-      }
-    }
-  </script>
   <style>
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #090d16; }
     ::-webkit-scrollbar-thumb { background: #253347; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #3b4e68; }
     @keyframes pulse-ring {
       0% { transform: scale(0.95); opacity: 0.85; }
       50% { transform: scale(1.2); opacity: 0.25; }
@@ -61,27 +30,24 @@
     }
     .live-pulse { animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
     .dispatch-card { background: linear-gradient(180deg, rgba(22, 30, 46, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%); }
-    html, body { -webkit-text-size-adjust: 100%; -webkit-overflow-scrolling: touch; min-height: 100vh; position: relative; -webkit-tap-highlight-color: transparent; }
+    html, body { -webkit-text-size-adjust: 100%; -webkit-overflow-scrolling: touch; min-height: 100vh; position: relative; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    body.drive-locked { height: 100vh !important; max-height: 100vh !important; overflow: hidden !important; touch-action: none !important; user-select: none !important; -webkit-user-select: none !important; }
-    #cockpit-map-wrapper { isolation: isolate; position: relative; z-index: 1; contain: layout style; }
   </style>
 </head>
-<body class="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased flex flex-col selection:bg-teal-500 selection:text-white pb-14">
+<body class="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased flex flex-col pb-14">
 
   <!-- TOP DISPATCH CONTROL BAR -->
   <header class="border-b border-slate-800/90 bg-slate-900/95 sticky top-0 z-40 shadow-md">
     <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2">
       <div class="flex items-center justify-between gap-2 pb-2 border-b border-slate-800/60 flex-wrap">
         <div class="flex items-center space-x-3">
-          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-teal-600 via-teal-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-teal-500/20 text-slate-950 font-black text-lg">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-teal-600 via-teal-500 to-emerald-400 flex items-center justify-center shadow-lg text-slate-950 font-black text-lg">
             <i class="fa-solid fa-van-shuttle"></i>
           </div>
           <div>
             <div class="flex items-center space-x-2">
               <span class="text-base sm:text-lg font-extrabold tracking-tight text-white">Serenity <span class="text-teal-400">Dispatch OS</span></span>
-              <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/30">NEMT PRO v4.2</span>
+              <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/30">NEMT PRO v4.3</span>
             </div>
             <p class="text-[10px] sm:text-[11px] text-slate-400">Independent NEMT Operations • Long Island, NY (Suffolk County)</p>
           </div>
@@ -94,7 +60,7 @@
           </div>
         </div>
 
-        <!-- View Mode Toggle: Cockpit vs Roster vs Settings Deck -->
+        <!-- View Mode Toggle -->
         <div class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 shadow-inner">
           <button id="btn-mode-cockpit" type="button" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 bg-teal-600 text-white shadow-md cursor-pointer" onclick="toggleViewMode('cockpit')">
             <i class="fa-solid fa-plane-up text-xs"></i>
@@ -111,36 +77,18 @@
         </div>
       </div>
 
-      <!-- Action Toolbar -->
       <div class="flex items-center space-x-2 overflow-x-auto no-scrollbar pt-2 pb-0.5 text-xs">
         <button id="btn-clock-toggle" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-md transition flex items-center space-x-1.5 cursor-pointer shrink-0">
           <i class="fa-solid fa-business-time text-xs"></i>
           <span id="clock-btn-label">Clock In</span>
         </button>
-        <button id="btn-open-gps-map" class="px-2.5 py-1.5 text-xs rounded-lg bg-slate-950/90 border border-slate-800 hover:border-teal-500/50 flex items-center space-x-1.5 text-slate-300 hover:text-teal-300 transition cursor-pointer shrink-0">
+        <button id="btn-open-gps-map" class="px-2.5 py-1.5 text-xs rounded-lg bg-slate-950/90 border border-slate-800 flex items-center space-x-1.5 text-slate-300 hover:text-teal-300 transition cursor-pointer shrink-0">
           <span class="w-2 h-2 rounded-full bg-emerald-400 live-pulse"></span>
           <span class="text-[11px] font-mono text-slate-300" id="gps-header-label">GPS: Live</span>
-          <i class="fa-solid fa-map-location-dot text-teal-400 text-xs ml-0.5"></i>
         </button>
-        <button type="button" onclick="forceHardRefresh()" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-teal-300 border border-teal-500/30 transition flex items-center space-x-1 cursor-pointer shrink-0">
+        <button type="button" onclick="forceHardRefresh()" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 text-teal-300 border border-teal-500/30 transition flex items-center space-x-1 cursor-pointer shrink-0">
           <i class="fa-solid fa-rotate text-teal-400 text-xs"></i>
           <span>Refresh App</span>
-        </button>
-        <button type="button" onclick="toggleDriveLock()" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition flex items-center space-x-1 cursor-pointer shrink-0">
-          <i class="fa-solid fa-lock text-slate-400 text-xs" id="icon-drive-lock"></i>
-          <span id="label-drive-lock">Drive Lock</span>
-        </button>
-        <button type="button" onclick="openCorrectionsReportModal()" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 transition flex items-center space-x-1 cursor-pointer shrink-0">
-          <i class="fa-solid fa-file-signature text-amber-400 text-xs"></i>
-          <span>Corrections</span>
-        </button>
-        <button id="btn-clear-manifest-header" class="px-2.5 py-1.5 text-xs font-bold rounded-lg bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-500/50 transition flex items-center space-x-1.5 cursor-pointer shrink-0">
-          <i class="fa-solid fa-trash-can text-xs text-rose-400"></i>
-          <span>Clear Manifest</span>
-        </button>
-        <button id="btn-open-parser" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-teal-600 hover:bg-teal-500 text-white transition flex items-center space-x-1.5 cursor-pointer shrink-0">
-          <i class="fa-solid fa-file-invoice"></i>
-          <span>Upload Manifest</span>
         </button>
       </div>
     </div>
@@ -149,30 +97,30 @@
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-6 flex-1 w-full">
 
     <!-- METRICS GRID -->
-    <section aria-label="Operational Metrics">
-      <div id="metrics-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+    <section>
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
         <div class="dispatch-card border border-slate-800 rounded-xl p-4">
-          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Runs</div>
-          <div class="mt-2 text-2xl font-bold font-mono text-white" id="metric-total-runs">8</div>
+          <div class="text-xs font-semibold text-slate-400 uppercase">Total Runs</div>
+          <div class="mt-2 text-2xl font-bold font-mono text-white" id="metric-total-runs">2</div>
         </div>
         <div class="dispatch-card border border-slate-800 rounded-xl p-4">
-          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Expected Miles</div>
-          <div class="mt-2 text-2xl font-bold font-mono text-white" id="metric-total-miles">187.7</div>
+          <div class="text-xs font-semibold text-slate-400 uppercase">Expected Miles</div>
+          <div class="mt-2 text-2xl font-bold font-mono text-white" id="metric-total-miles">32.3</div>
         </div>
         <div class="dispatch-card border border-slate-800 rounded-xl p-4">
-          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Driver Hours</div>
-          <div class="mt-2 text-2xl font-bold font-mono text-white" id="metric-driver-hours">8.32</div>
+          <div class="text-xs font-semibold text-slate-400 uppercase">Driver Hours</div>
+          <div class="mt-2 text-2xl font-bold font-mono text-white" id="metric-driver-hours">8.00</div>
         </div>
         <div class="dispatch-card border border-slate-800 rounded-xl p-4">
-          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Labor Pay</div>
-          <div class="mt-2 text-2xl font-bold font-mono text-white" id="metric-labor-pay">$187.20</div>
+          <div class="text-xs font-semibold text-slate-400 uppercase">Labor Pay</div>
+          <div class="mt-2 text-2xl font-bold font-mono text-white" id="metric-labor-pay">$180.00</div>
         </div>
         <div class="dispatch-card border border-teal-500/30 rounded-xl p-4 bg-gradient-to-br from-slate-900 to-teal-950/40">
-          <div class="text-xs font-semibold text-teal-400 uppercase tracking-wider">Total Earned</div>
-          <div class="mt-2 text-2xl font-bold font-mono text-teal-300" id="metric-net-margin">$532.00</div>
+          <div class="text-xs font-semibold text-teal-400 uppercase">Total Earned</div>
+          <div class="mt-2 text-2xl font-bold font-mono text-teal-300" id="metric-net-margin">$159.00</div>
         </div>
         <div class="dispatch-card border border-slate-800 rounded-xl p-4">
-          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Suffolk Weather</div>
+          <div class="text-xs font-semibold text-slate-400 uppercase">Suffolk Weather</div>
           <div class="mt-2 text-2xl font-bold font-mono text-white" id="weather-temp">52°F</div>
         </div>
       </div>
@@ -181,4 +129,205 @@
     <!-- COCKPIT VIEW SECTION -->
     <section id="section-cockpit-view" class="space-y-3.5">
       <div class="dispatch-card border border-slate-800 rounded-2xl shadow-xl overflow-hidden p-3 sm:p-4 bg-slate-900/90">
-        <div class="flex items-center justify-between pb-2 mb-2 border-b border
+        <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800/80 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-teal-400 live-pulse"></span>
+            <span class="font-bold text-white uppercase tracking-wider text-[11px]">Long Island Corridor Radar</span>
+          </div>
+        </div>
+        <div id="cockpit-map-wrapper" class="rounded-xl overflow-hidden border border-slate-800 relative bg-slate-950" style="height: 250px;">
+          <div id="cockpit-leaflet-map" style="height: 100%; width: 100%;"></div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-3.5">
+        <div class="md:col-span-7 dispatch-card border border-teal-500/40 rounded-2xl p-4 sm:p-5 bg-gradient-to-br from-slate-900 to-teal-950/20 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-2.5 border-b border-slate-800">
+              <span class="text-xs font-mono font-black uppercase px-2 py-0.5 rounded bg-teal-500/20 text-teal-300" id="cockpit-run-badge">Active Run 1</span>
+            </div>
+            <div class="mt-3">
+              <h3 class="text-2xl sm:text-3xl font-black text-white" id="cockpit-passenger-name">Antonio Marquez</h3>
+              <div class="mt-1 flex items-center space-x-2" id="cockpit-phone-actions"></div>
+            </div>
+            <div class="mt-3.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div class="p-3 rounded-xl bg-slate-950 border border-teal-500/30">
+                <div class="text-[11px] text-teal-400 font-bold uppercase font-mono">Pickup</div>
+                <div class="text-xl font-black font-mono text-teal-300" id="cockpit-target-pu">07:45 AM</div>
+                <p class="text-xs text-slate-200 mt-1" id="cockpit-pu-address">100 Ronkonkoma Ave, Lake Ronkonkoma, NY</p>
+              </div>
+              <div class="p-3 rounded-xl bg-slate-950 border border-rose-500/30">
+                <div class="text-[11px] text-rose-400 font-bold uppercase font-mono">Dropoff</div>
+                <div class="text-xl font-black font-mono text-rose-300" id="cockpit-target-do">08:45 AM</div>
+                <p class="text-xs text-slate-200 mt-1" id="cockpit-do-address">998 Crooked Hill Rd, Brentwood, NY</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="md:col-span-5 dispatch-card border border-slate-800 rounded-2xl p-4 bg-slate-900/90 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-2.5 border-b border-slate-800">
+              <span class="text-xs font-bold text-slate-300 uppercase">Upcoming Runs Queue</span>
+            </div>
+            <div class="mt-2.5 space-y-2" id="cockpit-queue-list">
+              <div class="p-2.5 rounded-xl border border-slate-800 bg-slate-950 flex items-center justify-between">
+                <div>
+                  <div class="font-bold text-white text-xs">Azeneth Ramos Bonilla</div>
+                  <div class="text-[10px] text-slate-400 font-mono">Brentwood → Shirley</div>
+                </div>
+                <div class="text-xs font-mono font-bold text-teal-300">09:00 AM</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CLASSIC ROSTER SECTION -->
+    <section id="section-2-manifest" class="dispatch-card border border-slate-800 rounded-2xl shadow-lg overflow-hidden hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr class="bg-slate-950/80 text-slate-400 border-b border-slate-800 font-semibold uppercase">
+              <th class="py-3 px-3 text-center">Status</th>
+              <th class="py-3 px-4">Passenger & Mobility</th>
+              <th class="py-3 px-4">Sched PU</th>
+              <th class="py-3 px-4">Sched DO</th>
+              <th class="py-3 px-3 text-center">Miles</th>
+              <th class="py-3 px-4">Route Corridor</th>
+              <th class="py-3 px-3 text-right">Revenue</th>
+            </tr>
+          </thead>
+          <tbody id="trip-table-body" class="divide-y divide-slate-800/80"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 3RD PAGE: SETTINGS DECK SECTION -->
+    <section id="section-settings-deck" class="dispatch-card border border-amber-500/30 rounded-2xl p-6 shadow-xl space-y-6 hidden">
+      <div class="flex items-center space-x-3 pb-4 border-b border-slate-800">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center text-lg">
+          <i class="fa-solid fa-gear"></i>
+        </div>
+        <div>
+          <h2 class="text-lg font-extrabold text-white">Settings Deck & Fleet Directory</h2>
+          <p class="text-xs text-slate-400">Locked passenger phone bindings and base depot configuration</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+        <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+          <h3 class="font-bold text-teal-400 text-sm">Base Depot Location</h3>
+          <p class="text-slate-200 font-mono text-sm">1480 5th Ave, Bay Shore, NY 11706</p>
+        </div>
+        <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+          <h3 class="font-bold text-amber-400 text-sm">Locked Passenger Directory</h3>
+          <div class="space-y-1.5 font-mono text-xs" id="settings-directory-view"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    const AppState = {
+      viewMode: 'cockpit',
+      trips: [
+        { id: "RB-201", passenger: "Antonio Marquez", phone: "516-375-6525", mobility: "Amb", schedPU: "07:45", schedDO: "08:45", puAddress: "100 Ronkonkoma Ave, Lake Ronkonkoma, NY", doAddress: "998 Crooked Hill Rd, Brentwood, NY", miles: 7.8, corridor: "LIE I-495 W", revenue: 54.00, status: "Scheduled" },
+        { id: "RB-202", passenger: "Azeneth Ramos Bonilla", phone: "516-878-6692", mobility: "Amb", schedPU: "09:00", schedDO: "10:00", puAddress: "228 Hilltop Dr, Brentwood, NY", doAddress: "640 Montauk Hwy, Shirley, NY", miles: 24.5, corridor: "Sunrise Hwy (NY-27 E)", revenue: 105.00, status: "Scheduled" }
+      ]
+    };
+
+    const LOCKED_PHONE_DIRECTORY = {
+      "Antonio Marquez": "516-375-6525",
+      "Azeneth Ramos Bonilla": "516-878-6692",
+      "Patricia O'Neill-Lubbe": "516-555-0192",
+      "Daniel Cotter": "516-555-0144",
+      "William Bland": "631-836-1188"
+    };
+
+    function toggleViewMode(mode) {
+      AppState.viewMode = mode;
+      document.getElementById('section-cockpit-view').classList.add('hidden');
+      document.getElementById('section-2-manifest').classList.add('hidden');
+      document.getElementById('section-settings-deck').classList.add('hidden');
+
+      if (mode === 'cockpit') {
+        document.getElementById('section-cockpit-view').classList.remove('hidden');
+        renderCockpitView();
+      } else if (mode === 'roster') {
+        document.getElementById('section-2-manifest').classList.remove('hidden');
+        renderTable(AppState.trips);
+      } else if (mode === 'settings') {
+        document.getElementById('section-settings-deck').classList.remove('hidden');
+        renderSettingsDeck();
+      }
+    }
+
+    function renderSettingsDeck() {
+      const container = document.getElementById('settings-directory-view');
+      if (!container) return;
+      container.innerHTML = Object.entries(LOCKED_PHONE_DIRECTORY).map(([name, phone]) => `
+        <div class="flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-800">
+          <span class="font-bold text-slate-200">${name}</span>
+          <span class="text-teal-300 font-mono">${phone}</span>
+        </div>
+      `).join('');
+    }
+
+    function renderTable(trips) {
+      const tbody = document.getElementById('trip-table-body');
+      if (!tbody) return;
+      tbody.innerHTML = trips.map(t => `
+        <tr class="border-b border-slate-800/80 hover:bg-slate-800/50">
+          <td class="py-3 px-3 text-center"><span class="px-2 py-0.5 rounded bg-teal-500/20 text-teal-300 text-[10px] font-bold">${t.status}</span></td>
+          <td class="py-3 px-4"><strong>${t.passenger}</strong><br><span class="text-teal-400 font-mono text-[11px]">${t.phone}</span></td>
+          <td class="py-3 px-4 font-mono">${t.schedPU}</td>
+          <td class="py-3 px-4 font-mono">${t.schedDO}</td>
+          <td class="py-3 px-3 text-center font-mono">${t.miles} mi</td>
+          <td class="py-3 px-4">${t.corridor}</td>
+          <td class="py-3 px-3 text-right font-mono text-teal-300">$${(t.revenue || 0).toFixed(2)}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderCockpitView() {
+      const t = AppState.trips[0];
+      if (!t) return;
+      document.getElementById('cockpit-passenger-name').textContent = t.passenger;
+      document.getElementById('cockpit-target-pu').textContent = t.schedPU;
+      document.getElementById('cockpit-pu-address').textContent = t.puAddress;
+      document.getElementById('cockpit-target-do').textContent = t.schedDO;
+      document.getElementById('cockpit-do-address').textContent = t.doAddress;
+      
+      const phoneActions = document.getElementById('cockpit-phone-actions');
+      if (phoneActions) {
+        phoneActions.innerHTML = `
+          <a href="tel:${t.phone}" class="px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center space-x-1.5 shadow-md">
+            <i class="fa-solid fa-phone text-[10px]"></i>
+            <span>Call ${t.phone}</span>
+          </a>
+        `;
+      }
+    }
+
+    function forceHardRefresh() {
+      window.location.href = window.location.origin + window.location.pathname + '?v=' + Date.now();
+    }
+
+    function startClock() {
+      setInterval(() => {
+        const now = new Date();
+        const clockEl = document.getElementById('clock-display');
+        if (clockEl) clockEl.textContent = now.toLocaleTimeString();
+      }, 1000);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      startClock();
+      renderCockpitView();
+    });
+  </script>
+</body>
+</html>
