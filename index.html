@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Serenity Dispatch OS - Commercial Production</title>
 
     <style>
@@ -106,6 +106,7 @@
 
         .btn {
             appearance: none;
+            -webkit-appearance: none;
             border: none;
             outline: none;
             cursor: pointer;
@@ -115,10 +116,12 @@
             border-radius: 6px;
             text-align: center;
             user-select: none;
+            -webkit-user-select: none;
             display: inline-flex;
             justify-content: center;
             align-items: center;
             text-decoration: none;
+            min-height: 40px;
         }
 
         .btn:active {
@@ -130,8 +133,10 @@
         .btn-cyan { background-color: #0284c7; color: #fff; }
         .btn-cyan-active { background-color: #0ea5e9; color: #fff; border: 1px solid var(--cyan-accent); }
         .btn-orange { background-color: #ea580c; color: #fff; }
+        .btn-orange.nav-active { box-shadow: 0 0 0 2px var(--cyan-accent); }
         .btn-red { background-color: #dc2626; color: #fff; }
         .btn-slate { background-color: #334155; color: #f8fafc; }
+        .btn.mini { padding: 4px 8px; font-size: 11px; min-height: 28px; }
 
         .metric-grid {
             display: grid;
@@ -202,6 +207,7 @@
             align-items: flex-start;
             border-bottom: 1px solid #1e293b;
             padding-bottom: 8px;
+            gap: 8px;
         }
 
         .action-title-group h2 {
@@ -226,11 +232,23 @@
             border-radius: 4px;
         }
 
+        .badge-wc {
+            background-color: #7c2d12;
+            border: 1px solid #fb923c;
+            color: #fed7aa;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 4px;
+            letter-spacing: 0.4px;
+            vertical-align: middle;
+        }
+
         .phone-call-btn {
             background-color: #1e1b4b;
             border: 1px solid #6366f1;
             color: #a5b4fc;
-            padding: 4px 10px;
+            padding: 6px 12px;
             border-radius: 6px;
             font-size: 13px;
             font-weight: 800;
@@ -289,6 +307,14 @@
             margin-bottom: 8px;
         }
 
+        .status-line {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .status-line b { color: var(--cyan-accent); }
+
         .comm-box {
             background-color: #0b1329;
             border: 1px solid #1e293b;
@@ -324,7 +350,7 @@
             color: var(--text-muted);
             font-size: 11px;
             font-weight: 800;
-            padding: 2px 8px;
+            padding: 4px 10px;
             border-radius: 4px;
             cursor: pointer;
         }
@@ -339,6 +365,7 @@
             display: flex;
             gap: 6px;
             overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
             padding-bottom: 2px;
         }
 
@@ -346,9 +373,9 @@
             background-color: #1e293b;
             border: 1px solid #334155;
             color: #cbd5e1;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 700;
-            padding: 4px 8px;
+            padding: 7px 10px;
             border-radius: 4px;
             white-space: nowrap;
             cursor: pointer;
@@ -361,7 +388,7 @@
             border-radius: 4px;
             color: #fff;
             padding: 8px;
-            font-size: 13px;
+            font-size: 16px;
             resize: none;
             outline: none;
         }
@@ -377,6 +404,8 @@
             grid-template-columns: 1fr 1fr;
             gap: 8px;
         }
+
+        .primary-actions .btn { font-size: 15px; min-height: 48px; }
 
         .upload-card {
             background-color: var(--bg-card);
@@ -408,7 +437,7 @@
             border-radius: 6px;
             color: #fff;
             padding: 8px 10px;
-            font-size: 13px;
+            font-size: 16px;
             outline: none;
         }
 
@@ -417,11 +446,19 @@
         }
 
         .raw-ingest-area {
-            height: 120px;
+            height: 140px;
             font-family: monospace;
-            font-size: 12px;
+            font-size: 16px;
             resize: vertical;
         }
+
+        .ingest-msg {
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.4;
+        }
+        .ingest-msg.ok { color: var(--emerald-green); }
+        .ingest-msg.err { color: var(--rose-red); }
 
         .roster-card {
             background-color: var(--bg-card);
@@ -441,6 +478,7 @@
             color: var(--text-muted);
             display: flex;
             justify-content: space-between;
+            align-items: center;
         }
 
         .roster-item {
@@ -451,6 +489,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 8px;
             cursor: pointer;
         }
 
@@ -482,6 +521,10 @@
 
         .roster-right {
             text-align: right;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
         }
 
         .roster-tariff {
@@ -516,6 +559,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 8px;
         }
 
         .phone-dir-name {
@@ -529,6 +573,15 @@
             color: var(--text-muted);
             font-weight: 700;
         }
+
+        @media (max-width: 760px) {
+            .shift-bar { grid-template-columns: 1fr 1fr; }
+            .clock-display { grid-column: 1 / -1; }
+        }
+
+        @media (max-width: 520px) {
+            .loc-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -540,7 +593,7 @@
             <span class="brand-title">SERENITY DISPATCH OS</span>
             <span class="version-badge">V6 COMMERCIAL</span>
         </div>
-        <div class="brand-sub">
+        <div class="brand-sub" id="brandSub">
             1480 5TH AVE, BAY SHORE, NY 11706 | FLEET UNIT: VAN #104
         </div>
     </header>
@@ -572,7 +625,7 @@
         <div class="metric-card">
             <span class="metric-title">Driver Labor</span>
             <span class="metric-val" id="metricLabor">$0.00</span>
-            <span class="metric-sub">@ $22.50/hr</span>
+            <span class="metric-sub" id="metricRate">@ $22.50/hr</span>
         </div>
         <div class="metric-card border-green">
             <span class="metric-title">Gross Billed</span>
@@ -582,15 +635,7 @@
     </section>
 
     <main class="view-panel active" id="viewCockpit">
-        <div id="cockpitCore">
-            <div class="empty-queue" style="background:#0f172a; border-radius:8px; border:1px solid #1e293b;">
-                <p style="font-size:16px; color:#fff; margin-bottom:8px;">Dispatch Cockpit Standby</p>
-                <p style="font-size:12px; margin-bottom:12px;">No active runs loaded. Tap "Upload Manifest" to scan schedules or enter legs manually.</p>
-                <div style="display:flex; justify-content:center; gap:8px;">
-                    <button class="btn btn-cyan" onclick="switchView('upload')">Go to Manifest Upload</button>
-                </div>
-            </div>
-        </div>
+        <div id="cockpitCore"></div>
 
         <section class="roster-card">
             <div class="roster-header">
@@ -607,7 +652,7 @@
         <section class="roster-card">
             <div class="roster-header">
                 <span>Full Manifest Table</span>
-                <button class="btn btn-green" style="padding:4px 8px; font-size:11px;" onclick="switchView('upload')">+ Add / Upload Trips</button>
+                <button class="btn btn-green mini" onclick="switchView('upload')">+ Add / Upload Trips</button>
             </div>
             <div id="fullManifestTable" style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
                 <div class="empty-queue">No runs loaded. Use Upload Manifest to ingest.</div>
@@ -620,30 +665,18 @@
             <div class="field-group">
                 <span class="field-lbl">Extracted Manifest Buffer (Editable)</span>
                 <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">
-                    Format: Name | Phone | Mobility | PU Time | PU Address | DO Time | DO Address | Miles | Tariff ($)
+                    Format: Name | Phone | Mobility | PU Time | PU Address | DO Time | DO Address | Miles | Tariff ($) &nbsp;(optional 10th field: Corridor). One trip per line.
                 </div>
                 <textarea class="text-input raw-ingest-area" id="rawManifestInput" placeholder="Paste dispatch manifest lines here..."></textarea>
             </div>
 
             <button class="btn btn-green" style="font-size:14px; font-weight:800; padding:12px;" onclick="parseRawManifest()">Ingest &amp; Launch Dispatch Queue</button>
+            <div class="ingest-msg" id="ingestMsg"></div>
         </section>
 
         <section class="upload-card">
             <span class="field-lbl" style="font-size:13px; color:#fff;">Add Single Dispatch Leg</span>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
                 <input type="text" class="text-input" id="manName" placeholder="Passenger Name">
-                <input type="text" class="text-input" id="manPhone" placeholder="Phone Number">
-                <select class="text-input" id="manMobility">
-                    <option value="Ambulatory">Ambulatory</option>
-                    <option value="Wheelchair">Wheelchair</option>
-                </select>
-                <input type="text" class="text-input" id="manCorridor" placeholder="Corridor (e.g. Sunrise NY-27)">
-                <input type="text" class="text-input" id="manPUTime" placeholder="PU Time (07:30 AM)">
-                <input type="text" class="text-input" id="manDOTime" placeholder="DO Time (08:15 AM)">
-            </div>
-            <input type="text" class="text-input" id="manPUAddr" placeholder="Pickup Street Address, Town, NY">
-            <input type="text" class="text-input" id="manDOAddr" placeholder="Dropoff Street Address, Town, NY">
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
-                <input type="number" step="0.1" class="text-input" id="manMiles" placeholder="Miles (10.0)">
-                <input type="number" step="0.01" class="text-input" id="manTariff" placeholder="Tariff ($55.00)">
-            </di
+                <input type="tel" class="text-input" id="manPhone" placeholder="Phone Number">
+                <sele
