@@ -388,56 +388,6 @@
             gap: 12px;
         }
 
-        .file-drop-zone {
-            border: 2px dashed #00f2fe;
-            border-radius: 8px;
-            padding: 24px 16px;
-            text-align: center;
-            background: rgba(0, 242, 254, 0.04);
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .file-drop-zone.dragover {
-            background: rgba(0, 242, 254, 0.12);
-            border-color: #38bdf8;
-        }
-
-        .drop-zone-icon {
-            font-size: 28px;
-            margin-bottom: 6px;
-        }
-
-        .drop-zone-text {
-            font-size: 14px;
-            font-weight: 800;
-            color: #fff;
-            margin-bottom: 2px;
-        }
-
-        .drop-zone-sub {
-            font-size: 11px;
-            color: var(--text-muted);
-            font-weight: 600;
-        }
-
-        .file-status-badge {
-            display: none;
-            margin-top: 8px;
-            background: #032b30;
-            border: 1px solid #00f2fe;
-            color: #00f2fe;
-            padding: 6px 12px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 700;
-            word-break: break-all;
-        }
-
-        .file-hidden-input {
-            display: none;
-        }
-
         .field-group {
             display: flex;
             flex-direction: column;
@@ -668,17 +618,32 @@
     <main class="view-panel" id="viewUpload">
         <section class="upload-card">
             <div class="field-group">
-                <span class="field-lbl">Upload Dispatch Photos (Continuous Ingestion &amp; OCR)</span>
-                <div class="file-drop-zone" id="fileDropZone" onclick="triggerFileInput()">
-                    <div class="drop-zone-icon">📷</div>
-                    <div class="drop-zone-text">Tap to Pick Photo(s) or Drag Files Here</div>
-                    <div class="drop-zone-sub">Supports Multiple Screenshots, Photos &amp; Camera Images</div>
-                    <div class="file-status-badge" id="fileStatusBadge"></div>
-                </div>
-                <input type="file" id="manifestFileInput" class="file-hidden-input" accept="image/*,.csv,.txt" multiple onchange="handleFileSelected(event)">
-            </div>
-
-            <div class="field-group">
                 <span class="field-lbl">Extracted Manifest Buffer (Editable)</span>
                 <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">
-                    Fo
+                    Format: Name | Phone | Mobility | PU Time | PU Address | DO Time | DO Address | Miles | Tariff ($)
+                </div>
+                <textarea class="text-input raw-ingest-area" id="rawManifestInput" placeholder="Paste dispatch manifest lines here..."></textarea>
+            </div>
+
+            <button class="btn btn-green" style="font-size:14px; font-weight:800; padding:12px;" onclick="parseRawManifest()">Ingest &amp; Launch Dispatch Queue</button>
+        </section>
+
+        <section class="upload-card">
+            <span class="field-lbl" style="font-size:13px; color:#fff;">Add Single Dispatch Leg</span>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                <input type="text" class="text-input" id="manName" placeholder="Passenger Name">
+                <input type="text" class="text-input" id="manPhone" placeholder="Phone Number">
+                <select class="text-input" id="manMobility">
+                    <option value="Ambulatory">Ambulatory</option>
+                    <option value="Wheelchair">Wheelchair</option>
+                </select>
+                <input type="text" class="text-input" id="manCorridor" placeholder="Corridor (e.g. Sunrise NY-27)">
+                <input type="text" class="text-input" id="manPUTime" placeholder="PU Time (07:30 AM)">
+                <input type="text" class="text-input" id="manDOTime" placeholder="DO Time (08:15 AM)">
+            </div>
+            <input type="text" class="text-input" id="manPUAddr" placeholder="Pickup Street Address, Town, NY">
+            <input type="text" class="text-input" id="manDOAddr" placeholder="Dropoff Street Address, Town, NY">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                <input type="number" step="0.1" class="text-input" id="manMiles" placeholder="Miles (10.0)">
+                <input type="number" step="0.01" class="text-input" id="manTariff" placeholder="Tariff ($55.00)">
+            </di
