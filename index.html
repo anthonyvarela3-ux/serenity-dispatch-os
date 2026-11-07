@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Serenity Dispatch OS - Commercial Production</title>
+    <!-- vConsole Integration for Live Mobile Debugging -->
+    <script src="https://unpkg.com/vconsole@latest/dist/vconsole.min.js"></script>
+    <script>
+        window.vConsole = new window.VConsole();
+    </script>
     <style>
         :root {
             --bg-base: #070b14;
@@ -16,7 +21,6 @@
             --emerald-green: #10b981;
             --rose-red: #f43f5e;
             --amber-gold: #f59e0b;
-            --violet-card: #1e1b4b;
         }
 
         * {
@@ -85,7 +89,7 @@
             letter-spacing: 0.4px;
         }
 
-        /* Shift Bar */
+        /* Shift & Nav Bar */
         .shift-bar {
             display: grid;
             grid-template-columns: 100px 1.2fr 1.2fr 1.2fr 0.8fr;
@@ -116,7 +120,6 @@
             padding: 10px 8px;
             border-radius: 6px;
             text-align: center;
-            transition: opacity 0.15s ease, transform 0.05s ease;
             user-select: none;
             display: inline-flex;
             justify-content: center;
@@ -125,8 +128,8 @@
         }
 
         .btn:active {
-            transform: scale(0.98);
             opacity: 0.85;
+            transform: scale(0.98);
         }
 
         .btn-green { background-color: var(--emerald-green); color: #fff; }
@@ -180,7 +183,7 @@
             box-shadow: 0 0 10px rgba(16, 185, 129, 0.15);
         }
 
-        /* View Layouts */
+        /* View Panels */
         .view-panel {
             display: none;
             flex-direction: column;
@@ -385,7 +388,7 @@
             gap: 8px;
         }
 
-        /* Upload / Manifest Panel */
+        /* Upload Panel & File Drop Zone */
         .upload-card {
             background-color: var(--bg-card);
             border: 1px solid var(--border-dim);
@@ -396,7 +399,6 @@
             gap: 12px;
         }
 
-        /* Native Drag-and-Drop / Tap Zone */
         .file-drop-zone {
             border: 2px dashed #00f2fe;
             border-radius: 8px;
@@ -609,7 +611,7 @@
 
     <!-- Shift & Navigation Bar -->
     <nav class="shift-bar">
-        <div class="clock-display" id="clockDisplay">00:00:00 AM</div>
+        <div class="clock-display" id="clockDisplay">--:--:-- --</div>
         <button class="btn btn-cyan-active" id="navCockpit" onclick="switchView('cockpit')">Cockpit View</button>
         <button class="btn btn-cyan" id="navRoster" onclick="switchView('roster')">Classic Roster</button>
         <button class="btn btn-cyan" id="navUpload" onclick="switchView('upload')">Upload Manifest</button>
@@ -684,8 +686,7 @@
         </section>
     </main>
 
-    <!-- VIEW 3: UPLOAD MANIFEST (Strict Anti-Bleed Zero State) -->
+    <!-- VIEW 3: UPLOAD MANIFEST -->
     <main class="view-panel" id="viewUpload">
         <section class="upload-card">
-            <div class="field-group">
-                <span class="field-lbl">Up
+            <div class="field
