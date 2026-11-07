@@ -4,13 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Serenity Dispatch OS - Commercial Production</title>
-    <!-- vConsole Mobile Debugger -->
+    
+    <!-- vConsole Mobile Debugger with Safe Fallback -->
     <script src="https://unpkg.com/vconsole@latest/dist/vconsole.min.js"></script>
     <script>
-        if (typeof VConsole !== 'undefined') {
-            window.vConsole = new VConsole();
+        try {
+            if (typeof VConsole !== 'undefined') {
+                window.vConsole = new VConsole();
+            }
+        } catch (e) {
+            console.warn('vConsole initialization skipped:', e);
         }
     </script>
+
     <style>
         :root {
             --bg-base: #070b14;
@@ -91,7 +97,7 @@
             letter-spacing: 0.4px;
         }
 
-        /* Shift & Nav Bar */
+        /* Shift & Navigation Bar */
         .shift-bar {
             display: grid;
             grid-template-columns: 100px 1.2fr 1.2fr 1.2fr 0.8fr;
@@ -595,6 +601,599 @@
             font-weight: 700;
         }
     </style>
+
+    <!-- CORE FUNCTION DEFINITIONS LOADED IN HEAD (GUARANTEED GLOBAL RESOLUTION) -->
+    <script>
+        var STATE = {
+            currentView: 'cockpit',
+            shiftElapsedSeconds: 0,
+            isClockedIn: false,
+            driverLaborRate: 22.50,
+            runs: [],
+            activeRunIndex: -1,
+            selectedLang: 'EN',
+            lockedPhoneDirectory: {
+                "William": "631-555-0111",
+                "Gloria": "631-555-0122",
+                "Julián": "631-555-0144",
+                "Dispatcher Primary": "631-555-0100"
+            }
+        };
+
+        var MACROS = {
+            EN: {
+                eta: "Hi {NAME}, this is Anthony from Serenity Medical Transport. I am en route and will arrive in approximately 10 minutes.",
+                early: "Hi {NAME}, running slightly ahead of schedule. Expected arrival in 5 minutes.",
+                atCurb: "Serenity Transport is at the curb for {NAME} at {ADDR}."
+            },
+            ES: {
+                eta: "Hola {NAME}, le habla Anthony de Serenity Medical Transport. Estoy en camino y llegaré en aproximadamente 10 minutos.",
+                early: "Hola {NAME}, voy un poco adelantado. Llegada estimada en 5 minutos.",
+                atCurb: "Serenity Transport está esperando en la acera para {NAME} en {ADDR}."
+            }
+        };
+
+        function updateClockDisplay() {
+            var now = new Date();
+            var timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+            var clockEl = document.getElementById('clockDisplay');
+            if (clockEl) {
+                clockEl.innerText = timeStr;
+            }
+
+            if (STATE.isClockedIn) {
+                STATE.shiftElapsedSeconds++;
+                updateLaborMetrics();
+            }
+        }
+
+        function toggleShiftClock() {
+            var btn = document.getElementById('btnClockIn');
+            if (!STATE.isClockedIn) {
+                STATE.isClockedIn = true;
+                if (btn) {
+                    btn.innerText = 'Clock Out';
+                    btn.className = 'btn btn-red';
+                }
+            } else {
+                STATE.isClockedIn = false;
+                if (btn) {
+                    btn.innerText = 'Clock In';
+                    btn.className = 'btn btn-green';
+                }
+            }
+        }
+
+        function updateLaborMetrics() {
+            var hours = STATE.shiftElapsedSeconds / 3600;
+            var laborCost = hours * STATE.driverLaborRate;
+            var laborEl = document.getElementById('metricLabor');
+            if (laborEl) {
+                laborEl.innerText = '$' + laborCost.toFixed(2);
+            }
+        }
+
+        function updateLaborRate() {
+            var input = document.getElementById('cfgLaborRate');
+            if (input && !isNaN(parseFloat(input.value))) {
+                STATE.driverLaborRate = parseFloat(input.value);
+                updateLaborMetrics();
+            }
+        }
+
+        function switchView(viewName) {
+            STATE.currentView = viewName;
+            var views = ['cockpit', 'roster', 'upload', 'settings'];
+            for (var i = 0; i < views.length; i++) {
+                var v = views[i];
+                var panel = document.getElementById('view' + v.charAt(0).toUpperCase() + v.slice(1));
+                var navBtn = document.getElementById('nav' + v.charAt(0).toUpperCase() + v.slice(1));
+                if (panel) panel.classList.remove('active');
+                if (navBtn && v !== 'settings') navBtn.className = 'btn btn-cyan';
+            }
+
+            var activePanel = document.getElementById('view' + viewName.charAt(0).toUpperCase() + viewName.slice(1));
+            var activeNavBtn = document.getElementById('nav' + viewName.charAt(0).toUpperCase() + viewName.slice(1));
+            if (activePanel) activePanel.classList.add('active');
+            if (activeNavBtn && viewName !== 'settings') activeNavBtn.className = 'btn btn-cyan-active';
+
+            // Auto-wipe raw input when accessing Upload view to guarantee clean slate
+            if (viewName === 'upload') {
+                var rawInput = document.getElementById('rawManifestInput');
+                if (rawInput) rawInput.value = '';
+            }
+
+            renderApp();
+        }
+
+        function triggerFileInput() {
+            var input = document.getElementById('manifestFileInput');
+            if (input) input.click();
+        }
+
+        function handleFileSelected(event) {
+            var files = event.target.files;
+            if (files && files.length > 0) {
+                handleFile(files[0]);
+            }
+        }
+
+        function handleFile(file) {
+            var badge = document.getElementById('fileStatusBadge');
+            if (badge) {
+                badge.style.display = 'inline-block';
+                badge.innerText = 'Loaded: ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+            }
+
+            if (file.type.indexOf('text') !== -1 || file.name.endsWith('.csv') || file.name.endsWith('.txt')) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var text = e.target.result;
+                    var rawArea = document.getElementById('rawManifestInput');
+                    if (rawArea) rawArea.value = text;
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        function parseRawManifest() {
+            var rawArea = document.getElementById('rawManifestInput');
+            if (!rawArea) return;
+            var raw = rawArea.value.trim();
+            if (!raw) return;
+
+            var lines = raw.split('\n');
+            for (var i = 0; i < lines.length; i++) {
+                var line = lines[i];
+                var parts = line.split('|');
+                for (var j = 0; j < parts.length; j++) {
+                    parts[j] = parts[j].trim();
+                }
+
+                if (parts.length >= 7) {
+                    var name = parts[0] || "Passenger";
+                    var phone = parts[1] || (STATE.lockedPhoneDirectory[name] || "631-555-0100");
+                    var mobility = parts[2] || "Ambulatory";
+                    var puTime = parts[3] || "07:30 AM";
+                    var puAddr = parts[4] || "Bay Shore, NY";
+                    var doTime = parts[5] || "08:15 AM";
+                    var doAddr = parts[6] || "Patchogue, NY";
+                    var miles = parseFloat(parts[7]) || 10.0;
+                    var tariff = parseFloat(parts[8]) || 55.00;
+
+                    STATE.runs.push({
+                        name: name,
+                        phone: phone,
+                        mobility: mobility,
+                        corridor: "Suffolk / Nassau",
+                        puTime: puTime,
+                        puAddr: puAddr,
+                        doTime: doTime,
+                        doAddr: doAddr,
+                        miles: miles,
+                        tariff: tariff,
+                        status: 'SCHEDULED'
+                    });
+
+                    if (!STATE.lockedPhoneDirectory[name] && phone) {
+                        STATE.lockedPhoneDirectory[name] = phone;
+                    }
+                }
+            }
+
+            if (STATE.activeRunIndex === -1 && STATE.runs.length > 0) {
+                STATE.activeRunIndex = 0;
+            }
+
+            switchView('cockpit');
+        }
+
+        function addSingleManualLeg() {
+            var name = document.getElementById('manName').value.trim();
+            var puAddr = document.getElementById('manPUAddr').value.trim();
+            var doAddr = document.getElementById('manDOAddr').value.trim();
+
+            if (!name || !puAddr || !doAddr) {
+                alert('Name, Pickup Address, and Dropoff Address are required.');
+                return;
+            }
+
+            var phone = document.getElementById('manPhone').value.trim() || (STATE.lockedPhoneDirectory[name] || "631-555-0100");
+            var mobility = document.getElementById('manMobility').value;
+            var corridor = document.getElementById('manCorridor').value.trim() || "Suffolk / Nassau";
+            var puTime = document.getElementById('manPUTime').value.trim() || "07:30 AM";
+            var doTime = document.getElementById('manDOTime').value.trim() || "08:15 AM";
+            var miles = parseFloat(document.getElementById('manMiles').value) || 10.0;
+            var tariff = parseFloat(document.getElementById('manTariff').value) || 55.00;
+
+            STATE.runs.push({
+                name: name,
+                phone: phone,
+                mobility: mobility,
+                corridor: corridor,
+                puTime: puTime,
+                puAddr: puAddr,
+                doTime: doTime,
+                doAddr: doAddr,
+                miles: miles,
+                tariff: tariff,
+                status: 'SCHEDULED'
+            });
+
+            if (!STATE.lockedPhoneDirectory[name] && phone) {
+                STATE.lockedPhoneDirectory[name] = phone;
+            }
+
+            document.getElementById('manName').value = '';
+            document.getElementById('manPhone').value = '';
+            document.getElementById('manPUAddr').value = '';
+            document.getElementById('manDOAddr').value = '';
+            document.getElementById('manMiles').value = '';
+            document.getElementById('manTariff').value = '';
+
+            if (STATE.activeRunIndex === -1) STATE.activeRunIndex = 0;
+            switchView('cockpit');
+        }
+
+        function loadSampleMorningShift() {
+            STATE.runs = [
+                {
+                    name: "William",
+                    phone: "631-555-0111",
+                    mobility: "Ambulatory",
+                    corridor: "Sunrise Hwy NY-27",
+                    puTime: "07:30 AM",
+                    puAddr: "Bay Shore, NY",
+                    doTime: "08:15 AM",
+                    doAddr: "Suffolk Medical Center, NY",
+                    miles: 11.4,
+                    tariff: 62.00,
+                    status: 'SCHEDULED'
+                },
+                {
+                    name: "Gloria",
+                    phone: "631-555-0122",
+                    mobility: "Ambulatory",
+                    corridor: "Southern State Pkwy",
+                    puTime: "08:30 AM",
+                    puAddr: "Islip Terrace, NY",
+                    doTime: "09:15 AM",
+                    doAddr: "Good Samaritan Hospital, NY",
+                    miles: 9.8,
+                    tariff: 58.00,
+                    status: 'SCHEDULED'
+                }
+            ];
+            STATE.activeRunIndex = 0;
+            renderApp();
+        }
+
+        function clearManifestData() {
+            STATE.runs = [];
+            STATE.activeRunIndex = -1;
+            var badge = document.getElementById('fileStatusBadge');
+            if (badge) badge.style.display = 'none';
+            renderApp();
+        }
+
+        function setLanguage(lang) {
+            STATE.selectedLang = lang;
+            var enBtn = document.getElementById('langEN');
+            var esBtn = document.getElementById('langES');
+            if (enBtn) enBtn.className = lang === 'EN' ? 'btn-toggle active' : 'btn-toggle';
+            if (esBtn) esBtn.className = lang === 'ES' ? 'btn-toggle active' : 'btn-toggle';
+            applyMacro('eta');
+        }
+
+        function applyMacro(type) {
+            if (STATE.activeRunIndex < 0 || STATE.activeRunIndex >= STATE.runs.length) return;
+            var run = STATE.runs[STATE.activeRunIndex];
+            var template = MACROS[STATE.selectedLang][type];
+            var message = template.replace('{NAME}', run.name).replace('{ADDR}', run.puAddr);
+            var smsBox = document.getElementById('smsMessageText');
+            if (smsBox) smsBox.value = message;
+        }
+
+        function sendSMS() {
+            if (STATE.activeRunIndex < 0 || STATE.activeRunIndex >= STATE.runs.length) return;
+            var run = STATE.runs[STATE.activeRunIndex];
+            var message = document.getElementById('smsMessageText').value;
+            var cleanPhone = run.phone.replace(/[^0-9]/g, '');
+            window.location.href = 'sms:' + cleanPhone + '?body=' + encodeURIComponent(message);
+        }
+
+        function copyAndOpenGV() {
+            var smsBox = document.getElementById('smsMessageText');
+            if (smsBox) {
+                smsBox.select();
+                document.execCommand('copy');
+            }
+            window.open('https://voice.google.com/messages', '_blank');
+        }
+
+        function markPassengerArrived() {
+            if (STATE.activeRunIndex < 0 || STATE.activeRunIndex >= STATE.runs.length) return;
+            applyMacro('atCurb');
+        }
+
+        function completeActiveRun() {
+            if (STATE.activeRunIndex < 0 || STATE.activeRunIndex >= STATE.runs.length) return;
+            STATE.runs[STATE.activeRunIndex].status = 'COMPLETED';
+            advanceQueue();
+        }
+
+        function executeNoShow() {
+            if (STATE.activeRunIndex < 0 || STATE.activeRunIndex >= STATE.runs.length) return;
+            var run = STATE.runs[STATE.activeRunIndex];
+            var dryPct = (parseFloat(document.getElementById('cfgDryRunPct').value) || 50) / 100;
+            var dryMin = parseFloat(document.getElementById('cfgDryRunMin').value) || 25.00;
+            
+            var dryAmount = Math.max(run.tariff * dryPct, dryMin);
+            run.tariff = dryAmount;
+            run.status = 'NO_SHOW_BILLED';
+            advanceQueue();
+        }
+
+        function advanceQueue() {
+            var nextIdx = -1;
+            for (var i = 0; i < STATE.runs.length; i++) {
+                if (STATE.runs[i].status === 'SCHEDULED') {
+                    nextIdx = i;
+                    break;
+                }
+            }
+            STATE.activeRunIndex = nextIdx;
+            renderApp();
+        }
+
+        function setActiveRun(index) {
+            STATE.activeRunIndex = index;
+            switchView('cockpit');
+        }
+
+        function renderApp() {
+            renderMetrics();
+            renderCockpit();
+            renderRoster();
+            renderPhoneDirectory();
+        }
+
+        function renderMetrics() {
+            var total = STATE.runs.length;
+            var completed = 0;
+            var exceptions = 0;
+            var miles = 0;
+            var grossBilled = 0;
+            var scheduledGross = 0;
+
+            for (var i = 0; i < STATE.runs.length; i++) {
+                var r = STATE.runs[i];
+                miles += (r.miles || 0);
+                scheduledGross += (r.tariff || 0);
+                if (r.status === 'COMPLETED' || r.status === 'NO_SHOW_BILLED') {
+                    completed++;
+                    grossBilled += (r.tariff || 0);
+                }
+                if (r.status === 'NO_SHOW_BILLED') {
+                    exceptions++;
+                }
+            }
+
+            var metricRuns = document.getElementById('metricRuns');
+            var metricExceptions = document.getElementById('metricExceptions');
+            var metricMiles = document.getElementById('metricMiles');
+            var metricGross = document.getElementById('metricGross');
+            var metricSchedGross = document.getElementById('metricScheduledGross');
+            var queueCount = document.getElementById('queueCount');
+
+            if (metricRuns) metricRuns.innerText = completed + ' / ' + total;
+            if (metricExceptions) metricExceptions.innerText = exceptions + ' Exceptions';
+            if (metricMiles) metricMiles.innerText = miles.toFixed(1) + ' mi';
+            if (metricGross) metricGross.innerText = '$' + grossBilled.toFixed(2);
+            if (metricSchedGross) metricSchedGross.innerText = 'Scheduled: $' + scheduledGross.toFixed(2);
+            if (queueCount) queueCount.innerText = (total - completed) + ' Remaining';
+        }
+
+        function renderCockpit() {
+            var container = document.getElementById('cockpitCore');
+            if (!container) return;
+
+            if (STATE.activeRunIndex === -1 || !STATE.runs[STATE.activeRunIndex]) {
+                container.innerHTML = 
+                    '<div class="empty-queue" style="background:#0f172a; border-radius:8px; border:1px solid #1e293b;">' +
+                        '<p style="font-size:16px; color:#fff; margin-bottom:8px;">Dispatch Cockpit Ready</p>' +
+                        '<p style="font-size:12px; margin-bottom:12px;">Tap "Load 07:30 Schedule" or tap "Upload Manifest" to populate your queue.</p>' +
+                        '<div style="display:flex; justify-content:center; gap:8px;">' +
+                            '<button class="btn btn-green" onclick="loadSampleMorningShift()">Load 07:30 Schedule</button>' +
+                            '<button class="btn btn-cyan" onclick="switchView(\'upload\')">Upload Manifest</button>' +
+                        '</div>' +
+                    '</div>';
+                renderQuickQueue();
+                return;
+            }
+
+            var run = STATE.runs[STATE.activeRunIndex];
+            var cleanPhone = run.phone.replace(/[^0-9]/g, '');
+
+            container.innerHTML = 
+                '<div class="action-card">' +
+                    '<div class="action-card-header">' +
+                        '<div class="action-title-group">' +
+                            '<h2>' + run.name + '</h2>' +
+                            '<div class="action-sub">' + run.corridor + ' | ' + run.miles + ' mi | Tariff: $' + run.tariff.toFixed(2) + '</div>' +
+                        '</div>' +
+                        '<div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">' +
+                            '<span class="badge-sched">' + run.status + '</span>' +
+                            '<a href="tel:' + cleanPhone + '" class="phone-call-btn">' +
+                                '<span>📞</span> ' + run.phone +
+                            '</a>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="loc-grid">' +
+                        '<div class="loc-box loc-pu">' +
+                            '<div>' +
+                                '<span class="loc-lbl">Pickup | Sched: ' + run.puTime + '</span>' +
+                                '<div class="loc-target">Target: ' + run.puTime + '</div>' +
+                                '<div class="loc-addr">' + run.puAddr + '</div>' +
+                            '</div>' +
+                            '<a href="https://maps.google.com/?daddr=' + encodeURIComponent(run.puAddr) + '" target="_blank" class="btn btn-green" style="font-size:11px; padding:6px;">Navigate Pickup</a>' +
+                        '</div>' +
+                        '<div class="loc-box loc-do">' +
+                            '<div>' +
+                                '<span class="loc-lbl">Dropoff | Sched: ' + run.doTime + '</span>' +
+                                '<div class="loc-target">Target: ' + run.doTime + '</div>' +
+                                '<div class="loc-addr">' + run.doAddr + '</div>' +
+                            '</div>' +
+                            '<a href="https://maps.google.com/?daddr=' + encodeURIComponent(run.doAddr) + '" target="_blank" class="btn btn-red" style="font-size:11px; padding:6px;">Navigate Dropoff</a>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="comm-box">' +
+                        '<div class="comm-top">' +
+                            '<span class="comm-title">Bilingual Passenger SMS (EN / ES)</span>' +
+                            '<div class="lang-toggles">' +
+                                '<button class="btn-toggle ' + (STATE.selectedLang === 'EN' ? 'active' : '') + '" id="langEN" onclick="setLanguage(\'EN\')">EN</button>' +
+                                '<button class="btn-toggle ' + (STATE.selectedLang === 'ES' ? 'active' : '') + '" id="langES" onclick="setLanguage(\'ES\')">ES</button>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="macro-row">' +
+                            '<button class="macro-btn" onclick="applyMacro(\'eta\')">10m Out</button>' +
+                            '<button class="macro-btn" onclick="applyMacro(\'early\')">Early</button>' +
+                            '<button class="macro-btn" onclick="applyMacro(\'atCurb\')">At Curb</button>' +
+                        '</div>' +
+                        '<textarea id="smsMessageText" class="sms-input" rows="2"></textarea>' +
+                        '<div class="sms-actions">' +
+                            '<button class="btn btn-orange" onclick="sendSMS()">Send SMS</button>' +
+                            '<button class="btn btn-cyan" onclick="copyAndOpenGV()">Copy & Open Google Voice</button>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="primary-actions">' +
+                        '<button class="btn btn-orange" style="font-size:14px; font-weight:800;" onclick="markPassengerArrived()">Mark Arrived</button>' +
+                        '<button class="btn btn-green" style="font-size:14px; font-weight:800;" onclick="completeActiveRun()">Complete Run ($' + run.tariff.toFixed(2) + ')</button>' +
+                    '</div>' +
+                    '<div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">' +
+                        '<button class="btn btn-red" onclick="executeNoShow()">No Show</button>' +
+                        '<button class="btn btn-slate" onclick="executeNoShow()">Cancel at Door</button>' +
+                    '</div>' +
+                '</div>';
+
+            applyMacro('eta');
+            renderQuickQueue();
+        }
+
+        function renderQuickQueue() {
+            var queueEl = document.getElementById('quickQueueList');
+            if (!queueEl) return;
+
+            if (STATE.runs.length === 0) {
+                queueEl.innerHTML = '<div style="font-size:12px; color:var(--text-muted); padding:4px 0;">No runs in queue.</div>';
+                return;
+            }
+
+            var html = '';
+            for (var idx = 0; idx < STATE.runs.length; idx++) {
+                var r = STATE.runs[idx];
+                var activeClass = (idx === STATE.activeRunIndex ? 'active-run' : '');
+                var completedClass = (r.status === 'COMPLETED' ? 'completed' : '');
+                var noShowClass = (r.status === 'NO_SHOW_BILLED' ? 'noshow' : '');
+                html += 
+                    '<div class="roster-item ' + activeClass + ' ' + completedClass + ' ' + noShowClass + '" onclick="setActiveRun(' + idx + ')">' +
+                        '<div class="roster-left">' +
+                            '<h4>#' + (idx + 1) + ' ' + r.name + ' <span style="font-size:11px; font-weight:600; color:var(--text-muted);">(' + r.mobility + ')</span></h4>' +
+                            '<p>' + r.puAddr + ' &rarr; ' + r.doAddr + '</p>' +
+                        '</div>' +
+                        '<div class="roster-right">' +
+                            '<div class="roster-tariff">$' + r.tariff.toFixed(2) + '</div>' +
+                            '<div style="font-size:10px; font-weight:700; color:var(--text-muted);">' + r.status + '</div>' +
+                        '</div>' +
+                    '</div>';
+            }
+            queueEl.innerHTML = html;
+        }
+
+        function renderRoster() {
+            var fullTable = document.getElementById('fullManifestTable');
+            if (!fullTable) return;
+
+            if (STATE.runs.length === 0) {
+                fullTable.innerHTML = '<div class="empty-queue">No runs loaded. Tap "Load 07:30 Schedule" or "Upload Manifest".</div>';
+                return;
+            }
+
+            var html = '';
+            for (var idx = 0; idx < STATE.runs.length; idx++) {
+                var r = STATE.runs[idx];
+                var activeClass = (idx === STATE.activeRunIndex ? 'active-run' : '');
+                var completedClass = (r.status === 'COMPLETED' ? 'completed' : '');
+                var noShowClass = (r.status === 'NO_SHOW_BILLED' ? 'noshow' : '');
+                html += 
+                    '<div class="roster-item ' + activeClass + ' ' + completedClass + ' ' + noShowClass + '" onclick="setActiveRun(' + idx + ')">' +
+                        '<div class="roster-left">' +
+                            '<h4>#' + (idx + 1) + ' ' + r.name + ' &bull; ' + r.phone + '</h4>' +
+                            '<p>PU: ' + r.puTime + ' (' + r.puAddr + ')</p>' +
+                            '<p>DO: ' + r.doTime + ' (' + r.doAddr + ')</p>' +
+                        '</div>' +
+                        '<div class="roster-right">' +
+                            '<div class="roster-tariff">$' + r.tariff.toFixed(2) + '</div>' +
+                            '<div style="font-size:11px; color:#38bdf8;">' + r.miles + ' mi</div>' +
+                            '<span style="font-size:10px; font-weight:800; color:var(--text-muted);">' + r.status + '</span>' +
+                        '</div>' +
+                    '</div>';
+            }
+            fullTable.innerHTML = html;
+        }
+
+        function renderPhoneDirectory() {
+            var dirContainer = document.getElementById('phoneDirList');
+            if (!dirContainer) return;
+
+            var html = '';
+            var keys = Object.keys(STATE.lockedPhoneDirectory);
+            for (var i = 0; i < keys.length; i++) {
+                var name = keys[i];
+                var phone = STATE.lockedPhoneDirectory[name];
+                var cleanPhone = phone.replace(/[^0-9]/g, '');
+                html += 
+                    '<div class="phone-dir-row">' +
+                        '<span class="phone-dir-name">' + name + '</span>' +
+                        '<a href="tel:' + cleanPhone + '" class="phone-call-btn" style="padding:2px 8px; font-size:11px;">' +
+                            '📞 ' + phone +
+                        '</a>' +
+                    '</div>';
+            }
+            dirContainer.innerHTML = html;
+        }
+
+        function setupDragAndDrop() {
+            var dropZone = document.getElementById('fileDropZone');
+            if (!dropZone) return;
+
+            var events = ['dragenter', 'dragover'];
+            for (var i = 0; i < events.length; i++) {
+                dropZone.addEventListener(events[i], function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.classList.add('dragover');
+                }, false);
+            }
+
+            var leaveEvents = ['dragleave', 'drop'];
+            for (var j = 0; j < leaveEvents.length; j++) {
+                dropZone.addEventListener(leaveEvents[j], function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.classList.remove('dragover');
+                }, false);
+            }
+
+            dropZone.addEventListener('drop', function(e) {
+                var dt = e.dataTransfer;
+                var files = dt.files;
+                if (files && files.length > 0) {
+                    handleFile(files[0]);
+                }
+            }, false);
+        }
+    </script>
 </head>
 <body>
 
@@ -614,17 +1213,17 @@
     <!-- Shift & Navigation Bar -->
     <nav class="shift-bar">
         <div class="clock-display" id="clockDisplay">--:--:-- --</div>
-        <button class="btn btn-cyan-active" id="navCockpit" onclick="window.switchView('cockpit')">Cockpit View</button>
-        <button class="btn btn-cyan" id="navRoster" onclick="window.switchView('roster')">Classic Roster</button>
-        <button class="btn btn-cyan" id="navUpload" onclick="window.switchView('upload')">Upload Manifest</button>
-        <button class="btn btn-orange" id="navSettings" onclick="window.switchView('settings')">Settings Deck</button>
+        <button class="btn btn-cyan-active" id="navCockpit" onclick="switchView('cockpit')">Cockpit View</button>
+        <button class="btn btn-cyan" id="navRoster" onclick="switchView('roster')">Classic Roster</button>
+        <button class="btn btn-cyan" id="navUpload" onclick="switchView('upload')">Upload Manifest</button>
+        <button class="btn btn-orange" id="navSettings" onclick="switchView('settings')">Settings Deck</button>
     </nav>
 
     <!-- Secondary Trigger Row -->
     <div style="display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 8px;">
-        <button class="btn btn-green" id="btnClockIn" onclick="window.toggleShiftClock()">Clock In</button>
-        <button class="btn btn-green" id="btnQuickLoad" onclick="window.loadSampleMorningShift()">Load 07:30 Schedule</button>
-        <button class="btn btn-red" onclick="window.clearManifestData()">Clear</button>
+        <button class="btn btn-green" id="btnClockIn" onclick="toggleShiftClock()">Clock In</button>
+        <button class="btn btn-green" id="btnQuickLoad" onclick="loadSampleMorningShift()">Load 07:30 Schedule</button>
+        <button class="btn btn-red" onclick="clearManifestData()">Clear</button>
     </div>
 
     <!-- Active Metric Deck -->
@@ -658,8 +1257,8 @@
                 <p style="font-size:16px; color:#fff; margin-bottom:8px;">Dispatch Cockpit Ready</p>
                 <p style="font-size:12px; margin-bottom:12px;">Tap "Load 07:30 Schedule" or tap "Upload Manifest" to populate your queue.</p>
                 <div style="display:flex; justify-content:center; gap:8px;">
-                    <button class="btn btn-green" onclick="window.loadSampleMorningShift()">Load 07:30 Schedule</button>
-                    <button class="btn btn-cyan" onclick="window.switchView('upload')">Upload Manifest</button>
+                    <button class="btn btn-green" onclick="loadSampleMorningShift()">Load 07:30 Schedule</button>
+                    <button class="btn btn-cyan" onclick="switchView('upload')">Upload Manifest</button>
                 </div>
             </div>
         </div>
@@ -680,7 +1279,7 @@
         <section class="roster-card">
             <div class="roster-header">
                 <span>Full Manifest Table</span>
-                <button class="btn btn-green" style="padding:4px 8px; font-size:11px;" onclick="window.switchView('upload')">+ Add / Upload Trips</button>
+                <button class="btn btn-green" style="padding:4px 8px; font-size:11px;" onclick="switchView('upload')">+ Add / Upload Trips</button>
             </div>
             <div id="fullManifestTable" style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
                 <div class="empty-queue">No runs loaded. Tap "Load 07:30 Schedule" or "Upload Manifest".</div>
@@ -689,4 +1288,101 @@
     </main>
 
     <!-- VIEW 3: UPLOAD MANIFEST -->
-    <main c
+    <main class="view-panel" id="viewUpload">
+        <section class="upload-card">
+            <div class="field-group">
+                <span class="field-lbl">Upload Manifest File (Screenshot / Camera Scan / CSV)</span>
+                <div class="file-drop-zone" id="fileDropZone" onclick="triggerFileInput()">
+                    <div class="drop-zone-icon">📁</div>
+                    <div class="drop-zone-text">Tap to Browse or Drop File Here</div>
+                    <div class="drop-zone-sub">Supports Camera, Images (PNG, JPG) and Documents</div>
+                    <div class="file-status-badge" id="fileStatusBadge"></div>
+                </div>
+                <input type="file" id="manifestFileInput" class="file-hidden-input" accept="image/*,.pdf,.csv,.txt" onchange="handleFileSelected(event)">
+            </div>
+
+            <div class="field-group">
+                <span class="field-lbl">Paste or Ingest Daily Schedule</span>
+                <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">
+                    Line format: Name | Phone | Mobility | PU Time | PU Address | DO Time | DO Address | Miles | Tariff ($)
+                </div>
+                <textarea class="text-input raw-ingest-area" id="rawManifestInput" placeholder="William | 631-555-0111 | Ambulatory | 07:30 AM | Bay Shore, NY | 08:15 AM | Patchogue, NY | 11.4 | 62.00"></textarea>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                <button class="btn btn-green" onclick="parseRawManifest()">Ingest Pasted Schedule</button>
+                <button class="btn btn-orange" onclick="loadSampleMorningShift()">Load Morning Shift (William -&gt; Gloria)</button>
+            </div>
+        </section>
+
+        <!-- Manual Single Leg Entry Form -->
+        <section class="upload-card">
+            <span class="field-lbl" style="font-size:13px; color:#fff;">Add Single Dispatch Leg</span>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                <input type="text" class="text-input" id="manName" placeholder="Passenger Name">
+                <input type="text" class="text-input" id="manPhone" placeholder="Phone Number">
+                <select class="text-input" id="manMobility">
+                    <option value="Ambulatory">Ambulatory</option>
+                    <option value="Wheelchair">Wheelchair</option>
+                </select>
+                <input type="text" class="text-input" id="manCorridor" placeholder="Corridor (e.g. Sunrise NY-27)">
+                <input type="text" class="text-input" id="manPUTime" placeholder="PU Time (07:30 AM)">
+                <input type="text" class="text-input" id="manDOTime" placeholder="DO Time (08:15 AM)">
+            </div>
+            <input type="text" class="text-input" id="manPUAddr" placeholder="Pickup Street Address, Town, NY">
+            <input type="text" class="text-input" id="manDOAddr" placeholder="Dropoff Street Address, Town, NY">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                <input type="number" step="0.1" class="text-input" id="manMiles" placeholder="Miles (11.4)">
+                <input type="number" step="0.01" class="text-input" id="manTariff" placeholder="Tariff ($62.00)">
+            </div>
+            <button class="btn btn-green" onclick="addSingleManualLeg()">Add Run to Manifest</button>
+        </section>
+    </main>
+
+    <!-- VIEW 4: SETTINGS DECK -->
+    <main class="view-panel" id="viewSettings">
+        <section class="settings-card">
+            <span class="field-lbl" style="font-size:13px; color:#fff;">System Guardrails &amp; Rates</span>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                <div class="field-group">
+                    <span class="field-lbl">Driver Hourly Rate ($)</span>
+                    <input type="number" class="text-input" id="cfgLaborRate" value="22.50" onchange="updateLaborRate()">
+                </div>
+                <div class="field-group">
+                    <span class="field-lbl">Base Depot Address</span>
+                    <input type="text" class="text-input" value="1480 5th Ave, Bay Shore, NY 11706" readonly>
+                </div>
+                <div class="field-group">
+                    <span class="field-lbl">Dry-Run Bill (%)</span>
+                    <input type="number" class="text-input" id="cfgDryRunPct" value="50">
+                </div>
+                <div class="field-group">
+                    <span class="field-lbl">Dry-Run Min ($)</span>
+                    <input type="number" class="text-input" id="cfgDryRunMin" value="25.00">
+                </div>
+            </div>
+        </section>
+
+        <!-- Locked CRM Phone Directory -->
+        <section class="settings-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="field-lbl" style="font-size:13px; color:#fff;">Passenger Phone Directory</span>
+                <span style="font-size:11px; color:var(--emerald-green); font-weight:700;">Locked</span>
+            </div>
+            <div class="phone-dir-grid" id="phoneDirList"></div>
+        </section>
+    </main>
+
+</div>
+
+<!-- DOM READY INITIALIZATION -->
+<script>
+    updateClockDisplay();
+    setInterval(updateClockDisplay, 1000);
+    setupDragAndDrop();
+    renderApp();
+</script>
+
+</body>
+</html>
+
