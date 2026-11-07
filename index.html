@@ -4,19 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Serenity Dispatch OS - Commercial Production</title>
-    
-    <script src="https://unpkg.com/vconsole@latest/dist/vconsole.min.js"></script>
-    <script>
-        try {
-            if (typeof VConsole !== 'undefined') {
-                window.vConsole = new VConsole();
-            }
-        } catch (e) {
-            console.warn('vConsole initialization skipped:', e);
-        }
-    </script>
-
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
     <style>
         :root {
@@ -593,120 +580,105 @@
             font-weight: 700;
         }
     </style>
+</head>
+<body>
 
-    <script>
-        var STATE = {
-            currentView: 'cockpit',
-            shiftElapsedSeconds: 0,
-            isClockedIn: false,
-            driverLaborRate: 22.50,
-            runs: [],
-            activeRunIndex: -1,
-            selectedLang: 'EN',
-            lockedPhoneDirectory: {
-                "Dispatcher Primary": "631-555-0100"
-            }
-        };
+<div class="os-container">
 
-        var MACROS = {
-            EN: {
-                eta: "Hi {NAME}, this is Anthony from Serenity Medical Transport. I am en route and will arrive in approximately 10 minutes.",
-                early: "Hi {NAME}, running slightly ahead of schedule. Expected arrival in 5 minutes.",
-                atCurb: "Serenity Transport is at the curb for {NAME} at {ADDR}."
-            },
-            ES: {
-                eta: "Hola {NAME}, le habla Anthony de Serenity Medical Transport. Estoy en camino y llegaré en aproximadamente 10 minutos.",
-                early: "Hola {NAME}, voy un poco adelantado. Llegada estimada en 5 minutos.",
-                atCurb: "Serenity Transport está esperando en la acera para {NAME} en {ADDR}."
-            }
-        };
+    <header class="brand-header">
+        <div class="brand-row-1">
+            <span class="brand-title">SERENITY DISPATCH OS</span>
+            <span class="version-badge">V6 COMMERCIAL</span>
+        </div>
+        <div class="brand-sub">
+            1480 5TH AVE, BAY SHORE, NY 11706 | FLEET UNIT: VAN #104
+        </div>
+    </header>
 
-        function updateClockDisplay() {
-            var now = new Date();
-            var timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-            var clockEl = document.getElementById('clockDisplay');
-            if (clockEl) {
-                clockEl.innerText = timeStr;
-            }
+    <nav class="shift-bar">
+        <div class="clock-display" id="clockDisplay">--:--:-- --</div>
+        <button class="btn btn-cyan-active" id="navCockpit" onclick="switchView('cockpit')">Cockpit View</button>
+        <button class="btn btn-cyan" id="navRoster" onclick="switchView('roster')">Classic Roster</button>
+        <button class="btn btn-cyan" id="navUpload" onclick="switchView('upload')">Upload Manifest</button>
+        <button class="btn btn-orange" id="navSettings" onclick="switchView('settings')">Settings Deck</button>
+    </nav>
 
-            if (STATE.isClockedIn) {
-                STATE.shiftElapsedSeconds++;
-                updateLaborMetrics();
-            }
-        }
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <button class="btn btn-green" id="btnClockIn" onclick="toggleShiftClock()">Clock In</button>
+        <button class="btn btn-red" onclick="clearManifestData()">Clear Manifest</button>
+    </div>
 
-        function toggleShiftClock() {
-            var btn = document.getElementById('btnClockIn');
-            if (!STATE.isClockedIn) {
-                STATE.isClockedIn = true;
-                if (btn) {
-                    btn.innerText = 'Clock Out';
-                    btn.className = 'btn btn-red';
-                }
-            } else {
-                STATE.isClockedIn = false;
-                if (btn) {
-                    btn.innerText = 'Clock In';
-                    btn.className = 'btn btn-green';
-                }
-            }
-        }
+    <section class="metric-grid">
+        <div class="metric-card">
+            <span class="metric-title">Active Manifest</span>
+            <span class="metric-val" id="metricRuns">0 / 0</span>
+            <span class="metric-sub" id="metricExceptions">0 Exceptions</span>
+        </div>
+        <div class="metric-card">
+            <span class="metric-title">Route Miles</span>
+            <span class="metric-val" id="metricMiles">0.0 mi</span>
+            <span class="metric-sub">Suffolk / Nassau Corridors</span>
+        </div>
+        <div class="metric-card">
+            <span class="metric-title">Driver Labor</span>
+            <span class="metric-val" id="metricLabor">$0.00</span>
+            <span class="metric-sub">@ $22.50/hr</span>
+        </div>
+        <div class="metric-card border-green">
+            <span class="metric-title">Gross Billed</span>
+            <span class="metric-val" id="metricGross" style="color: var(--emerald-green);">$0.00</span>
+            <span class="metric-sub" id="metricScheduledGross">Scheduled: $0.00</span>
+        </div>
+    </section>
 
-        function updateLaborMetrics() {
-            var hours = STATE.shiftElapsedSeconds / 3600;
-            var laborCost = hours * STATE.driverLaborRate;
-            var laborEl = document.getElementById('metricLabor');
-            if (laborEl) {
-                laborEl.innerText = '$' + laborCost.toFixed(2);
-            }
-        }
+    <main class="view-panel active" id="viewCockpit">
+        <div id="cockpitCore">
+            <div class="empty-queue" style="background:#0f172a; border-radius:8px; border:1px solid #1e293b;">
+                <p style="font-size:16px; color:#fff; margin-bottom:8px;">Dispatch Cockpit Standby</p>
+                <p style="font-size:12px; margin-bottom:12px;">No active runs loaded. Tap "Upload Manifest" to scan schedules or enter legs manually.</p>
+                <div style="display:flex; justify-content:center; gap:8px;">
+                    <button class="btn btn-cyan" onclick="switchView('upload')">Go to Manifest Upload</button>
+                </div>
+            </div>
+        </div>
 
-        function updateLaborRate() {
-            var input = document.getElementById('cfgLaborRate');
-            if (input && !isNaN(parseFloat(input.value))) {
-                STATE.driverLaborRate = parseFloat(input.value);
-                updateLaborMetrics();
-            }
-        }
+        <section class="roster-card">
+            <div class="roster-header">
+                <span>Active Manifest Queue</span>
+                <span id="queueCount">0 Runs</span>
+            </div>
+            <div id="quickQueueList" style="display:flex; flex-direction:column; gap:6px;">
+                <div style="font-size:12px; color:var(--text-muted); padding:4px 0;">No runs in queue.</div>
+            </div>
+        </section>
+    </main>
 
-        function switchView(viewName) {
-            STATE.currentView = viewName;
-            var views = ['cockpit', 'roster', 'upload', 'settings'];
-            for (var i = 0; i < views.length; i++) {
-                var v = views[i];
-                var panel = document.getElementById('view' + v.charAt(0).toUpperCase() + v.slice(1));
-                var navBtn = document.getElementById('nav' + v.charAt(0).toUpperCase() + v.slice(1));
-                if (panel) panel.classList.remove('active');
-                if (navBtn && v !== 'settings') navBtn.className = 'btn btn-cyan';
-            }
+    <main class="view-panel" id="viewRoster">
+        <section class="roster-card">
+            <div class="roster-header">
+                <span>Full Manifest Table</span>
+                <button class="btn btn-green" style="padding:4px 8px; font-size:11px;" onclick="switchView('upload')">+ Add / Upload Trips</button>
+            </div>
+            <div id="fullManifestTable" style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
+                <div class="empty-queue">No runs loaded. Use Upload Manifest to ingest.</div>
+            </div>
+        </section>
+    </main>
 
-            var activePanel = document.getElementById('view' + viewName.charAt(0).toUpperCase() + viewName.slice(1));
-            var activeNavBtn = document.getElementById('nav' + viewName.charAt(0).toUpperCase() + viewName.slice(1));
-            if (activePanel) activePanel.classList.add('active');
-            if (activeNavBtn && viewName !== 'settings') activeNavBtn.className = 'btn btn-cyan-active';
+    <main class="view-panel" id="viewUpload">
+        <section class="upload-card">
+            <div class="field-group">
+                <span class="field-lbl">Upload Dispatch Photos (Continuous Ingestion &amp; OCR)</span>
+                <div class="file-drop-zone" id="fileDropZone" onclick="triggerFileInput()">
+                    <div class="drop-zone-icon">📷</div>
+                    <div class="drop-zone-text">Tap to Pick Photo(s) or Drag Files Here</div>
+                    <div class="drop-zone-sub">Supports Multiple Screenshots, Photos &amp; Camera Images</div>
+                    <div class="file-status-badge" id="fileStatusBadge"></div>
+                </div>
+                <input type="file" id="manifestFileInput" class="file-hidden-input" accept="image/*,.csv,.txt" multiple onchange="handleFileSelected(event)">
+            </div>
 
-            renderApp();
-        }
-
-        function triggerFileInput() {
-            var input = document.getElementById('manifestFileInput');
-            if (input) input.click();
-        }
-
-        function handleFileSelected(event) {
-            var files = event.target.files;
-            if (files && files.length > 0) {
-                processFilesSequentially(Array.from(files));
-            }
-        }
-
-        async function processFilesSequentially(files) {
-            var badge = document.getElementById('fileStatusBadge');
-            for (var idx = 0; idx < files.length; idx++) {
-                var file = files[idx];
-                if (badge) {
-                    badge.style.display = 'inline-block';
-                    badge.innerText = `Processing ${idx + 1} of ${files.length}: ${file.name}...`;
-                }
-
-                if (file.type.star
+            <div class="field-group">
+                <span class="field-lbl">Extracted Manifest Buffer (Editable)</span>
+                <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">
+                    Fo
