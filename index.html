@@ -317,5 +317,183 @@
   </header>
 
   <!-- METRICS GRID -->
-  <section class="metrics
-    
+  <section class="metrics-grid">
+    <div class="metric-card">
+      <span class="metric-label">Active Manifest</span>
+      <div class="metric-val" id="metric-runs">0 / 0</div>
+      <span class="metric-sub" id="metric-exceptions">0 Exceptions</span>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Route Miles</span>
+      <div class="metric-val"><span id="metric-miles">0.0</span> <small style="font-size:11px;">mi</small></div>
+      <span class="metric-sub">Suffolk / Nassau Corridors</span>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Shift Elapsed</span>
+      <div class="metric-val"><span id="metric-hours">0.00</span> <small style="font-size:11px;">hrs</small></div>
+      <span class="metric-sub" id="metric-shift-status">Off Clock</span>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Driver Labor</span>
+      <div class="metric-val" id="metric-labor">$0.00</div>
+      <span class="metric-sub" id="metric-wage-label">@ $22.50/hr</span>
+    </div>
+    <div class="metric-card" style="border-color: rgba(16, 185, 129, 0.4);">
+      <span class="metric-label" style="color:#34d399;">Gross Billed</span>
+      <div class="metric-val" style="color:#34d399;" id="metric-revenue">$0.00</div>
+      <span class="metric-sub" id="metric-est-rev">Scheduled: $0.00</span>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Van #104 GPS</span>
+      <div class="metric-val" style="font-size:13px; margin-top:8px; color:#38bdf8;" id="metric-gps">40.7521, -73.2514</div>
+      <span class="metric-sub" id="metric-corridor">Base Depot: Bay Shore</span>
+    </div>
+  </section>
+
+  <!-- ==================== VIEW 1: COCKPIT VIEW ==================== -->
+  <section id="view-cockpit" class="view-section active">
+    <!-- Radar Map Panel -->
+    <div class="panel">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:11px; font-weight:900; text-transform:uppercase; color:#38bdf8;">
+            <i class="fa-solid fa-satellite-dish"></i> Long Island Corridor Radar
+          </span>
+          <span id="active-corridor-pill" class="pill" style="padding:2px 8px; font-size:10px;">LIE I-495 / Sunrise NY-27 / SSP</span>
+        </div>
+        <button type="button" class="pill" onclick="recenterRadarMap()">
+          <i class="fa-solid fa-crosshairs" style="color:#38bdf8;"></i> Recenter Radar
+        </button>
+      </div>
+      <div id="cockpit-map" style="height: 220px; width: 100%; border-radius: 8px; border: 1px solid var(--border-panel); background:#030712;"></div>
+      <div id="run-scrubber" class="scrubber-bar"></div>
+    </div>
+
+    <!-- Active Run Card + Queue -->
+    <div class="cockpit-grid">
+      <!-- Left: Active Run Execution Card -->
+      <div class="panel" id="active-run-panel" style="display:flex; flex-direction:column; justify-content:space-between; gap:10px;">
+        <!-- Populated dynamically via renderCockpit() -->
+      </div>
+
+      <!-- Right: Upcoming Manifest Queue -->
+      <div class="panel" style="display:flex; flex-direction:column; justify-content:space-between;">
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:8px; border-bottom:1px solid var(--border-panel);">
+            <span style="font-size:11px; font-weight:900; text-transform:uppercase; color:var(--text-muted);">
+              <i class="fa-solid fa-list-check" style="color:#38bdf8;"></i> Active Manifest Queue
+            </span>
+            <span id="queue-count-label" style="font-size:11px; font-family:var(--font-mono); color:var(--text-muted);">0 Runs</span>
+          </div>
+          <div id="cockpit-queue-list" style="display:flex; flex-direction:column; gap:6px; margin-top:8px; max-height:420px; overflow-y:auto;"></div>
+        </div>
+
+        <div style="padding-top:10px; border-top:1px solid var(--border-panel); display:flex; justify-content:space-between; font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">
+          <span>NEMT Dry-Run Rule: <strong style="color:#fbbf24;" id="rule-display">50% / $25 Min</strong></span>
+          <span>Depot: <strong style="color:#38bdf8;">1480 5th Ave</strong></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== VIEW 2: CLASSIC ROSTER ==================== -->
+  <section id="view-roster" class="view-section">
+    <div class="panel">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div>
+          <h2 style="font-size:14px; font-weight:900;">Interactive Manifest &amp; Terminal Sequence Table</h2>
+          <p style="font-size:11px; color:var(--text-muted);">Tap any run to load into Cockpit or trigger status/exception stamps</p>
+        </div>
+        <button type="button" class="pill pill-green" onclick="openAddRunModal()">
+          <i class="fa-solid fa-plus"></i> Add Single Trip
+        </button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Run</th>
+              <th>Status</th>
+              <th>Passenger &amp; Phone</th>
+              <th>Pickup (Target / Sched)</th>
+              <th>Dropoff (Target / Sched)</th>
+              <th>Corridor &amp; Miles</th>
+              <th>Tariff</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="roster-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== VIEW 3: SETTINGS DECK ==================== -->
+  <section id="view-settings" class="view-section">
+    <div class="cockpit-grid">
+      <!-- Depot, Fleet & Billing Rules -->
+      <div class="panel" style="display:flex; flex-direction:column; gap:12px;">
+        <div style="border-bottom:1px solid var(--border-panel); padding-bottom:8px;">
+          <h3 style="font-size:14px; font-weight:900; color:#fbbf24;"><i class="fa-solid fa-sliders"></i> Fleet, Billing &amp; API Configuration</h3>
+          <p style="font-size:11px; color:var(--text-muted);">Persistent local settings for Van #104</p>
+        </div>
+
+        <div>
+          <label class="metric-label">Base Depot Address</label>
+          <input type="text" id="cfg-depot" class="input-field" value="1480 5th Ave, Bay Shore, NY 11706">
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+          <div>
+            <label class="metric-label">Hourly Wage ($)</label>
+            <input type="number" step="0.5" id="cfg-wage" class="input-field" value="22.50">
+          </div>
+          <div>
+            <label class="metric-label">Dry-RunRate (%)</label>
+            <input type="number" id="cfg-dry-pct" class="input-field" value="50">
+          </div>
+          <div>
+            <label class="metric-label">Dry-Run Min ($)</label>
+            <input type="number" id="cfg-dry-min" class="input-field" value="25">
+          </div>
+        </div>
+
+        <div>
+          <label class="metric-label">Gemini API Key (Stored Locally on Device)</label>
+          <input type="password" id="cfg-gemini-key" class="input-field" placeholder="AIzaSy...">
+        </div>
+
+        <div style="display:flex; gap:8px; flex-wrap:wrap; padding-top:6px;">
+          <button type="button" class="pill pill-green" onclick="saveSettingsConfig()">
+            <i class="fa-solid fa-floppy-disk"></i> Save Configuration
+          </button>
+          <button type="button" class="pill active-tab" onclick="exportManifestJSON()">
+            <i class="fa-solid fa-download"></i> Export Shift Audit JSON
+          </button>
+        </div>
+      </div>
+
+      <!-- Locked Phone Directory -->
+      <div class="panel" style="display:flex; flex-direction:column; gap:10px;">
+        <div style="border-bottom:1px solid var(--border-panel); padding-bottom:8px;">
+          <h3 style="font-size:14px; font-weight:900; color:#38bdf8;"><i class="fa-solid fa-address-book"></i> Locked Passenger Phone Directory</h3>
+          <p style="font-size:11px; color:var(--text-muted);">Prevents "Unknown" phone numbers when importing manifests</p>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr auto; gap:6px;">
+          <input type="text" id="dir-new-name" class="input-field" placeholder="Passenger Full Name">
+          <input type="text" id="dir-new-phone" class="input-field" placeholder="631-555-0100">
+          <button type="button" class="pill pill-green" onclick="addLockedPhoneEntry()">
+            <i class="fa-solid fa-plus"></i> Lock
+          </button>
+        </div>
+
+        <div id="locked-directory-list" style="display:flex; flex-direction:column; gap:6px; max-height:260px; overflow-y:auto;"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== MODAL 1: UPLOAD / PARSE MANIFEST ==================== -->
+  <div id="modal-manifest" class="modal-overlay">
+    <div class="modal-box">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px s
