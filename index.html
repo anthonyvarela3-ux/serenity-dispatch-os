@@ -567,4 +567,406 @@
         return 'Hola ' + first + ', soy Anthony de Serenity Medical Transport. Estoy en camino y llegare en unos 10 minutos.';
       } else {
         if (AppState.smsType === 'early') return 'Hi ' + first + ', this is Anthony from Serenity Medical Transport. I arrived a few minutes early for your pickup. No rush at all, ready whenever you are.';
-        if (AppState.smsType === 'curb') return 'Hi ' + first + ', this is Anthony from Serenity Medical Transport. I am outside at the pickup point whenever you ar
+        if (AppState.smsType === 'curb') return 'Hi ' + first + ', this is Anthony from Serenity Medical Transport. I am outside at the pickup point whenever you are ready.';
+        return 'Hi ' + first + ', this is Anthony from Serenity Medical Transport. I am en route and will arrive in approximately 10 minutes.';
+      }
+    }
+
+    function setSmsConfig(lang, type) {
+      if (lang) AppState.smsLang = lang;
+      if (type) AppState.smsType = type;
+      renderCockpit();
+    }
+
+    function dispatchSMS(phone, mode) {
+      var box = document.getElementById('active-sms-box');
+      var txt = box ? box.value : '';
+      var clean = (phone || '').replace(/[^0-9]/g, '');
+      if (navigator.clipboard && txt) navigator.clipboard.writeText(txt);
+      if (mode === 'sms') {
+        window.location.href = 'sms:' + clean + '?&body=' + encodeURIComponent(txt);
+      } else {
+        notify('Copied text! Opening Google Voice...');
+        window.open('https://voice.google.com/u/0/messages', '_blank');
+      }
+    }
+
+    function getTripBilled(t) {
+      if (t.status === 'Completed') return Number(t.revenue) || 0;
+      if (t.status === 'No Show' || t.status === 'Cancel at Door') {
+        var pct = (Number(t.revenue) || 0) * (AppState.dryRunPct / 100);
+        return Math.max(pct, AppState.dryRunMin);
+      }
+      return 0;
+    }
+
+    function renderAll() {
+      for (var i = 0; i < AppState.trips.length; i++) {
+        var tr = AppState.trips[i];
+        if (AppState.lockedDirectory[tr.passenger]) {
+          tr.phone = AppState.lockedDirectory[tr.passenger];
+        }
+      }
+      renderMetrics();
+      renderCockpit();
+      renderQueue();
+      renderRoster();
+      renderDirectory();
+    }
+
+    function renderMetrics() {
+      var total = AppState.trips.length;
+      var done = 0;
+      var ex = 0;
+      var miles = 0;
+      var sched = 0;
+      var billed = 0;
+      for (var i = 0; i < total; i++) {
+        var t = AppState.trips[i];
+        if (t.status === 'Completed') done++;
+        if (t.status === 'No Show' || t.status === 'Cancel at Door') ex++;
+        miles += Number(t.miles) || 0;
+        sched += Number(t.revenue) || 0;
+        billed += getTripBilled(t);
+      }
+      document.getElementById('metric-runs').textContent = done + ' / ' + total;
+      document.getElementById('metric-exceptions').textContent = ex + ' Exceptions';
+      document.getElementById('metric-miles').textContent = miles.toFixed(1);
+      document.getElementById('metric-revenue').textContent = '$' + billed.toFixed(2);
+      document.getElementById('metric-est-rev').textContent = 'Scheduled: $' + sched.toFixed(2);
+    }
+
+    function renderCockpit() {
+      var panel = document.getElementById('active-run-panel');
+      if (!panel) return;
+
+      if (AppState.trips.length === 0) {
+        panel.innerHTML = '<div style="padding:32px; text-align:center;">' +
+          '<h3 style="font-size:16px; color:#38bdf8; margin-bottom:8px;">Dispatch Cockpit Ready</h3>' +
+          '<p style="font-size:12px; color:#94a3b8; margin-bottom:16px;">Tap "Load 07:30 Schedule" or tap "Upload Manifest" to populate your queue.</p>' +
+          '<div style="display:flex; justify-content:center; gap:8px;">' +
+            '<button type="button" class="pill pill-green" onclick="loadSampleMorningShift()">Load 07:30 Schedule</button>' +
+            '<button type="button" class="pill active-tab" onclick="switchView(\'upload\')">Upload Manifest</button>' +
+          '</div>' +
+        '</div>';
+        return;
+      }
+
+      if (AppState.activeIdx >= AppState.trips.length) AppState.activeIdx = 0;
+      var t = AppState.trips[AppState.activeIdx];
+      var sms = buildSmsText(t.passenger);
+
+      var html = '';
+      html += '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1b2c4f; padding-bottom:8px;">';
+      html += '  <span class="pill active-tab">RUN #' + (AppState.activeIdx + 1) + ' OF ' + AppState.trips.length + ' (' + t.mobility + ')</span>';
+      html += '  <span class="pill pill-amber">' + t.status + '</span>';
+      html += '</div>';
+
+      html += '<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-top:10px;">';
+      html += '  <div><h2 style="font-size:22px; font-weight:900;">' + t.passenger + '</h2>';
+      html += '  <span style="font-size:11px; color:#94a3b8;">' + t.corridor + ' | ' + t.miles + ' mi | Tariff: $' + Number(t.revenue).toFixed(2) + '</span></div>';
+      html += '  <div style="display:flex; gap:6px; align-items:center;">';
+      html += '    <span class="pill" style="font-family:monospace; color:#38bdf8;">' + t.phone + '</span>';
+      html += '    <a href="tel:' + t.phone + '" class="pill pill-green">Call</a>';
+      html += '  </div>';
+      html += '</div>';
+
+      html += '<div class="leg-grid">';
+      html += '  <div class="leg-card pickup">';
+      html += '    <div><div style="font-size:10px; font-weight:800; color:#2dd4bf;">PICKUP | SCHED: ' + t.schedPU + '</div>';
+      html += '    <div style="font-size:16px; font-weight:900; margin-top:2px;">Target: ' + t.targetPU + '</div>';
+      html += '    <div style="font-size:11px; color:#cbd5e1; margin-top:4px;">' + t.puAddress + '</div></div>';
+      html += '    <a href="https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(t.puAddress) + '" target="_blank" class="btn-action btn-teal">Navigate Pickup</a>';
+      html += '  </div>';
+
+      html += '  <div class="leg-card dropoff">';
+      html += '    <div><div style="font-size:10px; font-weight:800; color:#fda4af;">DROPOFF | SCHED: ' + t.schedDO + '</div>';
+      html += '    <div style="font-size:16px; font-weight:900; margin-top:2px;">Target: ' + t.targetDO + '</div>';
+      html += '    <div style="font-size:11px; color:#cbd5e1; margin-top:4px;">' + t.doAddress + '</div></div>';
+      html += '    <a href="https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(t.doAddress) + '" target="_blank" class="btn-action btn-rose">Navigate Dropoff</a>';
+      html += '  </div>';
+      html += '</div>';
+
+      // Bilingual SMS Hub
+      html += '<div style="margin-top:10px; background:#050810; border:1px solid #1b2c4f; border-radius:10px; padding:10px;">';
+      html += '  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">';
+      html += '    <span style="font-size:10px; font-weight:900; color:#fbbf24;">BILINGUAL PASSENGER SMS (EN / ES)</span>';
+      html += '    <div style="display:flex; gap:4px; flex-wrap:wrap;">';
+      html += '      <button type="button" class="pill ' + (AppState.smsLang === 'EN' ? 'active-tab' : '') + '" onclick="setSmsConfig(\'EN\', null)">EN</button>';
+      html += '      <button type="button" class="pill ' + (AppState.smsLang === 'ES' ? 'pill-amber' : '') + '" onclick="setSmsConfig(\'ES\', null)">ES</button>';
+      html += '      <button type="button" class="pill ' + (AppState.smsType === '10m' ? 'pill-green' : '') + '" onclick="setSmsConfig(null, \'10m\')">10m Out</button>';
+      html += '      <button type="button" class="pill ' + (AppState.smsType === 'early' ? 'pill-green' : '') + '" onclick="setSmsConfig(null, \'early\')">Early</button>';
+      html += '      <button type="button" class="pill ' + (AppState.smsType === 'curb' ? 'pill-green' : '') + '" onclick="setSmsConfig(null, \'curb\')">At Curb</button>';
+      html += '    </div>';
+      html += '  </div>';
+      html += '  <textarea id="active-sms-box" rows="2" class="input-field">' + sms + '</textarea>';
+      html += '  <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:6px;">';
+      html += '    <button type="button" class="pill pill-amber" onclick="dispatchSMS(\'' + t.phone + '\', \'sms\')">Send SMS</button>';
+      html += '    <button type="button" class="pill active-tab" onclick="dispatchSMS(\'' + t.phone + '\', \'gv\')">Copy & Open Google Voice</button>';
+      html += '  </div>';
+      html += '</div>';
+
+      // Actions
+      html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:10px;">';
+      html += '  <button type="button" class="btn-action btn-amber" onclick="markArrived(\'' + t.id + '\')">' + (t.arrivedTime ? 'Arrived (' + t.arrivedTime + ')' : 'Mark Arrived') + '</button>';
+      html += '  <button type="button" class="btn-action btn-emerald" onclick="markCompleted(\'' + t.id + '\')">Complete Run ($' + Number(t.revenue).toFixed(2) + ')</button>';
+      html += '  <button type="button" class="btn-action btn-rose" onclick="markException(\'' + t.id + '\', \'No Show\')">No Show</button>';
+      html += '  <button type="button" class="btn-action btn-slate" onclick="markException(\'' + t.id + '\', \'Cancel at Door\')">Cancel at Door</button>';
+      html += '</div>';
+
+      panel.innerHTML = html;
+    }
+
+    function renderQueue() {
+      var box = document.getElementById('cockpit-queue-list');
+      var lbl = document.getElementById('queue-count-label');
+      if (!box) return;
+      if (lbl) lbl.textContent = AppState.trips.length + ' Runs';
+      if (AppState.trips.length === 0) {
+        box.innerHTML = '<div style="font-size:11px; color:#94a3b8;">No runs in queue.</div>';
+        return;
+      }
+      var html = '';
+      for (var i = 0; i < AppState.trips.length; i++) {
+        var t = AppState.trips[i];
+        var border = (i === AppState.activeIdx) ? '#38bdf8' : '#1b2c4f';
+        html += '<div onclick="selectRun(' + i + ')" style="background:#050810; border:1px solid ' + border + '; border-radius:8px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;">';
+        html += '  <div><strong style="font-size:12px;">#' + (i + 1) + ' ' + t.passenger + '</strong> <span style="font-size:10px; color:#38bdf8;">(' + t.mobility + ')</span>';
+        html += '  <div style="font-size:10px; color:#94a3b8;">' + t.puAddress + ' -> ' + t.doAddress + '</div></div>';
+        html += '  <div style="text-align:right; font-family:monospace;"><div style="color:#34d399; font-weight:900;">' + t.schedPU + '</div><div style="font-size:10px; color:#94a3b8;">' + t.status + '</div></div>';
+        html += '</div>';
+      }
+      box.innerHTML = html;
+    }
+
+    function selectRun(idx) {
+      AppState.activeIdx = idx;
+      renderAll();
+    }
+
+    function renderRoster() {
+      var tb = document.getElementById('roster-tbody');
+      if (!tb) return;
+      if (AppState.trips.length === 0) {
+        tb.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#94a3b8;">No runs loaded. Tap "Load 07:30 Schedule" or "Upload Manifest".</td></tr>';
+        return;
+      }
+      var html = '';
+      for (var i = 0; i < AppState.trips.length; i++) {
+        var t = AppState.trips[i];
+        html += '<tr onclick="selectRun(' + i + '); switchView(\'cockpit\');" style="cursor:pointer;">';
+        html += '<td>#' + (i + 1) + '</td>';
+        html += '<td><span class="pill">' + t.status + '</span></td>';
+        html += '<td><strong>' + t.passenger + '</strong><br><span style="font-size:10px; color:#38bdf8;">' + t.phone + '</span></td>';
+        html += '<td>' + t.schedPU + '<br><span style="font-size:10px; color:#94a3b8;">' + t.puAddress + '</span></td>';
+        html += '<td>' + t.schedDO + '<br><span style="font-size:10px; color:#94a3b8;">' + t.doAddress + '</span></td>';
+        html += '<td>' + t.miles + ' mi</td>';
+        html += '<td style="color:#34d399; font-weight:800;">$' + Number(t.revenue).toFixed(2) + '</td>';
+        html += '<td onclick="event.stopPropagation();"><button type="button" class="pill pill-rose" onclick="deleteRun(\'' + t.id + '\')">Delete</button></td>';
+        html += '</tr>';
+      }
+      tb.innerHTML = html;
+    }
+
+    function markArrived(id) {
+      for (var i = 0; i < AppState.trips.length; i++) {
+        if (AppState.trips[i].id === id) {
+          AppState.trips[i].arrivedTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          AppState.trips[i].status = 'Arrived at Curb';
+          notify('Marked Arrived for ' + AppState.trips[i].passenger);
+        }
+      }
+      saveState();
+      renderAll();
+    }
+
+    function markCompleted(id) {
+      for (var i = 0; i < AppState.trips.length; i++) {
+        if (AppState.trips[i].id === id) {
+          AppState.trips[i].status = 'Completed';
+          notify('Completed Run for ' + AppState.trips[i].passenger);
+        }
+      }
+      saveState();
+      renderAll();
+    }
+
+    function markException(id, type) {
+      for (var i = 0; i < AppState.trips.length; i++) {
+        if (AppState.trips[i].id === id) {
+          AppState.trips[i].status = type;
+          notify(type + ' recorded.');
+        }
+      }
+      saveState();
+      renderAll();
+    }
+
+    function deleteRun(id) {
+      AppState.trips = AppState.trips.filter(function(t) { return t.id !== id; });
+      AppState.activeIdx = 0;
+      saveState();
+      renderAll();
+    }
+
+    function loadSampleMorningShift() {
+      AppState.trips = [
+        {
+          id: 'RUN-01',
+          passenger: 'William',
+          phone: AppState.lockedDirectory['William'] || '631-555-0111',
+          mobility: 'Ambulatory',
+          schedPU: '07:30 AM',
+          targetPU: '07:20 AM',
+          puAddress: 'Bay Shore, NY',
+          schedDO: '08:15 AM',
+          targetDO: '08:05 AM',
+          doAddress: 'Suffolk Medical Center, NY',
+          miles: 11.4,
+          revenue: 62.00,
+          corridor: 'Sunrise Hwy NY-27',
+          status: 'Scheduled'
+        },
+        {
+          id: 'RUN-02',
+          passenger: 'Gloria',
+          phone: AppState.lockedDirectory['Gloria'] || '631-555-0222',
+          mobility: 'Ambulatory',
+          schedPU: '08:30 AM',
+          targetPU: '08:20 AM',
+          puAddress: 'Bay Shore / Islip Corridor, NY',
+          schedDO: '09:15 AM',
+          targetDO: '09:05 AM',
+          doAddress: 'Outpatient Care Center, NY',
+          miles: 9.8,
+          revenue: 58.00,
+          corridor: 'Southern State Pkwy / Sagtikos',
+          status: 'Scheduled'
+        }
+      ];
+      AppState.activeIdx = 0;
+      saveState();
+      switchView('cockpit');
+      notify('Loaded 07:30 AM Schedule (William -> Gloria)');
+    }
+
+    function parseAndLoadManifest() {
+      var raw = document.getElementById('manifest-paste-box').value.trim();
+      if (!raw) {
+        notify('Paste schedule lines first.');
+        return;
+      }
+      var lines = raw.split('\n');
+      var list = [];
+      for (var i = 0; i < lines.length; i++) {
+        var ln = lines[i].trim();
+        if (!ln) continue;
+        var p = ln.split('|');
+        var pax = (p[0] || ('Passenger ' + (i + 1))).trim();
+        list.push({
+          id: 'RUN-' + Date.now() + '-' + i,
+          passenger: pax,
+          phone: AppState.lockedDirectory[pax] || (p[1] ? p[1].trim() : '631-836-1188'),
+          mobility: p[2] ? p[2].trim() : 'Ambulatory',
+          schedPU: p[3] ? p[3].trim() : '08:00 AM',
+          targetPU: p[3] ? p[3].trim() : '07:50 AM',
+          puAddress: p[4] ? p[4].trim() : 'Bay Shore, NY',
+          schedDO: p[5] ? p[5].trim() : '08:45 AM',
+          targetDO: p[5] ? p[5].trim() : '08:35 AM',
+          doAddress: p[6] ? p[6].trim() : 'Islip, NY',
+          miles: parseFloat(p[7]) || 10.0,
+          revenue: parseFloat(p[8]) || 55.00,
+          corridor: 'LIE I-495 / Sunrise NY-27',
+          status: 'Scheduled'
+        });
+      }
+      AppState.trips = list;
+      AppState.activeIdx = 0;
+      saveState();
+      switchView('cockpit');
+      notify('Ingested ' + list.length + ' runs.');
+    }
+
+    function saveManualRun() {
+      var pax = document.getElementById('add-pax').value.trim() || 'Passenger';
+      var phone = AppState.lockedDirectory[pax] || document.getElementById('add-phone').value.trim() || '631-836-1188';
+      AppState.trips.push({
+        id: 'RUN-' + Date.now(),
+        passenger: pax,
+        phone: phone,
+        mobility: document.getElementById('add-mob').value,
+        corridor: document.getElementById('add-corridor').value.trim() || 'Sunrise NY-27',
+        schedPU: document.getElementById('add-pu-time').value.trim() || '09:00 AM',
+        targetPU: document.getElementById('add-pu-time').value.trim() || '08:50 AM',
+        schedDO: document.getElementById('add-do-time').value.trim() || '09:45 AM',
+        targetDO: document.getElementById('add-do-time').value.trim() || '09:35 AM',
+        puAddress: document.getElementById('add-pu-addr').value.trim() || 'Bay Shore, NY',
+        doAddress: document.getElementById('add-do-addr').value.trim() || 'Islip, NY',
+        miles: parseFloat(document.getElementById('add-miles').value) || 8.5,
+        revenue: parseFloat(document.getElementById('add-rev').value) || 55.00,
+        status: 'Scheduled'
+      });
+      saveState();
+      switchView('cockpit');
+      notify('Added ' + pax + ' to manifest.');
+    }
+
+    function clearManifest() {
+      AppState.trips = [];
+      AppState.activeIdx = 0;
+      saveState();
+      renderAll();
+      notify('Manifest cleared.');
+    }
+
+    function renderDirectory() {
+      var box = document.getElementById('locked-directory-list');
+      if (!box) return;
+      var keys = Object.keys(AppState.lockedDirectory);
+      var html = '';
+      for (var i = 0; i < keys.length; i++) {
+        var k = keys[i];
+        html += '<div style="display:flex; justify-content:space-between; background:#050810; border:1px solid #1b2c4f; padding:6px 10px; border-radius:6px; font-size:12px;">';
+        html += '<strong>' + k + '</strong><span style="color:#38bdf8; font-family:monospace;">' + AppState.lockedDirectory[k] + '</span></div>';
+      }
+      box.innerHTML = html;
+    }
+
+    function addLockedPhoneEntry() {
+      var n = document.getElementById('dir-new-name').value.trim();
+      var p = document.getElementById('dir-new-phone').value.trim();
+      if (!n || !p) return;
+      AppState.lockedDirectory[n] = p;
+      document.getElementById('dir-new-name').value = '';
+      document.getElementById('dir-new-phone').value = '';
+      saveState();
+      renderAll();
+      notify('Locked ' + n + ' into directory.');
+    }
+
+    function saveSettingsConfig() {
+      AppState.depotAddress = document.getElementById('cfg-depot').value.trim();
+      AppState.hourlyWage = parseFloat(document.getElementById('cfg-wage').value) || 22.50;
+      AppState.dryRunPct = parseFloat(document.getElementById('cfg-dry-pct').value) || 50;
+      AppState.dryRunMin = parseFloat(document.getElementById('cfg-dry-min').value) || 25;
+      document.getElementById('metric-wage-label').textContent = '@ $' + AppState.hourlyWage.toFixed(2) + '/hr';
+      renderAll();
+      notify('Settings saved.');
+    }
+
+    // Boot Script
+    try {
+      var st = localStorage.getItem('serenity_trips_v6');
+      if (st) AppState.trips = JSON.parse(st);
+      var sd = localStorage.getItem('serenity_dir_v6');
+      if (sd) AppState.lockedDirectory = JSON.parse(sd);
+    } catch (e) {
+      console.error('Boot error:', e);
+    }
+
+    setInterval(updateClock, 1000);
+    updateClock();
+    renderAll();
+  </script>
+</body>
+</html>
