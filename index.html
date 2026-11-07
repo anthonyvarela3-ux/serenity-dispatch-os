@@ -5,584 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Serenity Dispatch OS - Commercial Production</title>
 
-    <style>
-        :root {
-            --bg-base: #070b14;
-            --bg-card: #0f172a;
-            --border-dim: #1e293b;
-            --border-glow: #06b6d4;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --cyan-accent: #00f2fe;
-            --emerald-green: #10b981;
-            --rose-red: #f43f5e;
-            --amber-gold: #f59e0b;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            background-color: var(--bg-base);
-            color: var(--text-main);
-            padding: 12px;
-            font-size: 15px;
-            line-height: 1.4;
-            display: flex;
-            justify-content: center;
-        }
-
-        .os-container {
-            width: 100%;
-            max-width: 900px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .brand-header {
-            background: linear-gradient(180deg, #111e38 0%, #0c1427 100%);
-            border: 1px solid var(--border-dim);
-            border-radius: 8px;
-            padding: 12px 14px;
-        }
-
-        .brand-row-1 {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 4px;
-        }
-
-        .brand-title {
-            font-size: 19px;
-            font-weight: 900;
-            letter-spacing: 0.5px;
-            color: var(--cyan-accent);
-            text-shadow: 0 0 10px rgba(0, 242, 254, 0.4);
-        }
-
-        .version-badge {
-            background-color: #2563eb;
-            color: #fff;
-            font-size: 11px;
-            font-weight: 800;
-            padding: 3px 8px;
-            border-radius: 4px;
-            letter-spacing: 0.5px;
-        }
-
-        .brand-sub {
-            font-size: 11px;
-            color: var(--text-muted);
-            font-weight: 700;
-            letter-spacing: 0.4px;
-        }
-
-        .shift-bar {
-            display: grid;
-            grid-template-columns: 100px 1.2fr 1.2fr 1.2fr 0.8fr;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .clock-display {
-            background-color: #032b30;
-            border: 1px solid #00f2fe;
-            color: #00f2fe;
-            font-size: 13px;
-            font-weight: 800;
-            text-align: center;
-            padding: 9px 0;
-            border-radius: 6px;
-            box-shadow: inset 0 0 8px rgba(0, 242, 254, 0.2);
-            white-space: nowrap;
-        }
-
-        .btn {
-            appearance: none;
-            -webkit-appearance: none;
-            border: none;
-            outline: none;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 700;
-            padding: 10px 8px;
-            border-radius: 6px;
-            text-align: center;
-            user-select: none;
-            -webkit-user-select: none;
-            display: inline-flex;
-            justify-content: center;
-            align-items: center;
-            text-decoration: none;
-            min-height: 40px;
-        }
-
-        .btn:active {
-            opacity: 0.85;
-            transform: scale(0.98);
-        }
-
-        .btn-green { background-color: var(--emerald-green); color: #fff; }
-        .btn-cyan { background-color: #0284c7; color: #fff; }
-        .btn-cyan-active { background-color: #0ea5e9; color: #fff; border: 1px solid var(--cyan-accent); }
-        .btn-orange { background-color: #ea580c; color: #fff; }
-        .btn-orange.nav-active { box-shadow: 0 0 0 2px var(--cyan-accent); }
-        .btn-red { background-color: #dc2626; color: #fff; }
-        .btn-slate { background-color: #334155; color: #f8fafc; }
-        .btn.mini { padding: 4px 8px; font-size: 11px; min-height: 28px; }
-
-        .metric-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .metric-card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-dim);
-            border-radius: 8px;
-            padding: 10px 14px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .metric-title {
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: 0.6px;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            margin-bottom: 2px;
-        }
-
-        .metric-val {
-            font-size: 22px;
-            font-weight: 900;
-            color: #fff;
-        }
-
-        .metric-sub {
-            font-size: 11px;
-            color: var(--text-muted);
-            margin-top: 1px;
-            font-weight: 600;
-        }
-
-        .border-green {
-            border: 1.5px solid var(--emerald-green);
-            box-shadow: 0 0 10px rgba(16, 185, 129, 0.15);
-        }
-
-        .view-panel {
-            display: none;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .view-panel.active {
-            display: flex;
-        }
-
-        .action-card {
-            background: linear-gradient(180deg, #101c38 0%, #0c1427 100%);
-            border: 1px solid #1e3a8a;
-            border-radius: 8px;
-            padding: 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .action-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            border-bottom: 1px solid #1e293b;
-            padding-bottom: 8px;
-            gap: 8px;
-        }
-
-        .action-title-group h2 {
-            font-size: 20px;
-            font-weight: 900;
-            color: #fff;
-        }
-
-        .action-sub {
-            font-size: 11px;
-            color: #38bdf8;
-            font-weight: 700;
-        }
-
-        .badge-sched {
-            background-color: #1e293b;
-            border: 1px solid #334155;
-            color: #f59e0b;
-            font-size: 12px;
-            font-weight: 800;
-            padding: 4px 10px;
-            border-radius: 4px;
-        }
-
-        .badge-wc {
-            background-color: #7c2d12;
-            border: 1px solid #fb923c;
-            color: #fed7aa;
-            font-size: 10px;
-            font-weight: 800;
-            padding: 2px 6px;
-            border-radius: 4px;
-            letter-spacing: 0.4px;
-            vertical-align: middle;
-        }
-
-        .phone-call-btn {
-            background-color: #1e1b4b;
-            border: 1px solid #6366f1;
-            color: #a5b4fc;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 800;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .loc-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .loc-box {
-            border-radius: 6px;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            min-height: 100px;
-        }
-
-        .loc-pu {
-            background-color: #032528;
-            border: 1px solid #0891b2;
-        }
-
-        .loc-do {
-            background-color: #2b0b18;
-            border: 1px solid #be123c;
-        }
-
-        .loc-lbl {
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }
-
-        .loc-pu .loc-lbl { color: #22d3ee; }
-        .loc-do .loc-lbl { color: #fb7185; }
-
-        .loc-target {
-            font-size: 14px;
-            font-weight: 900;
-            color: #fff;
-            margin: 2px 0 6px 0;
-        }
-
-        .loc-addr {
-            font-size: 13px;
-            font-weight: 600;
-            color: #e2e8f0;
-            margin-bottom: 8px;
-        }
-
-        .status-line {
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--text-muted);
-        }
-
-        .status-line b { color: var(--cyan-accent); }
-
-        .comm-box {
-            background-color: #0b1329;
-            border: 1px solid #1e293b;
-            border-radius: 6px;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .comm-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .comm-title {
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            color: var(--amber-gold);
-            text-transform: uppercase;
-        }
-
-        .lang-toggles {
-            display: flex;
-            gap: 4px;
-        }
-
-        .btn-toggle {
-            background-color: #1e293b;
-            border: 1px solid #334155;
-            color: var(--text-muted);
-            font-size: 11px;
-            font-weight: 800;
-            padding: 4px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .btn-toggle.active {
-            background-color: #0284c7;
-            border-color: #38bdf8;
-            color: #fff;
-        }
-
-        .macro-row {
-            display: flex;
-            gap: 6px;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            padding-bottom: 2px;
-        }
-
-        .macro-btn {
-            background-color: #1e293b;
-            border: 1px solid #334155;
-            color: #cbd5e1;
-            font-size: 12px;
-            font-weight: 700;
-            padding: 7px 10px;
-            border-radius: 4px;
-            white-space: nowrap;
-            cursor: pointer;
-        }
-
-        .sms-input {
-            width: 100%;
-            background-color: #070e1e;
-            border: 1px solid #334155;
-            border-radius: 4px;
-            color: #fff;
-            padding: 8px;
-            font-size: 16px;
-            resize: none;
-            outline: none;
-        }
-
-        .sms-actions {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-
-        .primary-actions {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-
-        .primary-actions .btn { font-size: 15px; min-height: 48px; }
-
-        .upload-card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-dim);
-            border-radius: 8px;
-            padding: 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .field-group {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .field-lbl {
-            font-size: 11px;
-            font-weight: 800;
-            color: #38bdf8;
-            letter-spacing: 0.5px;
-        }
-
-        .text-input {
-            width: 100%;
-            background-color: #070e1e;
-            border: 1px solid #334155;
-            border-radius: 6px;
-            color: #fff;
-            padding: 8px 10px;
-            font-size: 16px;
-            outline: none;
-        }
-
-        .text-input:focus {
-            border-color: var(--cyan-accent);
-        }
-
-        .raw-ingest-area {
-            height: 140px;
-            font-family: monospace;
-            font-size: 16px;
-            resize: vertical;
-        }
-
-        .ingest-msg {
-            font-size: 12px;
-            font-weight: 700;
-            line-height: 1.4;
-        }
-        .ingest-msg.ok { color: var(--emerald-green); }
-        .ingest-msg.err { color: var(--rose-red); }
-
-        .roster-card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-dim);
-            border-radius: 8px;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .roster-header {
-            font-size: 11px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-            color: var(--text-muted);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .roster-item {
-            background-color: #070e1e;
-            border: 1px solid #1e293b;
-            border-radius: 6px;
-            padding: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-        }
-
-        .roster-item.active-run {
-            border-left: 3px solid #00f2fe;
-            background-color: #0d1e38;
-        }
-
-        .roster-item.completed {
-            opacity: 0.5;
-            border-left: 3px solid var(--emerald-green);
-        }
-
-        .roster-item.noshow {
-            opacity: 0.5;
-            border-left: 3px solid var(--rose-red);
-        }
-
-        .roster-left h4 {
-            font-size: 14px;
-            font-weight: 800;
-            color: #fff;
-        }
-
-        .roster-left p {
-            font-size: 11px;
-            color: var(--text-muted);
-        }
-
-        .roster-right {
-            text-align: right;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 4px;
-        }
-
-        .roster-tariff {
-            font-size: 14px;
-            font-weight: 800;
-            color: var(--emerald-green);
-        }
-
-        .settings-card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-dim);
-            border-radius: 8px;
-            padding: 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .phone-dir-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 6px;
-            max-height: 250px;
-            overflow-y: auto;
-        }
-
-        .phone-dir-row {
-            background-color: #070e1e;
-            border: 1px solid #1e293b;
-            padding: 8px 12px;
-            border-radius: 6px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .phone-dir-name {
-            font-weight: 700;
-            font-size: 13px;
-        }
-
-        .empty-queue {
-            padding: 30px 10px;
-            text-align: center;
-            color: var(--text-muted);
-            font-weight: 700;
-        }
-
-        @media (max-width: 760px) {
-            .shift-bar { grid-template-columns: 1fr 1fr; }
-            .clock-display { grid-column: 1 / -1; }
-        }
-
-        @media (max-width: 520px) {
-            .loc-grid { grid-template-columns: 1fr; }
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -679,4 +102,71 @@
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
                 <input type="text" class="text-input" id="manName" placeholder="Passenger Name">
                 <input type="tel" class="text-input" id="manPhone" placeholder="Phone Number">
-                <sele
+                <select class="text-input" id="manMobility">
+                    <option value="Ambulatory">Ambulatory</option>
+                    <option value="Wheelchair">Wheelchair</option>
+                </select>
+                <input type="text" class="text-input" id="manCorridor" placeholder="Corridor (e.g. Sunrise NY-27)">
+                <input type="text" class="text-input" id="manPUTime" placeholder="PU Time (07:30 AM)">
+                <input type="text" class="text-input" id="manDOTime" placeholder="DO Time (08:15 AM)">
+            </div>
+            <input type="text" class="text-input" id="manPUAddr" placeholder="Pickup Street Address, Town, NY">
+            <input type="text" class="text-input" id="manDOAddr" placeholder="Dropoff Street Address, Town, NY">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                <input type="number" step="0.1" inputmode="decimal" class="text-input" id="manMiles" placeholder="Miles (10.0)">
+                <input type="number" step="0.01" inputmode="decimal" class="text-input" id="manTariff" placeholder="Tariff ($55.00)">
+            </div>
+            <button class="btn btn-cyan" style="font-size:14px; padding:12px;" onclick="addManualLeg()">Add Leg to Manifest</button>
+            <div class="ingest-msg" id="manualMsg"></div>
+        </section>
+    </main>
+
+    <main class="view-panel" id="viewSettings">
+        <section class="settings-card">
+            <span class="field-lbl" style="font-size:13px; color:#fff;">Shift &amp; Fleet Settings</span>
+            <div class="field-group">
+                <span class="field-lbl">HOURLY DRIVER RATE ($)</span>
+                <input type="number" step="0.01" inputmode="decimal" class="text-input" id="setRate">
+            </div>
+            <div class="field-group">
+                <span class="field-lbl">BASE ADDRESS</span>
+                <input type="text" class="text-input" id="setBase">
+            </div>
+            <div class="field-group">
+                <span class="field-lbl">FLEET UNIT</span>
+                <input type="text" class="text-input" id="setUnit">
+            </div>
+            <button class="btn btn-green" style="font-size:14px; padding:12px;" onclick="saveSettings()">Save Settings</button>
+            <div class="ingest-msg" id="settingsMsg"></div>
+        </section>
+
+        <section class="settings-card">
+            <span class="field-lbl" style="font-size:13px; color:#fff;">Phone Directory</span>
+            <div class="phone-dir-grid" id="phoneDir"></div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                <input type="text" class="text-input" id="dirName" placeholder="Name (e.g. Dispatch)">
+                <input type="tel" class="text-input" id="dirPhone" placeholder="Phone">
+            </div>
+            <button class="btn btn-cyan" onclick="addDirectory()">Add Contact</button>
+            <div class="ingest-msg" id="dirMsg"></div>
+        </section>
+
+        <section class="settings-card">
+            <span class="field-lbl" style="font-size:13px; color:#fff;">Data &amp; Privacy</span>
+            <div style="font-size:12px; color:var(--text-muted);">
+                Passenger names, phones, and addresses are stored only in this browser on this device. Clear the manifest at the end of each shift.
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                <button class="btn btn-slate" onclick="resetShiftTimer()">Reset Shift Timer</button>
+                <button class="btn btn-red" onclick="wipeAllData()">Wipe All Data</button>
+            </div>
+        </section>
+    </main>
+
+</div>
+
+<script src="app1.js"></script>
+<script src="app2.js"></script>
+<script src="app3.js"></script>
+</body>
+</html>
