@@ -1,972 +1,691 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Serenity Dispatch OS - V6 Production</title>
-  
-  <!-- On-Screen Mobile Debug Console (Floats in bottom-right corner) -->
-  <script src="https://unpkg.com/vconsole@latest/dist/vconsole.min.js"></script>
-  <script>
-    if (typeof VConsole !== 'undefined') {
-      window.vConsole = new VConsole();
-    }
-  </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Serenity Dispatch OS - Commercial Production</title>
+    <style>
+        :root {
+            --bg-base: #070b14;
+            --bg-card: #0f172a;
+            --border-dim: #1e293b;
+            --border-glow: #06b6d4;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --cyan-accent: #00f2fe;
+            --emerald-green: #10b981;
+            --rose-red: #f43f5e;
+            --amber-gold: #f59e0b;
+            --violet-card: #1e1b4b;
+        }
 
-  <style>
-    :root {
-      --bg-base: #050810;
-      --bg-panel: #0b1325;
-      --border-panel: #1b2c4f;
-      --accent-blue: #0ea5e9;
-      --accent-teal: #14b8a6;
-      --accent-amber: #f59e0b;
-      --accent-emerald: #10b981;
-      --accent-rose: #f43f5e;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --font-mono: Courier New, monospace;
-    }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      -webkit-tap-highlight-color: transparent;
-    }
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            padding: 12px;
+            font-size: 15px;
+            line-height: 1.4;
+            display: flex;
+            justify-content: center;
+        }
 
-    body {
-      background: var(--bg-base);
-      color: var(--text-main);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      padding: 8px;
-      gap: 8px;
-    }
+        .os-container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
 
-    .top-bar {
-      background: var(--bg-panel);
-      border: 1px solid var(--border-panel);
-      border-radius: 10px;
-      padding: 8px 12px;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-    }
+        /* Top Brand Header */
+        .brand-header {
+            background: linear-gradient(180deg, #111e38 0%, #0c1427 100%);
+            border: 1px solid var(--border-dim);
+            border-radius: 8px;
+            padding: 12px 14px;
+        }
 
-    .brand-title {
-      font-size: 16px;
-      font-weight: 900;
-      color: #38bdf8;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
+        .brand-row-1 {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
 
-    .brand-badge {
-      background: #0369a1;
-      color: #fff;
-      font-size: 9px;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-weight: 800;
-    }
+        .brand-title {
+            font-size: 19px;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+            color: var(--cyan-accent);
+            text-shadow: 0 0 10px rgba(0, 242, 254, 0.4);
+        }
 
-    .brand-sub {
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      margin-top: 2px;
-    }
+        .version-badge {
+            background-color: #2563eb;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+        }
 
-    .control-pills {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      align-items: center;
-    }
+        .brand-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 700;
+            letter-spacing: 0.4px;
+        }
 
-    button.pill, a.pill {
-      background: #172544;
-      border: 1px solid var(--border-panel);
-      border-radius: 7px;
-      padding: 8px 12px;
-      font-size: 11px;
-      font-weight: 800;
-      color: #cbd5e1;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      text-decoration: none;
-      touch-action: manipulation;
-    }
+        /* Shift Bar */
+        .shift-bar {
+            display: grid;
+            grid-template-columns: 100px 1.2fr 1.2fr 1.2fr 0.8fr;
+            gap: 8px;
+            align-items: center;
+        }
 
-    button.pill:active, a.pill:active {
-      opacity: 0.75;
-      transform: scale(0.97);
-    }
+        .clock-display {
+            background-color: #032b30;
+            border: 1px solid #00f2fe;
+            color: #00f2fe;
+            font-size: 13px;
+            font-weight: 800;
+            text-align: center;
+            padding: 9px 0;
+            border-radius: 6px;
+            box-shadow: inset 0 0 8px rgba(0, 242, 254, 0.2);
+            white-space: nowrap;
+        }
 
-    button.pill.active-tab {
-      background: var(--accent-blue);
-      border-color: #38bdf8;
-      color: #fff;
-    }
+        .btn {
+            appearance: none;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 10px 8px;
+            border-radius: 6px;
+            text-align: center;
+            transition: opacity 0.15s ease, transform 0.05s ease;
+            user-select: none;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            text-decoration: none;
+        }
 
-    button.pill-green, a.pill-green {
-      background: #064e3b;
-      border-color: #059669;
-      color: #34d399;
-    }
+        .btn:active {
+            transform: scale(0.98);
+            opacity: 0.85;
+        }
 
-    button.pill-amber {
-      background: #78350f;
-      border-color: #d97706;
-      color: #fbbf24;
-    }
+        .btn-green { background-color: var(--emerald-green); color: #fff; }
+        .btn-cyan { background-color: #0284c7; color: #fff; }
+        .btn-cyan-active { background-color: #0ea5e9; color: #fff; border: 1px solid var(--cyan-accent); }
+        .btn-orange { background-color: #ea580c; color: #fff; }
+        .btn-red { background-color: #dc2626; color: #fff; }
+        .btn-slate { background-color: #334155; color: #f8fafc; }
 
-    button.pill-rose {
-      background: #4c0519;
-      border-color: #e11d48;
-      color: #fda4af;
-    }
+        /* Metric Deck */
+        .metric-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
 
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 8px;
-    }
+        .metric-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 8px;
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
 
-    @media(max-width: 1024px) { .metrics-grid { grid-template-columns: repeat(3, 1fr); } }
-    @media(max-width: 540px) { .metrics-grid { grid-template-columns: repeat(2, 1fr); } }
+        .metric-title {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 2px;
+        }
 
-    .metric-card {
-      background: var(--bg-panel);
-      border: 1px solid var(--border-panel);
-      border-radius: 10px;
-      padding: 10px 12px;
-    }
+        .metric-val {
+            font-size: 22px;
+            font-weight: 900;
+            color: #fff;
+        }
 
-    .metric-label {
-      font-size: 10px;
-      font-weight: 800;
-      color: var(--text-muted);
-      text-transform: uppercase;
-    }
+        .metric-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 1px;
+            font-weight: 600;
+        }
 
-    .metric-val {
-      font-size: 20px;
-      font-weight: 900;
-      font-family: var(--font-mono);
-      color: var(--text-main);
-      margin-top: 4px;
-    }
+        .border-green {
+            border: 1.5px solid var(--emerald-green);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.15);
+        }
 
-    .metric-sub {
-      font-size: 10px;
-      color: var(--text-muted);
-      margin-top: 2px;
-      display: block;
-    }
+        /* View Layouts */
+        .view-panel {
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+        }
 
-    .view-section {
-      display: none;
-      flex-direction: column;
-      gap: 8px;
-    }
+        .view-panel.active {
+            display: flex;
+        }
 
-    .view-section.active {
-      display: flex;
-    }
+        /* Cockpit Core Card */
+        .action-card {
+            background: linear-gradient(180deg, #101c38 0%, #0c1427 100%);
+            border: 1px solid #1e3a8a;
+            border-radius: 8px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
 
-    .panel {
-      background: var(--bg-panel);
-      border: 1px solid var(--border-panel);
-      border-radius: 12px;
-      padding: 12px;
-    }
+        .action-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 1px solid #1e293b;
+            padding-bottom: 8px;
+        }
 
-    .cockpit-grid {
-      display: grid;
-      grid-template-columns: 7fr 5fr;
-      gap: 8px;
-    }
+        .action-title-group h2 {
+            font-size: 20px;
+            font-weight: 900;
+            color: #fff;
+        }
 
-    @media(max-width: 820px) { .cockpit-grid { grid-template-columns: 1fr; } }
+        .action-sub {
+            font-size: 11px;
+            color: #38bdf8;
+            font-weight: 700;
+        }
 
-    .leg-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-top: 10px;
-    }
+        .badge-sched {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            color: #f59e0b;
+            font-size: 12px;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
 
-    @media(max-width: 600px) { .leg-grid { grid-template-columns: 1fr; } }
+        .phone-call-btn {
+            background-color: #1e1b4b;
+            border: 1px solid #6366f1;
+            color: #a5b4fc;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 800;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
 
-    .leg-card {
-      background: var(--bg-base);
-      border: 1px solid var(--border-panel);
-      border-radius: 10px;
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 8px;
-    }
+        .loc-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
 
-    .leg-card.pickup { border-color: #0d9488; }
-    .leg-card.dropoff { border-color: #e11d48; }
+        .loc-box {
+            border-radius: 6px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 100px;
+        }
 
-    .btn-action {
-      width: 100%;
-      padding: 12px;
-      border-radius: 8px;
-      border: none;
-      font-weight: 800;
-      font-size: 12px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      text-decoration: none;
-      color: #fff;
-      touch-action: manipulation;
-    }
+        .loc-pu {
+            background-color: #032528;
+            border: 1px solid #0891b2;
+        }
 
-    .btn-teal { background: #0d9488; }
-    .btn-rose { background: #e11d48; }
-    .btn-amber { background: #d97706; }
-    .btn-emerald { background: #059669; }
-    .btn-slate { background: #1e293b; border: 1px solid #334155; color: #e2e8f0; }
+        .loc-do {
+            background-color: #2b0b18;
+            border: 1px solid #be123c;
+        }
 
-    .input-field {
-      width: 100%;
-      background: var(--bg-base);
-      border: 1px solid var(--border-panel);
-      border-radius: 8px;
-      padding: 9px 10px;
-      color: var(--text-main);
-      font-size: 12px;
-      font-family: inherit;
-    }
+        .loc-lbl {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 12px;
-      text-align: left;
-    }
+        .loc-pu .loc-lbl { color: #22d3ee; }
+        .loc-do .loc-lbl { color: #fb7185; }
 
-    th {
-      background: var(--bg-base);
-      color: var(--text-muted);
-      padding: 10px;
-      font-size: 10px;
-      text-transform: uppercase;
-      border-bottom: 1px solid var(--border-panel);
-    }
+        .loc-target {
+            font-size: 14px;
+            font-weight: 900;
+            color: #fff;
+            margin: 2px 0 6px 0;
+        }
 
-    td {
-      padding: 10px;
-      border-bottom: 1px solid var(--border-panel);
-    }
+        .loc-addr {
+            font-size: 13px;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 8px;
+        }
 
-    #status-banner {
-      background: #064e3b;
-      border: 1px solid #059669;
-      color: #34d399;
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-size: 11px;
-      font-weight: 800;
-      display: none;
-    }
-  </style>
+        /* Bilingual Passenger Messaging */
+        .comm-box {
+            background-color: #0b1329;
+            border: 1px solid #1e293b;
+            border-radius: 6px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .comm-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .comm-title {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            color: var(--amber-gold);
+            text-transform: uppercase;
+        }
+
+        .lang-toggles {
+            display: flex;
+            gap: 4px;
+        }
+
+        .btn-toggle {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-toggle.active {
+            background-color: #0284c7;
+            border-color: #38bdf8;
+            color: #fff;
+        }
+
+        .macro-row {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 2px;
+        }
+
+        .macro-btn {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            color: #cbd5e1;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .sms-input {
+            width: 100%;
+            background-color: #070e1e;
+            border: 1px solid #334155;
+            border-radius: 4px;
+            color: #fff;
+            padding: 8px;
+            font-size: 13px;
+            resize: none;
+            outline: none;
+        }
+
+        .sms-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .primary-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        /* Upload / Manifest Panel */
+        .upload-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 8px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Native Drag-and-Drop / Tap Zone */
+        .file-drop-zone {
+            border: 2px dashed #00f2fe;
+            border-radius: 8px;
+            padding: 24px 16px;
+            text-align: center;
+            background: rgba(0, 242, 254, 0.04);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .file-drop-zone.dragover {
+            background: rgba(0, 242, 254, 0.12);
+            border-color: #38bdf8;
+        }
+
+        .drop-zone-icon {
+            font-size: 28px;
+            margin-bottom: 6px;
+        }
+
+        .drop-zone-text {
+            font-size: 14px;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+
+        .drop-zone-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .file-status-badge {
+            display: none;
+            margin-top: 8px;
+            background: #032b30;
+            border: 1px solid #00f2fe;
+            color: #00f2fe;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 700;
+            word-break: break-all;
+        }
+
+        .file-hidden-input {
+            display: none;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .field-lbl {
+            font-size: 11px;
+            font-weight: 800;
+            color: #38bdf8;
+            letter-spacing: 0.5px;
+        }
+
+        .text-input {
+            width: 100%;
+            background-color: #070e1e;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            color: #fff;
+            padding: 8px 10px;
+            font-size: 13px;
+            outline: none;
+        }
+
+        .text-input:focus {
+            border-color: var(--cyan-accent);
+        }
+
+        .raw-ingest-area {
+            height: 80px;
+            font-family: monospace;
+            font-size: 12px;
+            resize: vertical;
+        }
+
+        /* Manifest Roster Table */
+        .roster-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .roster-header {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .roster-item {
+            background-color: #070e1e;
+            border: 1px solid #1e293b;
+            border-radius: 6px;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .roster-item.active-run {
+            border-left: 3px solid #00f2fe;
+            background-color: #0d1e38;
+        }
+
+        .roster-item.completed {
+            opacity: 0.5;
+            border-left: 3px solid var(--emerald-green);
+        }
+
+        .roster-item.noshow {
+            opacity: 0.5;
+            border-left: 3px solid var(--rose-red);
+        }
+
+        .roster-left h4 {
+            font-size: 14px;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .roster-left p {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .roster-right {
+            text-align: right;
+        }
+
+        .roster-tariff {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--emerald-green);
+        }
+
+        /* Settings Deck */
+        .settings-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 8px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .phone-dir-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 6px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .phone-dir-row {
+            background-color: #070e1e;
+            border: 1px solid #1e293b;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .phone-dir-name {
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .empty-queue {
+            padding: 30px 10px;
+            text-align: center;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+    </style>
 </head>
 <body>
 
-  <div id="status-banner">System Ready</div>
+<div class="os-container">
 
-  <!-- TOP DISPATCH CONTROL BAR -->
-  <header class="top-bar">
-    <div>
-      <div class="brand-title">
-        <span>SERENITY DISPATCH OS</span>
-        <span class="brand-badge">V6 COMMERCIAL</span>
-      </div>
-      <div class="brand-sub">1480 5th Ave, Bay Shore, NY 11706 | Fleet Unit: Van #104</div>
-    </div>
-
-    <!-- MAIN NAVIGATION TABS -->
-    <div class="control-pills">
-      <button type="button" class="pill" style="cursor:default;">
-        <span id="clock-display" style="font-family:var(--font-mono); color:#38bdf8;">00:00:00</span>
-      </button>
-      <button type="button" id="tab-cockpit" class="pill active-tab" onclick="switchView('cockpit')">Cockpit View</button>
-      <button type="button" id="tab-roster" class="pill" onclick="switchView('roster')">Classic Roster</button>
-      <button type="button" id="tab-upload" class="pill" onclick="switchView('upload')">Upload Manifest</button>
-      <button type="button" id="tab-settings" class="pill pill-amber" onclick="switchView('settings')">Settings Deck</button>
-    </div>
-
-    <!-- QUICK ACTIONS -->
-    <div class="control-pills">
-      <button type="button" id="btn-clock-shift" class="pill pill-green" onclick="toggleShiftClock()">Clock In</button>
-      <button type="button" class="pill pill-green" onclick="loadSampleMorningShift()">Load 07:30 Schedule</button>
-      <button type="button" class="pill pill-rose" onclick="clearManifest()">Clear</button>
-    </div>
-  </header>
-
-  <!-- METRICS GRID -->
-  <section class="metrics-grid">
-    <div class="metric-card">
-      <span class="metric-label">Active Manifest</span>
-      <div class="metric-val" id="metric-runs">0 / 0</div>
-      <span class="metric-sub" id="metric-exceptions">0 Exceptions</span>
-    </div>
-    <div class="metric-card">
-      <span class="metric-label">Route Miles</span>
-      <div class="metric-val"><span id="metric-miles">0.0</span> mi</div>
-      <span class="metric-sub">Suffolk / Nassau Corridors</span>
-    </div>
-    <div class="metric-card">
-      <span class="metric-label">Shift Elapsed</span>
-      <div class="metric-val"><span id="metric-hours">0.00</span> hrs</div>
-      <span class="metric-sub" id="metric-shift-status">Off Clock</span>
-    </div>
-    <div class="metric-card">
-      <span class="metric-label">Driver Labor</span>
-      <div class="metric-val" id="metric-labor">$0.00</div>
-      <span class="metric-sub" id="metric-wage-label">@ $22.50/hr</span>
-    </div>
-    <div class="metric-card" style="border-color: #059669;">
-      <span class="metric-label" style="color:#34d399;">Gross Billed</span>
-      <div class="metric-val" style="color:#34d399;" id="metric-revenue">$0.00</div>
-      <span class="metric-sub" id="metric-est-rev">Scheduled: $0.00</span>
-    </div>
-    <div class="metric-card">
-      <span class="metric-label">Van #104 GPS</span>
-      <div class="metric-val" style="font-size:13px; margin-top:8px; color:#38bdf8;" id="metric-gps">40.7521, -73.2514</div>
-      <span class="metric-sub">Base Depot: Bay Shore</span>
-    </div>
-  </section>
-
-  <!-- VIEW 1: COCKPIT VIEW -->
-  <section id="view-cockpit" class="view-section active">
-    <div class="cockpit-grid">
-      <!-- Left: Active Run Execution Panel -->
-      <div class="panel" id="active-run-panel"></div>
-
-      <!-- Right: Active Queue -->
-      <div class="panel" style="display:flex; flex-direction:column; gap:10px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:6px; border-bottom:1px solid var(--border-panel);">
-          <span style="font-size:11px; font-weight:900; text-transform:uppercase; color:var(--text-muted);">Active Manifest Queue</span>
-          <span id="queue-count-label" style="font-size:11px; font-family:var(--font-mono); color:var(--text-muted);">0 Runs</span>
+    <!-- Top Brand Header -->
+    <header class="brand-header">
+        <div class="brand-row-1">
+            <span class="brand-title">SERENITY DISPATCH OS</span>
+            <span class="version-badge">V6 COMMERCIAL</span>
         </div>
-        <div id="cockpit-queue-list" style="display:flex; flex-direction:column; gap:6px; max-height:450px; overflow-y:auto;"></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- VIEW 2: UPLOAD / INGEST MANIFEST -->
-  <section id="view-upload" class="view-section">
-    <div class="cockpit-grid">
-      <div class="panel" style="display:flex; flex-direction:column; gap:10px;">
-        <h3 style="font-size:14px; font-weight:900; color:#38bdf8;">Paste or Ingest Daily Schedule</h3>
-        <p style="font-size:11px; color:var(--text-muted);">
-          Line format: Name | Phone | Mobility | PU Time | PU Address | DO Time | DO Address | Miles | Tariff ($)
-        </p>
-        <textarea id="manifest-paste-box" rows="7" class="input-field" style="font-family:var(--font-mono);" placeholder="William | 631-555-0111 | Ambulatory | 07:30 AM | Bay Shore, NY | 08:15 AM | Patchogue, NY | 11.4 | 62.00"></textarea>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button type="button" class="pill pill-green" onclick="parseAndLoadManifest()">Ingest Pasted Schedule</button>
-          <button type="button" class="pill pill-amber" onclick="loadSampleMorningShift()">Load Morning Shift (William -> Gloria)</button>
+        <div class="brand-sub">
+            1480 5TH AVE, BAY SHORE, NY 11706 | FLEET UNIT: VAN #104
         </div>
-      </div>
+    </header>
 
-      <div class="panel" style="display:flex; flex-direction:column; gap:8px;">
-        <h3 style="font-size:14px; font-weight:900; color:#34d399;">Add Single Dispatch Leg</h3>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-          <input type="text" id="add-pax" class="input-field" placeholder="Passenger Name">
-          <input type="text" id="add-phone" class="input-field" placeholder="Phone Number">
-          <select id="add-mob" class="input-field">
-            <option value="Ambulatory">Ambulatory</option>
-            <option value="Wheelchair">Wheelchair</option>
-            <option value="Stretcher">Stretcher</option>
-          </select>
-          <input type="text" id="add-corridor" class="input-field" placeholder="Corridor (e.g. Sunrise NY-27)">
-          <input type="text" id="add-pu-time" class="input-field" placeholder="PU Time (07:30 AM)">
-          <input type="text" id="add-do-time" class="input-field" placeholder="DO Time (08:15 AM)">
-          <input type="text" id="add-pu-addr" class="input-field" style="grid-column:span 2;" placeholder="Pickup Street Address, Town, NY">
-          <input type="text" id="add-do-addr" class="input-field" style="grid-column:span 2;" placeholder="Dropoff Street Address, Town, NY">
-          <input type="number" step="0.1" id="add-miles" class="input-field" placeholder="Miles (11.4)">
-          <input type="number" step="0.5" id="add-rev" class="input-field" placeholder="Tariff ($62.00)">
-        </div>
-        <button type="button" class="btn-action btn-emerald" onclick="saveManualRun()">Add Run to Manifest</button>
-      </div>
+    <!-- Shift & Navigation Bar -->
+    <nav class="shift-bar">
+        <div class="clock-display" id="clockDisplay">00:00:00 AM</div>
+        <button class="btn btn-cyan-active" id="navCockpit" onclick="switchView('cockpit')">Cockpit View</button>
+        <button class="btn btn-cyan" id="navRoster" onclick="switchView('roster')">Classic Roster</button>
+        <button class="btn btn-cyan" id="navUpload" onclick="switchView('upload')">Upload Manifest</button>
+        <button class="btn btn-orange" id="navSettings" onclick="switchView('settings')">Settings Deck</button>
+    </nav>
+
+    <!-- Secondary Trigger Row -->
+    <div style="display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 8px;">
+        <button class="btn btn-green" id="btnClockIn" onclick="toggleShiftClock()">Clock In</button>
+        <button class="btn btn-green" id="btnQuickLoad" onclick="loadSampleMorningShift()">Load 07:30 Schedule</button>
+        <button class="btn btn-red" onclick="clearManifestData()">Clear</button>
     </div>
-  </section>
 
-  <!-- VIEW 3: CLASSIC ROSTER -->
-  <section id="view-roster" class="view-section">
-    <div class="panel">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <h3 style="font-size:14px; font-weight:900;">Interactive Manifest Table</h3>
-        <button type="button" class="pill pill-green" onclick="switchView('upload')">+ Add / Upload Trips</button>
-      </div>
-      <div style="overflow-x:auto;">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Status</th>
-              <th>Passenger</th>
-              <th>Pickup</th>
-              <th>Dropoff</th>
-              <th>Miles</th>
-              <th>Tariff</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody id="roster-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <!-- VIEW 4: SETTINGS DECK -->
-  <section id="view-settings" class="view-section">
-    <div class="cockpit-grid">
-      <div class="panel" style="display:flex; flex-direction:column; gap:10px;">
-        <h3 style="font-size:14px; font-weight:900; color:#fbbf24;">Fleet & Wage Configuration</h3>
-        <label class="metric-label">Base Depot Address</label>
-        <input type="text" id="cfg-depot" class="input-field" value="1480 5th Ave, Bay Shore, NY 11706">
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
-          <div>
-            <label class="metric-label">Hourly Wage ($)</label>
-            <input type="number" step="0.5" id="cfg-wage" class="input-field" value="22.50">
-          </div>
-          <div>
-            <label class="metric-label">Dry-Run (%)</label>
-            <input type="number" id="cfg-dry-pct" class="input-field" value="50">
-          </div>
-          <div>
-            <label class="metric-label">Dry-Run Min ($)</label>
-            <input type="number" id="cfg-dry-min" class="input-field" value="25">
-          </div>
+    <!-- Active Metric Deck -->
+    <section class="metric-grid">
+        <div class="metric-card">
+            <span class="metric-title">Active Manifest</span>
+            <span class="metric-val" id="metricRuns">0 / 0</span>
+            <span class="metric-sub" id="metricExceptions">0 Exceptions</span>
         </div>
-        <button type="button" class="pill pill-green" onclick="saveSettingsConfig()">Save Configuration</button>
-      </div>
-
-      <div class="panel" style="display:flex; flex-direction:column; gap:10px;">
-        <h3 style="font-size:14px; font-weight:900; color:#38bdf8;">Locked Passenger Phone Directory</h3>
-        <div style="display:grid; grid-template-columns:1fr 1fr auto; gap:6px;">
-          <input type="text" id="dir-new-name" class="input-field" placeholder="Passenger Name">
-          <input type="text" id="dir-new-phone" class="input-field" placeholder="631-555-0100">
-          <button type="button" class="pill pill-green" onclick="addLockedPhoneEntry()">Lock</button>
+        <div class="metric-card">
+            <span class="metric-title">Route Miles</span>
+            <span class="metric-val" id="metricMiles">0.0 mi</span>
+            <span class="metric-sub">Suffolk / Nassau Corridors</span>
         </div>
-        <div id="locked-directory-list" style="display:flex; flex-direction:column; gap:6px; max-height:240px; overflow-y:auto;"></div>
-      </div>
-    </div>
-  </section>
+        <div class="metric-card">
+            <span class="metric-title">Driver Labor</span>
+            <span class="metric-val" id="metricLabor">$0.00</span>
+            <span class="metric-sub">@ $22.50/hr</span>
+        </div>
+        <div class="metric-card border-green">
+            <span class="metric-title">Gross Billed</span>
+            <span class="metric-val" id="metricGross" style="color: var(--emerald-green);">$0.00</span>
+            <span class="metric-sub" id="metricScheduledGross">Scheduled: $0.00</span>
+        </div>
+    </section>
 
-  <!-- JAVASCRIPT LOGIC -->
-  <script>
-    var AppState = {
-      view: 'cockpit',
-      activeIdx: 0,
-      smsLang: 'EN',
-      smsType: '10m',
-      shiftActive: false,
-      shiftStartMs: null,
-      hourlyWage: 22.50,
-      dryRunPct: 50,
-      dryRunMin: 25.00,
-      depotAddress: '1480 5th Ave, Bay Shore, NY 11706',
-      lockedDirectory: {
-        'William': '631-555-0111',
-        'Gloria': '631-555-0222',
-        'Julian': '631-555-0144'
-      },
-      trips: []
-    };
+    <!-- VIEW 1: COCKPIT VIEW -->
+    <main class="view-panel active" id="viewCockpit">
+        <div id="cockpitCore">
+            <div class="empty-queue" style="background:#0f172a; border-radius:8px; border:1px solid #1e293b;">
+                <p style="font-size:16px; color:#fff; margin-bottom:8px;">Dispatch Cockpit Ready</p>
+                <p style="font-size:12px; margin-bottom:12px;">Tap "Load 07:30 Schedule" or tap "Upload Manifest" to populate your queue.</p>
+                <div style="display:flex; justify-content:center; gap:8px;">
+                    <button class="btn btn-green" onclick="loadSampleMorningShift()">Load 07:30 Schedule</button>
+                    <button class="btn btn-cyan" onclick="switchView('upload')">Upload Manifest</button>
+                </div>
+            </div>
+        </div>
 
-    function notify(msg) {
-      var b = document.getElementById('status-banner');
-      if (!b) return;
-      b.textContent = msg;
-      b.style.display = 'block';
-      setTimeout(function() { b.style.display = 'none'; }, 3000);
-    }
+        <section class="roster-card">
+            <div class="roster-header">
+                <span>Active Manifest Queue</span>
+                <span id="queueCount">0 Runs</span>
+            </div>
+            <div id="quickQueueList" style="display:flex; flex-direction:column; gap:6px;">
+                <div style="font-size:12px; color:var(--text-muted); padding:4px 0;">No runs in queue.</div>
+            </div>
+        </section>
+    </main>
 
-    function saveState() {
-      try {
-        localStorage.setItem('serenity_trips_v6', JSON.stringify(AppState.trips));
-        localStorage.setItem('serenity_dir_v6', JSON.stringify(AppState.lockedDirectory));
-      } catch (e) {
-        console.error('LocalStorage save error:', e);
-      }
-    }
+    <!-- VIEW 2: CLASSIC ROSTER -->
+    <main class="view-panel" id="viewRoster">
+        <section class="roster-card">
+            <div class="roster-header">
+                <span>Full Manifest Table</span>
+                <button class="btn btn-green" style="padding:4px 8px; font-size:11px;" onclick="switchView('upload')">+ Add / Upload Trips</button>
+            </div>
+            <div id="fullManifestTable" style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
+                <div class="empty-queue">No runs loaded. Tap "Load 07:30 Schedule" or "Upload Manifest".</div>
+            </div>
+        </section>
+    </main>
 
-    function switchView(viewName) {
-      AppState.view = viewName;
-      var views = ['cockpit', 'roster', 'upload', 'settings'];
-      for (var i = 0; i < views.length; i++) {
-        var v = views[i];
-        var sec = document.getElementById('view-' + v);
-        var tab = document.getElementById('tab-' + v);
-        if (sec) {
-          if (v === viewName) sec.classList.add('active');
-          else sec.classList.remove('active');
-        }
-        if (tab) {
-          if (v === viewName) tab.classList.add('active-tab');
-          else tab.classList.remove('active-tab');
-        }
-      }
-      renderAll();
-    }
-
-    function updateClock() {
-      var el = document.getElementById('clock-display');
-      if (el) el.textContent = new Date().toLocaleTimeString();
-      if (AppState.shiftActive && AppState.shiftStartMs) {
-        var hrs = (Date.now() - AppState.shiftStartMs) / 3600000;
-        document.getElementById('metric-hours').textContent = hrs.toFixed(2);
-        document.getElementById('metric-labor').textContent = '$' + (hrs * AppState.hourlyWage).toFixed(2);
-      }
-    }
-
-    function toggleShiftClock() {
-      AppState.shiftActive = !AppState.shiftActive;
-      var btn = document.getElementById('btn-clock-shift');
-      var st = document.getElementById('metric-shift-status');
-      if (AppState.shiftActive) {
-        if (!AppState.shiftStartMs) AppState.shiftStartMs = Date.now();
-        btn.textContent = 'Clock Out';
-        btn.className = 'pill pill-rose';
-        st.textContent = 'On Active Shift';
-        notify('Shift Clock Started.');
-      } else {
-        btn.textContent = 'Clock In';
-        btn.className = 'pill pill-green';
-        st.textContent = 'Shift Paused';
-        notify('Shift Clock Paused.');
-      }
-    }
-
-    function buildSmsText(name) {
-      var first = (name || 'Passenger').split(' ')[0];
-      if (AppState.smsLang === 'ES') {
-        if (AppState.smsType === 'early') return 'Hola ' + first + ', soy Anthony de Serenity Medical Transport. Llegue unos minutos antes para su recogida. No hay apuro, listo cuando usted pueda.';
-        if (AppState.smsType === 'curb') return 'Hola ' + first + ', soy Anthony de Serenity Medical Transport. Ya estoy afuera esperandole para su viaje.';
-        return 'Hola ' + first + ', soy Anthony de Serenity Medical Transport. Estoy en camino y llegare en unos 10 minutos.';
-      } else {
-        if (AppState.smsType === 'early') return 'Hi ' + first + ', this is Anthony from Serenity Medical Transport. I arrived a few minutes early for your pickup. No rush at all, ready whenever you are.';
-        if (AppState.smsType === 'curb') return 'Hi ' + first + ', this is Anthony from Serenity Medical Transport. I am outside at the pickup point whenever you are ready.';
-        return 'Hi ' + first + ', this is Anthony from Serenity Medical Transport. I am en route and will arrive in approximately 10 minutes.';
-      }
-    }
-
-    function setSmsConfig(lang, type) {
-      if (lang) AppState.smsLang = lang;
-      if (type) AppState.smsType = type;
-      renderCockpit();
-    }
-
-    function dispatchSMS(phone, mode) {
-      var box = document.getElementById('active-sms-box');
-      var txt = box ? box.value : '';
-      var clean = (phone || '').replace(/[^0-9]/g, '');
-      if (navigator.clipboard && txt) navigator.clipboard.writeText(txt);
-      if (mode === 'sms') {
-        window.location.href = 'sms:' + clean + '?&body=' + encodeURIComponent(txt);
-      } else {
-        notify('Copied text! Opening Google Voice...');
-        window.open('https://voice.google.com/u/0/messages', '_blank');
-      }
-    }
-
-    function getTripBilled(t) {
-      if (t.status === 'Completed') return Number(t.revenue) || 0;
-      if (t.status === 'No Show' || t.status === 'Cancel at Door') {
-        var pct = (Number(t.revenue) || 0) * (AppState.dryRunPct / 100);
-        return Math.max(pct, AppState.dryRunMin);
-      }
-      return 0;
-    }
-
-    function renderAll() {
-      for (var i = 0; i < AppState.trips.length; i++) {
-        var tr = AppState.trips[i];
-        if (AppState.lockedDirectory[tr.passenger]) {
-          tr.phone = AppState.lockedDirectory[tr.passenger];
-        }
-      }
-      renderMetrics();
-      renderCockpit();
-      renderQueue();
-      renderRoster();
-      renderDirectory();
-    }
-
-    function renderMetrics() {
-      var total = AppState.trips.length;
-      var done = 0;
-      var ex = 0;
-      var miles = 0;
-      var sched = 0;
-      var billed = 0;
-      for (var i = 0; i < total; i++) {
-        var t = AppState.trips[i];
-        if (t.status === 'Completed') done++;
-        if (t.status === 'No Show' || t.status === 'Cancel at Door') ex++;
-        miles += Number(t.miles) || 0;
-        sched += Number(t.revenue) || 0;
-        billed += getTripBilled(t);
-      }
-      document.getElementById('metric-runs').textContent = done + ' / ' + total;
-      document.getElementById('metric-exceptions').textContent = ex + ' Exceptions';
-      document.getElementById('metric-miles').textContent = miles.toFixed(1);
-      document.getElementById('metric-revenue').textContent = '$' + billed.toFixed(2);
-      document.getElementById('metric-est-rev').textContent = 'Scheduled: $' + sched.toFixed(2);
-    }
-
-    function renderCockpit() {
-      var panel = document.getElementById('active-run-panel');
-      if (!panel) return;
-
-      if (AppState.trips.length === 0) {
-        panel.innerHTML = '<div style="padding:32px; text-align:center;">' +
-          '<h3 style="font-size:16px; color:#38bdf8; margin-bottom:8px;">Dispatch Cockpit Ready</h3>' +
-          '<p style="font-size:12px; color:#94a3b8; margin-bottom:16px;">Tap "Load 07:30 Schedule" or tap "Upload Manifest" to populate your queue.</p>' +
-          '<div style="display:flex; justify-content:center; gap:8px;">' +
-            '<button type="button" class="pill pill-green" onclick="loadSampleMorningShift()">Load 07:30 Schedule</button>' +
-            '<button type="button" class="pill active-tab" onclick="switchView(\'upload\')">Upload Manifest</button>' +
-          '</div>' +
-        '</div>';
-        return;
-      }
-
-      if (AppState.activeIdx >= AppState.trips.length) AppState.activeIdx = 0;
-      var t = AppState.trips[AppState.activeIdx];
-      var sms = buildSmsText(t.passenger);
-
-      var html = '';
-      html += '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1b2c4f; padding-bottom:8px;">';
-      html += '  <span class="pill active-tab">RUN #' + (AppState.activeIdx + 1) + ' OF ' + AppState.trips.length + ' (' + t.mobility + ')</span>';
-      html += '  <span class="pill pill-amber">' + t.status + '</span>';
-      html += '</div>';
-
-      html += '<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-top:10px;">';
-      html += '  <div><h2 style="font-size:22px; font-weight:900;">' + t.passenger + '</h2>';
-      html += '  <span style="font-size:11px; color:#94a3b8;">' + t.corridor + ' | ' + t.miles + ' mi | Tariff: $' + Number(t.revenue).toFixed(2) + '</span></div>';
-      html += '  <div style="display:flex; gap:6px; align-items:center;">';
-      html += '    <span class="pill" style="font-family:monospace; color:#38bdf8;">' + t.phone + '</span>';
-      html += '    <a href="tel:' + t.phone + '" class="pill pill-green">Call</a>';
-      html += '  </div>';
-      html += '</div>';
-
-      html += '<div class="leg-grid">';
-      html += '  <div class="leg-card pickup">';
-      html += '    <div><div style="font-size:10px; font-weight:800; color:#2dd4bf;">PICKUP | SCHED: ' + t.schedPU + '</div>';
-      html += '    <div style="font-size:16px; font-weight:900; margin-top:2px;">Target: ' + t.targetPU + '</div>';
-      html += '    <div style="font-size:11px; color:#cbd5e1; margin-top:4px;">' + t.puAddress + '</div></div>';
-      html += '    <a href="https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(t.puAddress) + '" target="_blank" class="btn-action btn-teal">Navigate Pickup</a>';
-      html += '  </div>';
-
-      html += '  <div class="leg-card dropoff">';
-      html += '    <div><div style="font-size:10px; font-weight:800; color:#fda4af;">DROPOFF | SCHED: ' + t.schedDO + '</div>';
-      html += '    <div style="font-size:16px; font-weight:900; margin-top:2px;">Target: ' + t.targetDO + '</div>';
-      html += '    <div style="font-size:11px; color:#cbd5e1; margin-top:4px;">' + t.doAddress + '</div></div>';
-      html += '    <a href="https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(t.doAddress) + '" target="_blank" class="btn-action btn-rose">Navigate Dropoff</a>';
-      html += '  </div>';
-      html += '</div>';
-
-      // Bilingual SMS Hub
-      html += '<div style="margin-top:10px; background:#050810; border:1px solid #1b2c4f; border-radius:10px; padding:10px;">';
-      html += '  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">';
-      html += '    <span style="font-size:10px; font-weight:900; color:#fbbf24;">BILINGUAL PASSENGER SMS (EN / ES)</span>';
-      html += '    <div style="display:flex; gap:4px; flex-wrap:wrap;">';
-      html += '      <button type="button" class="pill ' + (AppState.smsLang === 'EN' ? 'active-tab' : '') + '" onclick="setSmsConfig(\'EN\', null)">EN</button>';
-      html += '      <button type="button" class="pill ' + (AppState.smsLang === 'ES' ? 'pill-amber' : '') + '" onclick="setSmsConfig(\'ES\', null)">ES</button>';
-      html += '      <button type="button" class="pill ' + (AppState.smsType === '10m' ? 'pill-green' : '') + '" onclick="setSmsConfig(null, \'10m\')">10m Out</button>';
-      html += '      <button type="button" class="pill ' + (AppState.smsType === 'early' ? 'pill-green' : '') + '" onclick="setSmsConfig(null, \'early\')">Early</button>';
-      html += '      <button type="button" class="pill ' + (AppState.smsType === 'curb' ? 'pill-green' : '') + '" onclick="setSmsConfig(null, \'curb\')">At Curb</button>';
-      html += '    </div>';
-      html += '  </div>';
-      html += '  <textarea id="active-sms-box" rows="2" class="input-field">' + sms + '</textarea>';
-      html += '  <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:6px;">';
-      html += '    <button type="button" class="pill pill-amber" onclick="dispatchSMS(\'' + t.phone + '\', \'sms\')">Send SMS</button>';
-      html += '    <button type="button" class="pill active-tab" onclick="dispatchSMS(\'' + t.phone + '\', \'gv\')">Copy & Open Google Voice</button>';
-      html += '  </div>';
-      html += '</div>';
-
-      // Actions
-      html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:10px;">';
-      html += '  <button type="button" class="btn-action btn-amber" onclick="markArrived(\'' + t.id + '\')">' + (t.arrivedTime ? 'Arrived (' + t.arrivedTime + ')' : 'Mark Arrived') + '</button>';
-      html += '  <button type="button" class="btn-action btn-emerald" onclick="markCompleted(\'' + t.id + '\')">Complete Run ($' + Number(t.revenue).toFixed(2) + ')</button>';
-      html += '  <button type="button" class="btn-action btn-rose" onclick="markException(\'' + t.id + '\', \'No Show\')">No Show</button>';
-      html += '  <button type="button" class="btn-action btn-slate" onclick="markException(\'' + t.id + '\', \'Cancel at Door\')">Cancel at Door</button>';
-      html += '</div>';
-
-      panel.innerHTML = html;
-    }
-
-    function renderQueue() {
-      var box = document.getElementById('cockpit-queue-list');
-      var lbl = document.getElementById('queue-count-label');
-      if (!box) return;
-      if (lbl) lbl.textContent = AppState.trips.length + ' Runs';
-      if (AppState.trips.length === 0) {
-        box.innerHTML = '<div style="font-size:11px; color:#94a3b8;">No runs in queue.</div>';
-        return;
-      }
-      var html = '';
-      for (var i = 0; i < AppState.trips.length; i++) {
-        var t = AppState.trips[i];
-        var border = (i === AppState.activeIdx) ? '#38bdf8' : '#1b2c4f';
-        html += '<div onclick="selectRun(' + i + ')" style="background:#050810; border:1px solid ' + border + '; border-radius:8px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;">';
-        html += '  <div><strong style="font-size:12px;">#' + (i + 1) + ' ' + t.passenger + '</strong> <span style="font-size:10px; color:#38bdf8;">(' + t.mobility + ')</span>';
-        html += '  <div style="font-size:10px; color:#94a3b8;">' + t.puAddress + ' -> ' + t.doAddress + '</div></div>';
-        html += '  <div style="text-align:right; font-family:monospace;"><div style="color:#34d399; font-weight:900;">' + t.schedPU + '</div><div style="font-size:10px; color:#94a3b8;">' + t.status + '</div></div>';
-        html += '</div>';
-      }
-      box.innerHTML = html;
-    }
-
-    function selectRun(idx) {
-      AppState.activeIdx = idx;
-      renderAll();
-    }
-
-    function renderRoster() {
-      var tb = document.getElementById('roster-tbody');
-      if (!tb) return;
-      if (AppState.trips.length === 0) {
-        tb.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#94a3b8;">No runs loaded. Tap "Load 07:30 Schedule" or "Upload Manifest".</td></tr>';
-        return;
-      }
-      var html = '';
-      for (var i = 0; i < AppState.trips.length; i++) {
-        var t = AppState.trips[i];
-        html += '<tr onclick="selectRun(' + i + '); switchView(\'cockpit\');" style="cursor:pointer;">';
-        html += '<td>#' + (i + 1) + '</td>';
-        html += '<td><span class="pill">' + t.status + '</span></td>';
-        html += '<td><strong>' + t.passenger + '</strong><br><span style="font-size:10px; color:#38bdf8;">' + t.phone + '</span></td>';
-        html += '<td>' + t.schedPU + '<br><span style="font-size:10px; color:#94a3b8;">' + t.puAddress + '</span></td>';
-        html += '<td>' + t.schedDO + '<br><span style="font-size:10px; color:#94a3b8;">' + t.doAddress + '</span></td>';
-        html += '<td>' + t.miles + ' mi</td>';
-        html += '<td style="color:#34d399; font-weight:800;">$' + Number(t.revenue).toFixed(2) + '</td>';
-        html += '<td onclick="event.stopPropagation();"><button type="button" class="pill pill-rose" onclick="deleteRun(\'' + t.id + '\')">Delete</button></td>';
-        html += '</tr>';
-      }
-      tb.innerHTML = html;
-    }
-
-    function markArrived(id) {
-      for (var i = 0; i < AppState.trips.length; i++) {
-        if (AppState.trips[i].id === id) {
-          AppState.trips[i].arrivedTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          AppState.trips[i].status = 'Arrived at Curb';
-          notify('Marked Arrived for ' + AppState.trips[i].passenger);
-        }
-      }
-      saveState();
-      renderAll();
-    }
-
-    function markCompleted(id) {
-      for (var i = 0; i < AppState.trips.length; i++) {
-        if (AppState.trips[i].id === id) {
-          AppState.trips[i].status = 'Completed';
-          notify('Completed Run for ' + AppState.trips[i].passenger);
-        }
-      }
-      saveState();
-      renderAll();
-    }
-
-    function markException(id, type) {
-      for (var i = 0; i < AppState.trips.length; i++) {
-        if (AppState.trips[i].id === id) {
-          AppState.trips[i].status = type;
-          notify(type + ' recorded.');
-        }
-      }
-      saveState();
-      renderAll();
-    }
-
-    function deleteRun(id) {
-      AppState.trips = AppState.trips.filter(function(t) { return t.id !== id; });
-      AppState.activeIdx = 0;
-      saveState();
-      renderAll();
-    }
-
-    function loadSampleMorningShift() {
-      AppState.trips = [
-        {
-          id: 'RUN-01',
-          passenger: 'William',
-          phone: AppState.lockedDirectory['William'] || '631-555-0111',
-          mobility: 'Ambulatory',
-          schedPU: '07:30 AM',
-          targetPU: '07:20 AM',
-          puAddress: 'Bay Shore, NY',
-          schedDO: '08:15 AM',
-          targetDO: '08:05 AM',
-          doAddress: 'Suffolk Medical Center, NY',
-          miles: 11.4,
-          revenue: 62.00,
-          corridor: 'Sunrise Hwy NY-27',
-          status: 'Scheduled'
-        },
-        {
-          id: 'RUN-02',
-          passenger: 'Gloria',
-          phone: AppState.lockedDirectory['Gloria'] || '631-555-0222',
-          mobility: 'Ambulatory',
-          schedPU: '08:30 AM',
-          targetPU: '08:20 AM',
-          puAddress: 'Bay Shore / Islip Corridor, NY',
-          schedDO: '09:15 AM',
-          targetDO: '09:05 AM',
-          doAddress: 'Outpatient Care Center, NY',
-          miles: 9.8,
-          revenue: 58.00,
-          corridor: 'Southern State Pkwy / Sagtikos',
-          status: 'Scheduled'
-        }
-      ];
-      AppState.activeIdx = 0;
-      saveState();
-      switchView('cockpit');
-      notify('Loaded 07:30 AM Schedule (William -> Gloria)');
-    }
-
-    function parseAndLoadManifest() {
-      var raw = document.getElementById('manifest-paste-box').value.trim();
-      if (!raw) {
-        notify('Paste schedule lines first.');
-        return;
-      }
-      var lines = raw.split('\n');
-      var list = [];
-      for (var i = 0; i < lines.length; i++) {
-        var ln = lines[i].trim();
-        if (!ln) continue;
-        var p = ln.split('|');
-        var pax = (p[0] || ('Passenger ' + (i + 1))).trim();
-        list.push({
-          id: 'RUN-' + Date.now() + '-' + i,
-          passenger: pax,
-          phone: AppState.lockedDirectory[pax] || (p[1] ? p[1].trim() : '631-836-1188'),
-          mobility: p[2] ? p[2].trim() : 'Ambulatory',
-          schedPU: p[3] ? p[3].trim() : '08:00 AM',
-          targetPU: p[3] ? p[3].trim() : '07:50 AM',
-          puAddress: p[4] ? p[4].trim() : 'Bay Shore, NY',
-          schedDO: p[5] ? p[5].trim() : '08:45 AM',
-          targetDO: p[5] ? p[5].trim() : '08:35 AM',
-          doAddress: p[6] ? p[6].trim() : 'Islip, NY',
-          miles: parseFloat(p[7]) || 10.0,
-          revenue: parseFloat(p[8]) || 55.00,
-          corridor: 'LIE I-495 / Sunrise NY-27',
-          status: 'Scheduled'
-        });
-      }
-      AppState.trips = list;
-      AppState.activeIdx = 0;
-      saveState();
-      switchView('cockpit');
-      notify('Ingested ' + list.length + ' runs.');
-    }
-
-    function saveManualRun() {
-      var pax = document.getElementById('add-pax').value.trim() || 'Passenger';
-      var phone = AppState.lockedDirectory[pax] || document.getElementById('add-phone').value.trim() || '631-836-1188';
-      AppState.trips.push({
-        id: 'RUN-' + Date.now(),
-        passenger: pax,
-        phone: phone,
-        mobility: document.getElementById('add-mob').value,
-        corridor: document.getElementById('add-corridor').value.trim() || 'Sunrise NY-27',
-        schedPU: document.getElementById('add-pu-time').value.trim() || '09:00 AM',
-        targetPU: document.getElementById('add-pu-time').value.trim() || '08:50 AM',
-        schedDO: document.getElementById('add-do-time').value.trim() || '09:45 AM',
-        targetDO: document.getElementById('add-do-time').value.trim() || '09:35 AM',
-        puAddress: document.getElementById('add-pu-addr').value.trim() || 'Bay Shore, NY',
-        doAddress: document.getElementById('add-do-addr').value.trim() || 'Islip, NY',
-        miles: parseFloat(document.getElementById('add-miles').value) || 8.5,
-        revenue: parseFloat(document.getElementById('add-rev').value) || 55.00,
-        status: 'Scheduled'
-      });
-      saveState();
-      switchView('cockpit');
-      notify('Added ' + pax + ' to manifest.');
-    }
-
-    function clearManifest() {
-      AppState.trips = [];
-      AppState.activeIdx = 0;
-      saveState();
-      renderAll();
-      notify('Manifest cleared.');
-    }
-
-    function renderDirectory() {
-      var box = document.getElementById('locked-directory-list');
-      if (!box) return;
-      var keys = Object.keys(AppState.lockedDirectory);
-      var html = '';
-      for (var i = 0; i < keys.length; i++) {
-        var k = keys[i];
-        html += '<div style="display:flex; justify-content:space-between; background:#050810; border:1px solid #1b2c4f; padding:6px 10px; border-radius:6px; font-size:12px;">';
-        html += '<strong>' + k + '</strong><span style="color:#38bdf8; font-family:monospace;">' + AppState.lockedDirectory[k] + '</span></div>';
-      }
-      box.innerHTML = html;
-    }
-
-    function addLockedPhoneEntry() {
-      var n = document.getElementById('dir-new-name').value.trim();
-      var p = document.getElementById('dir-new-phone').value.trim();
-      if (!n || !p) return;
-      AppState.lockedDirectory[n] = p;
-      document.getElementById('dir-new-name').value = '';
-      document.getElementById('dir-new-phone').value = '';
-      saveState();
-      renderAll();
-      notify('Locked ' + n + ' into directory.');
-    }
-
-    function saveSettingsConfig() {
-      AppState.depotAddress = document.getElementById('cfg-depot').value.trim();
-      AppState.hourlyWage = parseFloat(document.getElementById('cfg-wage').value) || 22.50;
-      AppState.dryRunPct = parseFloat(document.getElementById('cfg-dry-pct').value) || 50;
-      AppState.dryRunMin = parseFloat(document.getElementById('cfg-dry-min').value) || 25;
-      document.getElementById('metric-wage-label').textContent = '@ $' + AppState.hourlyWage.toFixed(2) + '/hr';
-      renderAll();
-      notify('Settings saved.');
-    }
-
-    // Boot Script
-    try {
-      var st = localStorage.getItem('serenity_trips_v6');
-      if (st) AppState.trips = JSON.parse(st);
-      var sd = localStorage.getItem('serenity_dir_v6');
-      if (sd) AppState.lockedDirectory = JSON.parse(sd);
-    } catch (e) {
-      console.error('Boot error:', e);
-    }
-
-    setInterval(updateClock, 1000);
-    updateClock();
-    renderAll();
-  </script>
-</body>
-</html>
+    <!-- VIEW 3: UPLOAD MANIFEST (Strict Anti-Bleed Zero State) -->
+    <main class="view-panel" id="viewUpload">
+        <section class="upload-card">
+            <div class="field-group">
+                <span class="field-lbl">Up
