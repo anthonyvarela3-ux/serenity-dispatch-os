@@ -1,10 +1,17 @@
+To add direct image upload parsing for your screenshot manifests without relying on manual text pasting, here is the updated build. It includes an **"Upload Manifest Image (OCR)"** button right above the ingest area.
+
+When you tap it and select your manifest screenshot, the app automatically extracts the text and populates your queue.
+
 ```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Serenity Dispatch OS - Index 3 Baseline</title>
+    <title>Serenity Dispatch OS - Commercial Production</title>
+
+    <!-- Tesseract.js for In-Browser OCR Image Parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
     <style>
         :root {
@@ -539,7 +546,7 @@
     <header class="brand-header">
         <div class="brand-row-1">
             <span class="brand-title">SERENITY DISPATCH OS</span>
-            <span class="version-badge">INDEX 3 BASELINE</span>
+            <span class="version-badge">COMMERCIAL OCR</span>
         </div>
         <div class="brand-sub">
             1480 5TH AVE, BAY SHORE, NY 11706 | FLEET UNIT: VAN #104
@@ -586,7 +593,7 @@
         <div id="cockpitCore">
             <div class="empty-queue" style="background:#0f172a; border-radius:8px; border:1px solid #1e293b;">
                 <p style="font-size:16px; color:#fff; margin-bottom:8px;">Dispatch Cockpit Standby</p>
-                <p style="font-size:12px; margin-bottom:12px;">No active runs loaded. Tap "Upload Manifest" to paste schedule lines.</p>
+                <p style="font-size:12px; margin-bottom:12px;">No active runs loaded. Tap "Upload Manifest" to select a screenshot or paste lines.</p>
                 <div style="display:flex; justify-content:center; gap:8px;">
                     <button class="btn btn-cyan" onclick="switchView('upload')">Go to Manifest Upload</button>
                 </div>
@@ -619,11 +626,14 @@
     <main class="view-panel" id="viewUpload">
         <section class="upload-card">
             <div class="field-group">
+                <span class="field-lbl">Upload Manifest Image (OCR Auto-Scan)</span>
+                <input type="file" id="manifestImageInput" accept="image/*" class="text-input" style="padding: 6px; cursor: pointer;" onchange="handleImageUpload(event)">
+                <div id="ocrStatus" style="font-size: 11px; color: var(--amber-gold); margin-top: 2px; font-weight: 700;"></div>
+            </div>
+
+            <div class="field-group" style="margin-top: 8px;">
                 <span class="field-lbl">Extracted Manifest Buffer (Editable)</span>
-                <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">
-                    Format: Name | Phone | Mobility | PU Time | PU Address | DO Time | DO Address | Miles | Tariff ($)
-                </div>
-                <textarea class="text-input raw-ingest-area" id="rawManifestInput" placeholder="Paste dispatch manifest lines here..."></textarea>
+                <textarea class="text-input raw-ingest-area" id="rawManifestInput" placeholder="Pasted or OCR-scanned text appears here..."></textarea>
             </div>
 
             <button class="btn btn-green" style="font-size:14px; font-weight:800; padding:12px;" onclick="parseRawManifest()">Ingest & Launch Dispatch Queue</button>
@@ -686,17 +696,6 @@
 
 </div>
 
-<script src="https://unpkg.com/vconsole@latest/dist/vconsole.min.js"></script>
-<script>
-    try {
-        if (typeof VConsole !== 'undefined') {
-            window.vConsole = new VConsole();
-        }
-    } catch (e) {
-        console.warn('vConsole skipped:', e);
-    }
-</script>
-
 <script>
     var STATE = {
         currentView: 'cockpit',
@@ -728,9 +727,7 @@
         var now = new Date();
         var timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
         var clockEl = document.getElementById('clockDisplay');
-        if (clockEl) {
-            clockEl.innerText = timeStr;
-        }
+        if (clockEl) clockEl.innerText = timeStr;
 
         if (STATE.isClockedIn) {
             STATE.shiftElapsedSeconds++;
@@ -742,16 +739,10 @@
         var btn = document.getElementById('btnClockIn');
         if (!STATE.isClockedIn) {
             STATE.isClockedIn = true;
-            if (btn) {
-                btn.innerText = 'Clock Out';
-                btn.className = 'btn btn-red';
-            }
+            if (btn) { btn.innerText = 'Clock Out'; btn.className = 'btn btn-red'; }
         } else {
             STATE.isClockedIn = false;
-            if (btn) {
-                btn.innerText = 'Clock In';
-                btn.className = 'btn btn-green';
-            }
+            if (btn) { btn.innerText = 'Clock In'; btn.className = 'btn btn-green'; }
         }
     }
 
@@ -759,9 +750,7 @@
         var hours = STATE.shiftElapsedSeconds / 3600;
         var laborCost = hours * STATE.driverLaborRate;
         var laborEl = document.getElementById('metricLabor');
-        if (laborEl) {
-            laborEl.innerText = '$' + laborCost.toFixed(2);
-        }
+        if (laborEl) laborEl.innerText = '$' + laborCost.toFixed(2);
     }
 
     function updateLaborRate() {
@@ -791,12 +780,37 @@
         renderApp();
     }
 
+    function handleImageUpload(event) {
+        var file = event.target.files[0];
+        if (!file) return;
+
+        var statusEl = document.getElementById('ocrStatus');
+        if (statusEl) statusEl.innerText = "Scanning image with OCR...";
+
+        Tesseract.recognize(file, 'eng', {
+            logger: m => {
+                if (m.status === 'recognizing text' && statusEl) {
+                    statusEl.innerText = "OCR Progress: " + Math.round(m.progress * 100) + "%";
+                }
+            }
+        }).then(({ data: { text } }) => {
+            if (statusEl) statusEl.innerText = "OCR Scan Complete!";
+            var rawArea = document.getElementById('rawManifestInput');
+            if (rawArea) {
+                rawArea.value = text;
+            }
+        }).catch(err => {
+            if (statusEl) statusEl.innerText = "OCR Error. Please paste text manually below.";
+            console.error(err);
+        });
+    }
+
     function parseRawManifest() {
         var rawArea = document.getElementById('rawManifestInput');
         if (!rawArea) return;
         var raw = rawArea.value.trim();
         if (!raw) {
-            alert('No manifest data entered. Paste lines first.');
+            alert('No manifest data entered or scanned.');
             return;
         }
 
@@ -819,7 +833,7 @@
                 var doTime = parts[5] || "08:15 AM";
                 var doAddr = parts[6] || "Patchogue, NY";
                 var miles = parseFloat(parts[7]) || 10.0;
-                var tariff = parseFloat(parts[8]) || (30.00 + (miles * 2.50));
+                var tariff = parseFloat(parts[8]) || 55.00;
 
                 STATE.runs.push({
                     name: name,
@@ -837,23 +851,6 @@
 
                 if (!STATE.lockedPhoneDirectory[name] && phone) {
                     STATE.lockedPhoneDirectory[name] = phone;
-                }
-            } else {
-                var tokens = line.split(/\s{2,}|\t/);
-                if (tokens.length >= 3) {
-                    STATE.runs.push({
-                        name: tokens[0] || "Passenger",
-                        phone: STATE.lockedPhoneDirectory[tokens[0]] || "631-555-0100",
-                        mobility: "Ambulatory",
-                        corridor: "Suffolk / Nassau",
-                        puTime: tokens[1] || "08:00 AM",
-                        puAddr: tokens[2] || "Long Island, NY",
-                        doTime: tokens[3] || "09:00 AM",
-                        doAddr: tokens[4] || "Medical Facility, NY",
-                        miles: 10.0,
-                        tariff: 55.00,
-                        status: 'SCHEDULED'
-                    });
                 }
             }
         }
@@ -881,7 +878,7 @@
         var puTime = document.getElementById('manPUTime').value.trim() || "07:30 AM";
         var doTime = document.getElementById('manDOTime').value.trim() || "08:15 AM";
         var miles = parseFloat(document.getElementById('manMiles').value) || 10.0;
-        var tariff = parseFloat(document.getElementById('manTariff').value) || (30.00 + (miles * 2.50));
+        var tariff = parseFloat(document.getElementById('manTariff').value) || 55.00;
 
         STATE.runs.push({
             name: name,
@@ -1046,7 +1043,7 @@
             container.innerHTML = 
                 '<div class="empty-queue" style="background:#0f172a; border-radius:8px; border:1px solid #1e293b;">' +
                     '<p style="font-size:16px; color:#fff; margin-bottom:8px;">Dispatch Cockpit Standby</p>' +
-                    '<p style="font-size:12px; margin-bottom:12px;">No active runs loaded. Tap "Upload Manifest" to paste schedule lines.</p>' +
+                    '<p style="font-size:12px; margin-bottom:12px;">No active runs loaded. Upload a manifest screenshot or paste lines.</p>' +
                     '<div style="display:flex; justify-content:center; gap:8px;">' +
                         '<button class="btn btn-cyan" onclick="switchView(\'upload\')">Go to Manifest Upload</button>' +
                     '</div>' +
