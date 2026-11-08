@@ -1,381 +1,650 @@
 <!DOCTYPE html>
-<html lang="en" class="bg-slate-950 text-slate-100">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
-  <!-- Apple iPadOS & iOS Standalone PWA Tags -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Serenity OS">
-  <meta name="theme-color" content="#020617">
-  <!-- Apple Touch Icon (Dark Teal NEMT Van SVG) -->
-  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='110' fill='%230f172a'/%3E%3Crect x='16' y='16' width='480' height='480' rx='96' fill='%23134e4a' stroke='%232dd4bf' stroke-width='16'/%3E%3Cpath fill='%232dd4bf' d='M96 160c0-35.3 28.7-64 64-64h192c35.3 0 64 28.7 64 64v192h16c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16h-16v16c0 17.7-14.3 32-32 32h-32c-17.7 0-32-14.3-32-32v-16H184v16c0 17.7-14.3 32-32 32h-32c-17.7 0-32-14.3-32-32v-16H72c-8.8 0-16-7.2-16-16v-32c0-8.8 7.2-16 16-16h16V160zm64 32v64h96v-64H160zm160 0v64h64v-64h-64zM144 384a32 32 0 1 0 0-64 32 32 0 1 0 0 64zm224 0a32 32 0 1 0 0-64 32 32 0 1 0 0 64z'/%3E%3C/svg%3E">
-  <title>Serenity Dispatch OS - Independent NEMT Operations</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <!-- FontAwesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <!-- Google Fonts: Inter & JetBrains Mono -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Leaflet Interactive Map for Live Vehicle Telematics & Route Radar -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <!-- Tesseract.js for Client-Side OCR -->
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            mono: ['JetBrains Mono', 'monospace'],
-          },
-          colors: {
-            serenity: {
-              50: '#f0fdfa',
-              100: '#ccfbf1',
-              400: '#2dd4bf',
-              500: '#14b8a6',
-              600: '#0d9488',
-              900: '#134e4a',
-              950: '#042f2e',
-            }
-          }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Serenity Dispatch OS - Index 3 Baseline</title>
+
+    <style>
+        :root {
+            --bg-base: #070b14;
+            --bg-card: #0f172a;
+            --border-dim: #1e293b;
+            --border-glow: #06b6d4;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --cyan-accent: #00f2fe;
+            --emerald-green: #10b981;
+            --rose-red: #f43f5e;
+            --amber-gold: #f59e0b;
         }
-      }
-    }
-  </script>
-  <style>
-    /* Custom Scrollbars */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #090d16;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #253347;
-      border-radius: 3px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #3b4e68;
-    }
-    /* Pulsing radar for Live status */
-    @keyframes pulse-ring {
-      0% { transform: scale(0.95); opacity: 0.85; }
-      50% { transform: scale(1.2); opacity: 0.25; }
-      100% { transform: scale(0.95); opacity: 0.85; }
-    }
-    .live-pulse {
-      animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    }
-    /* Subtle neon scanline for dispatch terminal feel */
-    .dispatch-card {
-      background: linear-gradient(180deg, rgba(22, 30, 46, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%);
-    }
 
-    /* =======================================================
-       IN-CAB TABLET APP LOCK (Zero Screen Jiggle & Static Lock)
-       Eliminates iOS / Android rubber-band bounce, horizontal sway,
-       and accidental blue text-selection boxes on touch.
-       ======================================================= */
-    /* High-Performance Mobile & Tablet Native Momentum Scrolling */
-    html {
-      -webkit-text-size-adjust: 100%;
-      -webkit-overflow-scrolling: touch;
-    }
-    body {
-      min-height: 100vh;
-      position: relative;
-      -webkit-tap-highlight-color: transparent;
-      -webkit-overflow-scrolling: touch;
-    }
-    /* Hide scrollbar for clean horizontal toolbars while keeping them fully scrollable */
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-    .no-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-    input, textarea, [contenteditable="true"] {
-      user-select: text !important;
-      -webkit-user-select: text !important;
-    }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-    /* Isolated Stacking Context for Leaflet Map
-       Traps Leaflet internal z-indices (z-400 to z-1000) inside level 1,
-       guaranteeing modals (z-9999) ALWAYS sit cleanly on top without bleeding through. */
-    /* Mobile GPU & Native Hardware Scrolling */
-    html, body {
-      -webkit-overflow-scrolling: touch;
-    }
-    /* Fluid modal scrolling */
-    #modal-ride-focus, #modal-parser, #modal-settings, #modal-location-correction, #modal-corrections-report, #modal-gps-radar {
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior: contain;
-    }
-    #modal-ride-focus > div, #modal-parser > div, #modal-settings > div, #modal-location-correction > div, #modal-corrections-report > div {
-      -webkit-overflow-scrolling: touch;
-    }
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            padding: 12px;
+            font-size: 15px;
+            line-height: 1.4;
+            display: flex;
+            justify-content: center;
+        }
 
-    /* In-Cab Driving Lock (Rigid Viewport Kiosk Mode) */
-    body.drive-locked {
-      height: 100vh !important;
-      max-height: 100vh !important;
-      overflow: hidden !important;
-      touch-action: none !important;
-      user-select: none !important;
-      -webkit-user-select: none !important;
-    }
+        .os-container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
 
-    #cockpit-map-wrapper {
-      isolation: isolate;
-      position: relative;
-      z-index: 1;
-      contain: layout style;
-    }
-    #cockpit-leaflet-map, #focus-ride-leaflet-map {
-      touch-action: pan-y !important;
-    }
-  
-    /* =======================================================
-       UNIVERSAL AUTO-FIT WINDOW ENGINE FOR PIXEL & MOBILE SCREENS
-       Automatically sizes and adapts EVERY modal window to 100% 
-       of the screen on phones (Pixel, iPhone) while maintaining 
-       comfortable, centered floating dialogs on iPads and desktops.
-       ======================================================= */
-    html {
-      width: 100%;
-      max-width: 100vw;
-      overflow-x: hidden;
-      -webkit-text-size-adjust: 100%;
-    }
-    body {
-      width: 100%;
-      max-width: 100vw;
-      overflow-x: hidden;
-      min-height: 100vh;
-      min-height: 100dvh;
-      position: relative;
-      margin: 0;
-      padding: 0;
-      -webkit-tap-highlight-color: transparent;
-      -webkit-overflow-scrolling: touch;
-    }
+        .brand-header {
+            background: linear-gradient(180deg, #111e38 0%, #0c1427 100%);
+            border: 1px solid var(--border-dim);
+            border-radius: 8px;
+            padding: 12px 14px;
+        }
 
-    main {
-      width: 100%;
-      max-width: 100%;
-      overflow-x: hidden;
-    }
+        .brand-row-1 {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
 
-    /* Universal Modal Wrapper Rules */
-    div[id^="modal-"] {
-      position: fixed !important;
-      inset: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      max-width: 100vw !important;
-      max-height: 100vh !important;
-      max-height: 100dvh !important;
-      overflow-y: auto !important;
-      -webkit-overflow-scrolling: touch !important;
-      overscroll-behavior: contain !important;
-    }
+        .brand-title {
+            font-size: 19px;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+            color: var(--cyan-accent);
+            text-shadow: 0 0 10px rgba(0, 242, 254, 0.4);
+        }
 
-    /* Mobile Phones (< 640px, e.g. Google Pixel in portrait):
-       Auto-fit full screen edge-to-edge like a native mobile app screen */
-    @media (max-width: 640px) {
-      div[id^="modal-"] {
-        padding: 0 !important;
-        align-items: stretch !important;
-        justify-content: stretch !important;
-      }
+        .version-badge {
+            background-color: var(--emerald-green);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+        }
 
-      div[id^="modal-"] > div {
-        width: 100% !important;
-        max-width: 100vw !important;
-        min-width: 100% !important;
-        min-height: 100vh !important;
-        min-height: 100dvh !important;
-        height: 100% !important;
-        max-height: 100vh !important;
-        max-height: 100dvh !important;
-        border-radius: 0 !important;
-        border: none !important;
-        margin: 0 !important;
-        padding: 1rem 0.875rem !important;
-        box-shadow: none !important;
-        overflow-y: auto !important;
-        -webkit-overflow-scrolling: touch !important;
-      }
+        .brand-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 700;
+            letter-spacing: 0.4px;
+        }
 
-      /* Make modal headers sticky on mobile so close button is always reachable */
-      div[id^="modal-"] > div > div:first-child {
-        position: sticky;
-        top: 0;
-        z-index: 30;
-        background-color: inherit;
-        padding-top: 0.25rem;
-        padding-bottom: 0.75rem;
-      }
-    }
+        .shift-bar {
+            display: grid;
+            grid-template-columns: 100px 1.2fr 1.2fr 1.2fr 0.8fr;
+            gap: 8px;
+            align-items: center;
+        }
 
-    /* Tablets & iPads (641px - 1024px):
-       Centered floating card with maximum screen utilization */
-    @media (min-width: 641px) and (max-width: 1024px) {
-      div[id^="modal-"] {
-        padding: 1rem !important;
-      }
-      div[id^="modal-"] > div {
-        width: 95% !important;
-        max-width: 720px !important;
-        max-height: 94vh !important;
-        max-height: 94dvh !important;
-        border-radius: 1.25rem !important;
-        margin: auto !important;
-      }
-    }
+        .clock-display {
+            background-color: #032b30;
+            border: 1px solid #00f2fe;
+            color: #00f2fe;
+            font-size: 13px;
+            font-weight: 800;
+            text-align: center;
+            padding: 9px 0;
+            border-radius: 6px;
+            box-shadow: inset 0 0 8px rgba(0, 242, 254, 0.2);
+            white-space: nowrap;
+        }
 
-  </style>
+        .btn {
+            appearance: none;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 10px 8px;
+            border-radius: 6px;
+            text-align: center;
+            user-select: none;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            text-decoration: none;
+        }
+
+        .btn:active {
+            opacity: 0.85;
+            transform: scale(0.98);
+        }
+
+        .btn-green { background-color: var(--emerald-green); color: #fff; }
+        .btn-cyan { background-color: #0284c7; color: #fff; }
+        .btn-cyan-active { background-color: #0ea5e9; color: #fff; border: 1px solid var(--cyan-accent); }
+        .btn-orange { background-color: #ea580c; color: #fff; }
+        .btn-red { background-color: #dc2626; color: #fff; }
+        .btn-slate { background-color: #334155; color: #f8fafc; }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .metric-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 8px;
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .metric-title {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 2px;
+        }
+
+        .metric-val {
+            font-size: 22px;
+            font-weight: 900;
+            color: #fff;
+        }
+
+        .metric-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 1px;
+            font-weight: 600;
+        }
+
+        .border-green {
+            border: 1.5px solid var(--emerald-green);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.15);
+        }
+
+        .view-panel {
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .view-panel.active {
+            display: flex;
+        }
+
+        .action-card {
+            background: linear-gradient(180deg, #101c38 0%, #0c1427 100%);
+            border: 1px solid #1e3a8a;
+            border-radius: 8px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .action-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 1px solid #1e293b;
+            padding-bottom: 8px;
+        }
+
+        .action-title-group h2 {
+            font-size: 20px;
+            font-weight: 900;
+            color: #fff;
+        }
+
+        .action-sub {
+            font-size: 11px;
+            color: #38bdf8;
+            font-weight: 700;
+        }
+
+        .badge-sched {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            color: #f59e0b;
+            font-size: 12px;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+
+        .phone-call-btn {
+            background-color: #1e1b4b;
+            border: 1px solid #6366f1;
+            color: #a5b4fc;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 800;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .loc-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .loc-box {
+            border-radius: 6px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 100px;
+        }
+
+        .loc-pu {
+            background-color: #032528;
+            border: 1px solid #0891b2;
+        }
+
+        .loc-do {
+            background-color: #2b0b18;
+            border: 1px solid #be123c;
+        }
+
+        .loc-lbl {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .loc-pu .loc-lbl { color: #22d3ee; }
+        .loc-do .loc-lbl { color: #fb7185; }
+
+        .loc-target {
+            font-size: 14px;
+            font-weight: 900;
+            color: #fff;
+            margin: 2px 0 6px 0;
+        }
+
+        .loc-addr {
+            font-size: 13px;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 8px;
+        }
+
+        .comm-box {
+            background-color: #0b1329;
+            border: 1px solid #1e293b;
+            border-radius: 6px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .comm-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .comm-title {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            color: var(--amber-gold);
+            text-transform: uppercase;
+        }
+
+        .lang-toggles {
+            display: flex;
+            gap: 4px;
+        }
+
+        .btn-toggle {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-toggle.active {
+            background-color: #0284c7;
+            border-color: #38bdf8;
+            color: #fff;
+        }
+
+        .macro-row {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 2px;
+        }
+
+        .macro-btn {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            color: #cbd5e1;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .sms-input {
+            width: 100%;
+            background-color: #070e1e;
+            border: 1px solid #334155;
+            border-radius: 4px;
+            color: #fff;
+            padding: 8px;
+            font-size: 13px;
+            resize: none;
+            outline: none;
+        }
+
+        .sms-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .primary-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .upload-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 8px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .field-lbl {
+            font-size: 11px;
+            font-weight: 800;
+            color: #38bdf8;
+            letter-spacing: 0.5px;
+        }
+
+        .text-input {
+            width: 100%;
+            background-color: #070e1e;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            color: #fff;
+            padding: 8px 10px;
+            font-size: 13px;
+            outline: none;
+        }
+
+        .text-input:focus {
+            border-color: var(--cyan-accent);
+        }
+
+        .raw-ingest-area {
+            height: 120px;
+            font-family: monospace;
+            font-size: 12px;
+            resize: vertical;
+        }
+
+        .roster-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .roster-header {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .roster-item {
+            background-color: #070e1e;
+            border: 1px solid #1e293b;
+            border-radius: 6px;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .roster-item.active-run {
+            border-left: 3px solid #00f2fe;
+            background-color: #0d1e38;
+        }
+
+        .roster-item.completed {
+            opacity: 0.5;
+            border-left: 3px solid var(--emerald-green);
+        }
+
+        .roster-item.noshow {
+            opacity: 0.5;
+            border-left: 3px solid var(--rose-red);
+        }
+
+        .roster-left h4 {
+            font-size: 14px;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .roster-left p {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .roster-right {
+            text-align: right;
+        }
+
+        .roster-tariff {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--emerald-green);
+        }
+
+        .settings-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 8px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .phone-dir-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 6px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .phone-dir-row {
+            background-color: #070e1e;
+            border: 1px solid #1e293b;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .phone-dir-name {
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .empty-queue {
+            padding: 30px 10px;
+            text-align: center;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+    </style>
 </head>
-<body class="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased flex flex-col selection:bg-teal-500 selection:text-white pb-14">
-  <!-- Full-Page Drag & Drop Overlay (Allows dropping manifest screenshots directly onto the live site) -->
-  <div id="fullpage-drop-overlay" class="fixed inset-0 z-[9998] bg-slate-950/90  border-4 border-dashed border-teal-400 hidden flex flex-col items-center justify-center p-6 text-center pointer-events-none">
-    <div class="w-20 h-20 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-4xl mb-4 animate-bounce">
-      <i class="fa-solid fa-cloud-arrow-up"></i>
-    </div>
-    <h2 class="text-2xl font-black text-white tracking-tight">Drop Manifest Screenshots Here</h2>
-    <p class="text-sm text-teal-300 mt-2 max-w-md">Release 1, 2, or multiple RoutingBox screenshots to automatically parse today's daily dispatch roster.</p>
-  </div>
+<body>
 
-  <!-- TOP DISPATCH CONTROL BAR -->
-  <header class="border-b border-slate-800/90 bg-slate-900/95 sticky top-0 z-40 shadow-md">
-    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2">
-      <!-- Row 1: Logo & Branding, Live Clock & Status, Cockpit vs Roster Toggle -->
-      <div class="flex items-center justify-between gap-2 pb-2 border-b border-slate-800/60 flex-wrap">
-        <!-- Logo & Branding -->
-        <div class="flex items-center space-x-3">
-          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-teal-600 via-teal-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-teal-500/20 text-slate-950 font-black text-lg">
-            <i class="fa-solid fa-van-shuttle"></i>
-          </div>
-          <div>
-            <div class="flex items-center space-x-2">
-              <span class="text-base sm:text-lg font-extrabold tracking-tight text-white">Serenity <span class="text-teal-400">Dispatch OS</span></span>
-              <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/30">NEMT PRO</span>
+<div class="os-container">
+
+    <header class="brand-header">
+        <div class="brand-row-1">
+            <span class="brand-title">SERENITY DISPATCH OS</span>
+            <span class="version-badge">INDEX 3 BASELINE</span>
+        </div>
+        <div class="brand-sub">
+            1480 5TH AVE, BAY SHORE, NY 11706 | FLEET UNIT: VAN #104
+        </div>
+    </header>
+
+    <nav class="shift-bar">
+        <div class="clock-display" id="clockDisplay">--:--:-- --</div>
+        <button class="btn btn-cyan-active" id="navCockpit" onclick="switchView('cockpit')">Cockpit View</button>
+        <button class="btn btn-cyan" id="navRoster" onclick="switchView('roster')">Classic Roster</button>
+        <button class="btn btn-cyan" id="navUpload" onclick="switchView('upload')">Upload Manifest</button>
+        <button class="btn btn-orange" id="navSettings" onclick="switchView('settings')">Settings Deck</button>
+    </nav>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <button class="btn btn-green" id="btnClockIn" onclick="toggleShiftClock()">Clock In</button>
+        <button class="btn btn-red" onclick="clearManifestData()">Clear Manifest</button>
+    </div>
+
+    <section class="metric-grid">
+        <div class="metric-card">
+            <span class="metric-title">Active Manifest</span>
+            <span class="metric-val" id="metricRuns">0 / 0</span>
+            <span class="metric-sub" id="metricExceptions">0 Exceptions</span>
+        </div>
+        <div class="metric-card">
+            <span class="metric-title">Route Miles</span>
+            <span class="metric-val" id="metricMiles">0.0 mi</span>
+            <span class="metric-sub">Suffolk / Nassau Corridors</span>
+        </div>
+        <div class="metric-card">
+            <span class="metric-title">Driver Labor</span>
+            <span class="metric-val" id="metricLabor">$0.00</span>
+            <span class="metric-sub">@ $22.50/hr</span>
+        </div>
+        <div class="metric-card border-green">
+            <span class="metric-title">Gross Billed</span>
+            <span class="metric-val" id="metricGross" style="color: var(--emerald-green);">$0.00</span>
+            <span class="metric-sub" id="metricScheduledGross">Scheduled: $0.00</span>
+        </div>
+    </section>
+
+    <main class="view-panel active" id="viewCockpit">
+        <div id="cockpitCore">
+            <div class="empty-queue" style="background:#0f172a; border-radius:8px; border:1px solid #1e293b;">
+                <p style="font-size:16px; color:#fff; margin-bottom:8px;">Dispatch Cockpit Standby</p>
+                <p style="font-size:12px; margin-bottom:12px;">No active runs loaded. Tap "Upload Manifest" to paste schedule lines.</p>
+                <div style="display:flex; justify-content:center; gap:8px;">
+                    <button class="btn btn-cyan" onclick="switchView('upload')">Go to Manifest Upload</button>
+                </div>
             </div>
-            <p class="text-[10px] sm:text-[11px] text-slate-400">Independent NEMT Operations &bull; Long Island, NY (Suffolk County)</p>
-          </div>
         </div>
 
-        <!-- Center Status & Clock -->
-        <div class="flex items-center space-x-2.5 text-sm">
-          <div class="flex items-center space-x-2 bg-slate-950/80 px-2.5 py-1 rounded-lg border border-slate-800">
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 live-pulse"></span>
-            <span class="text-xs text-slate-300 font-medium">Clock: <strong class="text-teal-300 font-mono" id="clock-display">--:--:--</strong></span>
-          </div>
+        <section class="roster-card">
+            <div class="roster-header">
+                <span>Active Manifest Queue</span>
+                <span id="queueCount">0 Runs</span>
+            </div>
+            <div id="quickQueueList" style="display:flex; flex-direction:column; gap:6px;">
+                <div style="font-size:12px; color:var(--text-muted); padding:4px 0;">No runs in queue.</div>
+            </div>
+        </section>
+    </main>
 
-          <!-- 30s Interactive Commercial Showcase Demo Button -->
-          <button id="btn-commercial-demo" type="button" onclick="window.startCommercialDemoShowcase(event)" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/20 to-teal-500/20 hover:from-amber-500/30 hover:to-teal-500/30 border border-amber-400/50 text-xs font-black text-amber-300 transition cursor-pointer shadow-md shadow-amber-950/40 live-pulse" title="Play 30-Second Automated Feature Showcase Video Demo">
-            <i class="fa-solid fa-clapperboard-play text-amber-400 text-xs"></i>
-            <span>30s Feature Demo</span>
-          </button>
-          <button id="btn-open-driver-profile" type="button" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-950/90 hover:bg-slate-800 border border-teal-500/40 text-xs font-semibold text-teal-300 transition cursor-pointer shadow-sm" onclick="openDriverProfileModal()" title="Driver Profile & Personal Home Address">
-            <i class="fa-solid fa-user-circle text-teal-400 text-sm"></i>
-            <span id="header-driver-label">Anthony &bull; Van #104</span>
-          </button>
-        </div>
+    <main class="view-panel" id="viewRoster">
+        <section class="roster-card">
+            <div class="roster-header">
+                <span>Full Manifest Table</span>
+                <button class="btn btn-green" style="padding:4px 8px; font-size:11px;" onclick="switchView('upload')">+ Add Trips</button>
+            </div>
+            <div id="fullManifestTable" style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
+                <div class="empty-queue">No runs loaded. Use Upload Manifest to ingest.</div>
+            </div>
+        </section>
+    </main>
 
-        <!-- Cockpit vs Roster View Mode Toggle -->
-        <div class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 shadow-inner">
-          <button id="btn-mode-cockpit" type="button" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 bg-teal-600 text-white shadow-md shadow-teal-950/60 cursor-pointer" onclick="toggleViewMode('cockpit')">
-            <i class="fa-solid fa-plane-up text-xs"></i>
-            <span>Cockpit View</span>
-          </button>
-          <button id="btn-mode-roster" type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center space-x-1.5 cursor-pointer" onclick="toggleViewMode('roster')">
-            <i class="fa-solid fa-table-list text-xs"></i>
-            <span>Classic Roster</span>
-          </button>
-        </div>
-      </div>
+    <main class="view-panel" id="viewUpload">
+        <section class="upload-card">
+            <div class="field-group">
+                <span class="field-lbl">Extracted Manifest Buffer (Editable)</span>
+                <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">
+                    Format: Name | Phone | Mobility | PU Time | PU Address | DO Time | DO Address | Miles | Tariff ($)
+                </div>
+                <textarea class="text-input raw-ingest-area" id="rawManifestInput" placeholder="Paste dispatch manifest lines here..."></textarea>
+            </div>
 
-      <!-- Row 2: Tactical Action Toolbar (Smooth horizontal scroll strip on tablet/mobile with zero overflow clipping) -->
-      <div class="flex items-center space-x-2 overflow-x-auto no-scrollbar pt-2 pb-0.5 text-xs">
-        <!-- Hidden Mobile Compatibility Hooks -->
-        <button id="btn-clock-mobile" class="hidden"><span id="clock-btn-mobile-label">Clock In</span></button>
-        <button id="btn-gps-mobile" class="hidden"></button>
+            <button class="btn btn-green" style="font-size:14px; font-weight:800; padding:12px;" onclick="parseRawManifest()">Ingest &amp; Launch Dispatch Queue</button>
+        </section>
 
-        <!-- DRIVER CLOCK IN / CLOCK OUT BUTTON -->
-        <button id="btn-clock-toggle" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-950/60 transition flex items-center space-x-1.5 cursor-pointer shrink-0" title="Tap to Clock In / Out (Times driver pay @ $22.50/hr)">
-          <i class="fa-solid fa-business-time text-xs" id="clock-btn-icon"></i>
-          <span id="clock-btn-label">Clock In</span>
-          <span id="clock-elapsed-badge" class="hidden text-[10px] font-mono px-1.5 py-0.2 rounded bg-black/40 text-emerald-200 font-bold ml-1">0.0h</span>
-        </button>
-
-        <!-- LIVE GPS RADAR TELEMATICS BADGE -->
-        <button id="btn-open-gps-map" class="px-2.5 py-1.5 text-xs rounded-lg bg-slate-950/90 border border-slate-800 hover:border-teal-500/50 flex items-center space-x-1.5 text-slate-300 hover:text-teal-300 transition cursor-pointer shrink-0" title="Open Live GPS Route Radar & Vehicle Tracker">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 live-pulse" id="gps-pulse-dot"></span>
-          <span class="text-[11px] font-mono text-slate-300" id="gps-header-label">GPS: Live</span>
-          <i class="fa-solid fa-map-location-dot text-teal-400 text-xs ml-0.5"></i>
-        </button>
-
-        <!-- 1-Tap Hard Refresh / Cache Buster -->
-        <button id="btn-force-refresh" type="button" onclick="forceHardRefresh()" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-teal-300 border border-teal-500/30 transition flex items-center space-x-1 cursor-pointer shrink-0" title="Force iPad to reload latest Cloudflare build past cache">
-          <i class="fa-solid fa-rotate text-teal-400 text-xs"></i>
-          <span>Refresh App</span>
-        </button>
-
-        <!-- In-Cab Driving Lock Toggle -->
-        <button id="btn-drive-lock" type="button" onclick="toggleDriveLock()" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition flex items-center space-x-1 cursor-pointer shrink-0" title="Lock screen & map camera for steady driving without jiggle">
-          <i class="fa-solid fa-lock text-slate-400 text-xs" id="icon-drive-lock"></i>
-          <span id="label-drive-lock">Drive Lock</span>
-        </button>
-
-        <!-- Address Corrections Report Badge -->
-        <button id="btn-open-corrections-report" type="button" onclick="openCorrectionsReportModal()" class="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 transition flex items-center space-x-1 cursor-pointer shrink-0" title="View & Export Address Corrections Report for Dispatch Master System">
-          <i class="fa-solid fa-file-signature text-amber-400 text-xs"></i>
-          <span>Corrections</span>
-          <span class="px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 font-mono text-[10px] font-bold" id="corrections-badge-count">0</span>
-        </button>
-
-        <!-- Clear Manifest / Start New Day Button in Header -->
-        <button id="btn-clear-manifest-header" class="px-2.5 py-1.5 text-xs font-bold rounded-lg bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-500/50 shadow-md shadow-rose-950/60 transition flex items-center space-x-1.5 cursor-pointer shrink-0" title="Wipe out old runs and clear board for a new day">
-          <i class="fa-solid fa-trash-can text-xs text-rose-400"></i>
-          <span>Clear Manifest</span>
-        </button>
-
-        <button id="btn-open-parser" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-teal-600 hover:bg-teal-500 text-white shadow-md shadow-teal-600/20 transition flex items-center space-x-1.5 cursor-pointer shrink-0">
-          <i class="fa-solid fa-file-invoice"></i>
-          <span>Upload Manifest</span>
-        </button>
-        <button id="btn-quick-sample" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-teal-300 border border-teal-500/30 transition flex items-center space-x-1.5 shrink-0">
-          <i class="fa-solid fa-wand-magic-sparkles"></i>
-          <span>Load RoutingBox Demo</span>
-        </button>
-        <button id="btn-open-settings" class="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition shrink-0" title="Routing & Labor Settings">
-          <i class="fa-solid fa-sliders"></i>
-        </button>
-        <button id="btn-reset-schedule" class="p-2 text-slate-400 hover:text-amber-400 rounded-lg hover:bg-slate-800 transition cursor-pointer shrink-0" title="Reset Schedule / Clear Board for New Day">
-          <i class="fa-solid fa-calendar-xmark text-sm"></i>
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <!-- LIVE OVERRIDE BANNER<!-- LIVE OVERRIDE BANNER (Active when Live Arrival is triggered) -->
-  <div id="live-banner" class="hidden bg-gradient-to-r from-emerald-950 via-teal-900 to-slate-900 border-b border-teal-500/50 px-4 py-2.5 text-xs text-teal-200">
-    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-      <div class="flex items-center space-x-2.5">
-        <span class="flex h-2.5 w-2.5 relative">
-          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-        </span>
-        <span c
+        <section class="upload-card">
+            <span class="field-lbl" style="font-size:13px; color:#fff;">Add Single Dispatch Leg</span>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                <input type="text" class="text-input" id="manName" placeholder="Passenger Name">
+                <input type="text" class="text-input" id="manPhone" placeholder="Phone Number">
+                <select class="text-input" id="manMobility">
+                    <option value="Ambulatory">Ambulatory</option>
+                    <option value="Wheelchair">Wheelchair</option>
+                </select>
+                <input type="text" class="text-input" id="manCorridor" placeholder="Corridor (e.g. Sunrise NY-27)">
+                <input type="text" class="text-input" id="manPUTime" placeholder="PU Time (07:30 AM)">
+                <input type="text" class="text-input" id="manDOTime" placeholder="DO Time (08:15 AM)">
+            </div>
+            <input type="text" class="text-input" id="manPUAddr" placeholder="Pickup Street Address, Town, NY">
+            <input type="text" class="text-input" id="manDOAddr" placeholder="Dropoff Street Address, Town, NY">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                <input type="number" step="0.1" class="text-input" id="manMiles" placeholder="Miles (10.0)">
+                <input type="number" step="0.01" class="text-input" id="manTariff" placeholder="Tariff ($55.00)">
+            </div>
+            
