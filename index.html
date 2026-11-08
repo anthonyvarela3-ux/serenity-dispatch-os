@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -625,7 +626,7 @@
                 <textarea class="text-input raw-ingest-area" id="rawManifestInput" placeholder="Paste dispatch manifest lines here..."></textarea>
             </div>
 
-            <button class="btn btn-green" style="font-size:14px; font-weight:800; padding:12px;" onclick="parseRawManifest()">Ingest &amp; Launch Dispatch Queue</button>
+            <button class="btn btn-green" style="font-size:14px; font-weight:800; padding:12px;" onclick="parseRawManifest()">Ingest & Launch Dispatch Queue</button>
         </section>
 
         <section class="upload-card">
@@ -647,4 +648,570 @@
                 <input type="number" step="0.1" class="text-input" id="manMiles" placeholder="Miles (10.0)">
                 <input type="number" step="0.01" class="text-input" id="manTariff" placeholder="Tariff ($55.00)">
             </div>
-            
+            <button class="btn btn-green" onclick="addSingleManualLeg()">Add Run to Manifest</button>
+        </section>
+    </main>
+
+    <main class="view-panel" id="viewSettings">
+        <section class="settings-card">
+            <span class="field-lbl" style="font-size:13px; color:#fff;">System Guardrails & Rates</span>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                <div class="field-group">
+                    <span class="field-lbl">Driver Hourly Rate ($)</span>
+                    <input type="number" class="text-input" id="cfgLaborRate" value="22.50" onchange="updateLaborRate()">
+                </div>
+                <div class="field-group">
+                    <span class="field-lbl">Base Depot Address</span>
+                    <input type="text" class="text-input" value="1480 5th Ave, Bay Shore, NY 11706" readonly>
+                </div>
+                <div class="field-group">
+                    <span class="field-lbl">Dry-Run Bill (%)</span>
+                    <input type="number" class="text-input" id="cfgDryRunPct" value="50">
+                </div>
+                <div class="field-group">
+                    <span class="field-lbl">Dry-Run Min ($)</span>
+                    <input type="number" class="text-input" id="cfgDryRunMin" value="25.00">
+                </div>
+            </div>
+        </section>
+
+        <section class="settings-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="field-lbl" style="font-size:13px; color:#fff;">Passenger Phone Directory</span>
+                <span style="font-size:11px; color:var(--emerald-green); font-weight:700;">Locked</span>
+            </div>
+            <div class="phone-dir-grid" id="phoneDirList"></div>
+        </section>
+    </main>
+
+</div>
+
+<script src="https://unpkg.com/vconsole@latest/dist/vconsole.min.js"></script>
+<script>
+    try {
+        if (typeof VConsole !== 'undefined') {
+            window.vConsole = new VConsole();
+        }
+    } catch (e) {
+        console.warn('vConsole skipped:', e);
+    }
+</script>
+
+<script>
+    var STATE = {
+        currentView: 'cockpit',
+        shiftElapsedSeconds: 0,
+        isClockedIn: false,
+        driverLaborRate: 22.50,
+        runs: [],
+        activeRunIndex: -1,
+        selectedLang: 'EN',
+        lockedPhoneDirectory: {
+            "Dispatcher Primary": "631-555-0100"
+        }
+    };
+
+    var MACROS = {
+        EN: {
+            eta: "Hi {NAME}, this is Anthony from Serenity Medical Transport. I am en route and will arrive in approximately 10 minutes.",
+            early: "Hi {NAME}, running slightly ahead of schedule. Expected arrival in 5 minutes.",
+            atCurb: "Serenity Transport is at the curb for {NAME} at {ADDR}."
+        },
+        ES: {
+            eta: "Hola {NAME}, le habla Anthony de Serenity Medical Transport. Estoy en camino y llegaré en aproximadamente 10 minutos.",
+            early: "Hola {NAME}, voy un poco adelantado. Llegada estimada en 5 minutos.",
+            atCurb: "Serenity Transport está esperando en la acera para {NAME} en {ADDR}."
+        }
+    };
+
+    function updateClockDisplay() {
+        var now = new Date();
+        var timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+        var clockEl = document.getElementById('clockDisplay');
+        if (clockEl) {
+            clockEl.innerText = timeStr;
+        }
+
+        if (STATE.isClockedIn) {
+            STATE.shiftElapsedSeconds++;
+            updateLaborMetrics();
+        }
+    }
+
+    function toggleShiftClock() {
+        var btn = document.getElementById('btnClockIn');
+        if (!STATE.isClockedIn) {
+            STATE.isClockedIn = true;
+            if (btn) {
+                btn.innerText = 'Clock Out';
+                btn.className = 'btn btn-red';
+            }
+        } else {
+            STATE.isClockedIn = false;
+            if (btn) {
+                btn.innerText = 'Clock In';
+                btn.className = 'btn btn-green';
+            }
+        }
+    }
+
+    function updateLaborMetrics() {
+        var hours = STATE.shiftElapsedSeconds / 3600;
+        var laborCost = hours * STATE.driverLaborRate;
+        var laborEl = document.getElementById('metricLabor');
+        if (laborEl) {
+            laborEl.innerText = '$' + laborCost.toFixed(2);
+        }
+    }
+
+    function updateLaborRate() {
+        var input = document.getElementById('cfgLaborRate');
+        if (input && !isNaN(parseFloat(input.value))) {
+            STATE.driverLaborRate = parseFloat(input.value);
+            updateLaborMetrics();
+        }
+    }
+
+    function switchView(viewName) {
+        STATE.currentView = viewName;
+        var views = ['cockpit', 'roster', 'upload', 'settings'];
+        for (var i = 0; i < views.length; i++) {
+            var v = views[i];
+            var panel = document.getElementById('view' + v.charAt(0).toUpperCase() + v.slice(1));
+            var navBtn = document.getElementById('nav' + v.charAt(0).toUpperCase() + v.slice(1));
+            if (panel) panel.classList.remove('active');
+            if (navBtn && v !== 'settings') navBtn.className = 'btn btn-cyan';
+        }
+
+        var activePanel = document.getElementById('view' + viewName.charAt(0).toUpperCase() + viewName.slice(1));
+        var activeNavBtn = document.getElementById('nav' + viewName.charAt(0).toUpperCase() + viewName.slice(1));
+        if (activePanel) activePanel.classList.add('active');
+        if (activeNavBtn && viewName !== 'settings') activeNavBtn.className = 'btn btn-cyan-active';
+
+        renderApp();
+    }
+
+    function parseRawManifest() {
+        var rawArea = document.getElementById('rawManifestInput');
+        if (!rawArea) return;
+        var raw = rawArea.value.trim();
+        if (!raw) {
+            alert('No manifest data entered. Paste lines first.');
+            return;
+        }
+
+        var lines = raw.split('\n');
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i].trim();
+            if (!line) continue;
+
+            var parts = line.split('|');
+            for (var p = 0; p < parts.length; p++) {
+                parts[p] = parts[p].trim();
+            }
+
+            if (parts.length >= 7) {
+                var name = parts[0] || "Passenger";
+                var phone = parts[1] || (STATE.lockedPhoneDirectory[name] || "631-555-0100");
+                var mobility = parts[2] || "Ambulatory";
+                var puTime = parts[3] || "07:30 AM";
+                var puAddr = parts[4] || "Bay Shore, NY";
+                var doTime = parts[5] || "08:15 AM";
+                var doAddr = parts[6] || "Patchogue, NY";
+                var miles = parseFloat(parts[7]) || 10.0;
+                var tariff = parseFloat(parts[8]) || (30.00 + (miles * 2.50));
+
+                STATE.runs.push({
+                    name: name,
+                    phone: phone,
+                    mobility: mobility,
+                    corridor: "Suffolk / Nassau",
+                    puTime: puTime,
+                    puAddr: puAddr,
+                    doTime: doTime,
+                    doAddr: doAddr,
+                    miles: miles,
+                    tariff: tariff,
+                    status: 'SCHEDULED'
+                });
+
+                if (!STATE.lockedPhoneDirectory[name] && phone) {
+                    STATE.lockedPhoneDirectory[name] = phone;
+                }
+            } else {
+                var tokens = line.split(/\s{2,}|\t/);
+                if (tokens.length >= 3) {
+                    STATE.runs.push({
+                        name: tokens[0] || "Passenger",
+                        phone: STATE.lockedPhoneDirectory[tokens[0]] || "631-555-0100",
+                        mobility: "Ambulatory",
+                        corridor: "Suffolk / Nassau",
+                        puTime: tokens[1] || "08:00 AM",
+                        puAddr: tokens[2] || "Long Island, NY",
+                        doTime: tokens[3] || "09:00 AM",
+                        doAddr: tokens[4] || "Medical Facility, NY",
+                        miles: 10.0,
+                        tariff: 55.00,
+                        status: 'SCHEDULED'
+                    });
+                }
+            }
+        }
+
+        if (STATE.activeRunIndex === -1 && STATE.runs.length > 0) {
+            STATE.activeRunIndex = 0;
+        }
+
+        switchView('cockpit');
+    }
+
+    function addSingleManualLeg() {
+        var name = document.getElementById('manName').value.trim();
+        var puAddr = document.getElementById('manPUAddr').value.trim();
+        var doAddr = document.getElementById('manDOAddr').value.trim();
+
+        if (!name || !puAddr || !doAddr) {
+            alert('Name, Pickup Address, and Dropoff Address are required.');
+            return;
+        }
+
+        var phone = document.getElementById('manPhone').value.trim() || (STATE.lockedPhoneDirectory[name] || "631-555-0100");
+        var mobility = document.getElementById('manMobility').value;
+        var corridor = document.getElementById('manCorridor').value.trim() || "Suffolk / Nassau";
+        var puTime = document.getElementById('manPUTime').value.trim() || "07:30 AM";
+        var doTime = document.getElementById('manDOTime').value.trim() || "08:15 AM";
+        var miles = parseFloat(document.getElementById('manMiles').value) || 10.0;
+        var tariff = parseFloat(document.getElementById('manTariff').value) || (30.00 + (miles * 2.50));
+
+        STATE.runs.push({
+            name: name,
+            phone: phone,
+            mobility: mobility,
+            corridor: corridor,
+            puTime: puTime,
+            puAddr: puAddr,
+            doTime: doTime,
+            doAddr: doAddr,
+            miles: miles,
+            tariff: tariff,
+            status: 'SCHEDULED'
+        });
+
+        if (!STATE.lockedPhoneDirectory[name] && phone) {
+            STATE.lockedPhoneDirectory[name] = phone;
+        }
+
+        document.getElementById('manName').value = '';
+        document.getElementById('manPhone').value = '';
+        document.getElementById('manPUAddr').value = '';
+        document.getElementById('manDOAddr').value = '';
+        document.getElementById('manMiles').value = '';
+        document.getElementById('manTariff').value = '';
+
+        if (STATE.activeRunIndex === -1) STATE.activeRunIndex = 0;
+        switchView('cockpit');
+    }
+
+    function clearManifestData() {
+        STATE.runs = [];
+        STATE.activeRunIndex = -1;
+        var rawInput = document.getElementById('rawManifestInput');
+        if (rawInput) rawInput.value = '';
+        renderApp();
+    }
+
+    function setLanguage(lang) {
+        STATE.selectedLang = lang;
+        var enBtn = document.getElementById('langEN');
+        var esBtn = document.getElementById('langES');
+        if (enBtn) enBtn.className = lang === 'EN' ? 'btn-toggle active' : 'btn-toggle';
+        if (esBtn) esBtn.className = lang === 'ES' ? 'btn-toggle active' : 'btn-toggle';
+        applyMacro('eta');
+    }
+
+    function applyMacro(type) {
+        if (STATE.activeRunIndex < 0 || STATE.activeRunIndex >= STATE.runs.length) return;
+        var run = STATE.runs[STATE.activeRunIndex];
+        var template = MACROS[STATE.selectedLang][type];
+        var message = template.replace('{NAME}', run.name).replace('{ADDR}', run.puAddr);
+        var smsBox = document.getElementById('smsMessageText');
+        if (smsBox) smsBox.value = message;
+    }
+
+    function sendSMS() {
+        if (STATE.activeRunIndex < 0 || STATE.activeRunIndex >= STATE.runs.length) return;
+        var run = STATE.runs[STATE.activeRunIndex];
+        var message = document.getElementById('smsMessageText').value;
+        var cleanPhone = run.phone.replace(/[^0-9]/g, '');
+        window.location.href = 'sms:' + cleanPhone + '?body=' + encodeURIComponent(message);
+    }
+
+    function copyAndOpenGV() {
+        var smsBox = document.getElementById('smsMessageText');
+        if (smsBox) {
+            smsBox.select();
+            document.execCommand('copy');
+        }
+        window.open('https://voice.google.com/messages', '_blank');
+    }
+
+    function markPassengerArrived() {
+        if (STATE.activeRunIndex < 0 || STATE.activeRunIndex >= STATE.runs.length) return;
+        applyMacro('atCurb');
+    }
+
+    function completeActiveRun() {
+        if (STATE.activeRunIndex < 0 || STATE.activeRunIndex >= STATE.runs.length) return;
+        STATE.runs[STATE.activeRunIndex].status = 'COMPLETED';
+        advanceQueue();
+    }
+
+    function executeNoShow() {
+        if (STATE.activeRunIndex < 0 || STATE.activeRunIndex >= STATE.runs.length) return;
+        var run = STATE.runs[STATE.activeRunIndex];
+        var dryPct = (parseFloat(document.getElementById('cfgDryRunPct').value) || 50) / 100;
+        var dryMin = parseFloat(document.getElementById('cfgDryRunMin').value) || 25.00;
+        
+        var dryAmount = Math.max(run.tariff * dryPct, dryMin);
+        run.tariff = dryAmount;
+        run.status = 'NO_SHOW_BILLED';
+        advanceQueue();
+    }
+
+    function advanceQueue() {
+        var nextIdx = -1;
+        for (var i = 0; i < STATE.runs.length; i++) {
+            if (STATE.runs[i].status === 'SCHEDULED') {
+                nextIdx = i;
+                break;
+            }
+        }
+        STATE.activeRunIndex = nextIdx;
+        renderApp();
+    }
+
+    function setActiveRun(index) {
+        STATE.activeRunIndex = index;
+        switchView('cockpit');
+    }
+
+    function renderApp() {
+        renderMetrics();
+        renderCockpit();
+        renderRoster();
+        renderPhoneDirectory();
+    }
+
+    function renderMetrics() {
+        var total = STATE.runs.length;
+        var completed = 0;
+        var exceptions = 0;
+        var miles = 0;
+        var grossBilled = 0;
+        var scheduledGross = 0;
+
+        for (var i = 0; i < STATE.runs.length; i++) {
+            var r = STATE.runs[i];
+            miles += (r.miles || 0);
+            scheduledGross += (r.tariff || 0);
+            if (r.status === 'COMPLETED' || r.status === 'NO_SHOW_BILLED') {
+                completed++;
+                grossBilled += (r.tariff || 0);
+            }
+            if (r.status === 'NO_SHOW_BILLED') {
+                exceptions++;
+            }
+        }
+
+        var metricRuns = document.getElementById('metricRuns');
+        var metricExceptions = document.getElementById('metricExceptions');
+        var metricMiles = document.getElementById('metricMiles');
+        var metricGross = document.getElementById('metricGross');
+        var metricSchedGross = document.getElementById('metricScheduledGross');
+        var queueCount = document.getElementById('queueCount');
+
+        if (metricRuns) metricRuns.innerText = completed + ' / ' + total;
+        if (metricExceptions) metricExceptions.innerText = exceptions + ' Exceptions';
+        if (metricMiles) metricMiles.innerText = miles.toFixed(1) + ' mi';
+        if (metricGross) metricGross.innerText = '$' + grossBilled.toFixed(2);
+        if (metricSchedGross) metricSchedGross.innerText = 'Scheduled: $' + scheduledGross.toFixed(2);
+        if (queueCount) queueCount.innerText = (total - completed) + ' Remaining';
+    }
+
+    function renderCockpit() {
+        var container = document.getElementById('cockpitCore');
+        if (!container) return;
+
+        if (STATE.activeRunIndex === -1 || !STATE.runs[STATE.activeRunIndex]) {
+            container.innerHTML = 
+                '<div class="empty-queue" style="background:#0f172a; border-radius:8px; border:1px solid #1e293b;">' +
+                    '<p style="font-size:16px; color:#fff; margin-bottom:8px;">Dispatch Cockpit Standby</p>' +
+                    '<p style="font-size:12px; margin-bottom:12px;">No active runs loaded. Tap "Upload Manifest" to paste schedule lines.</p>' +
+                    '<div style="display:flex; justify-content:center; gap:8px;">' +
+                        '<button class="btn btn-cyan" onclick="switchView(\'upload\')">Go to Manifest Upload</button>' +
+                    '</div>' +
+                '</div>';
+            renderQuickQueue();
+            return;
+        }
+
+        var run = STATE.runs[STATE.activeRunIndex];
+        var cleanPhone = run.phone.replace(/[^0-9]/g, '');
+
+        container.innerHTML = 
+            '<div class="action-card">' +
+                '<div class="action-card-header">' +
+                    '<div class="action-title-group">' +
+                        '<h2>' + run.name + '</h2>' +
+                        '<div class="action-sub">' + run.corridor + ' | ' + run.miles + ' mi | Tariff: $' + run.tariff.toFixed(2) + '</div>' +
+                    '</div>' +
+                    '<div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">' +
+                        '<span class="badge-sched">' + run.status + '</span>' +
+                        '<a href="tel:' + cleanPhone + '" class="phone-call-btn">' +
+                            '<span>📞</span> ' + run.phone +
+                        '</a>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="loc-grid">' +
+                    '<div class="loc-box loc-pu">' +
+                        '<div>' +
+                            '<span class="loc-lbl">Pickup | Sched: ' + run.puTime + '</span>' +
+                            '<div class="loc-target">Target: ' + run.puTime + '</div>' +
+                            '<div class="loc-addr">' + run.puAddr + '</div>' +
+                        '</div>' +
+                        '<a href="https://maps.google.com/?daddr=' + encodeURIComponent(run.puAddr) + '" target="_blank" class="btn btn-green" style="font-size:11px; padding:6px;">Navigate Pickup</a>' +
+                    '</div>' +
+                    '<div class="loc-box loc-do">' +
+                        '<div>' +
+                            '<span class="loc-lbl">Dropoff | Sched: ' + run.doTime + '</span>' +
+                            '<div class="loc-target">Target: ' + run.doTime + '</div>' +
+                            '<div class="loc-addr">' + run.doAddr + '</div>' +
+                        '</div>' +
+                        '<a href="https://maps.google.com/?daddr=' + encodeURIComponent(run.doAddr) + '" target="_blank" class="btn btn-red" style="font-size:11px; padding:6px;">Navigate Dropoff</a>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="comm-box">' +
+                    '<div class="comm-top">' +
+                        '<span class="comm-title">Bilingual Passenger SMS (EN / ES)</span>' +
+                        '<div class="lang-toggles">' +
+                            '<button class="btn-toggle ' + (STATE.selectedLang === 'EN' ? 'active' : '') + '" id="langEN" onclick="setLanguage(\'EN\')">EN</button>' +
+                            '<button class="btn-toggle ' + (STATE.selectedLang === 'ES' ? 'active' : '') + '" id="langES" onclick="setLanguage(\'ES\')">ES</button>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="macro-row">' +
+                        '<button class="macro-btn" onclick="applyMacro(\'eta\')">10m Out</button>' +
+                        '<button class="macro-btn" onclick="applyMacro(\'early\')">Early</button>' +
+                        '<button class="macro-btn" onclick="applyMacro(\'atCurb\')">At Curb</button>' +
+                    '</div>' +
+                    '<textarea id="smsMessageText" class="sms-input" rows="2"></textarea>' +
+                    '<div class="sms-actions">' +
+                        '<button class="btn btn-orange" onclick="sendSMS()">Send SMS</button>' +
+                        '<button class="btn btn-cyan" onclick="copyAndOpenGV()">Copy & Open Google Voice</button>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="primary-actions">' +
+                    '<button class="btn btn-orange" style="font-size:14px; font-weight:800;" onclick="markPassengerArrived()">Mark Arrived</button>' +
+                    '<button class="btn btn-green" style="font-size:14px; font-weight:800;" onclick="completeActiveRun()">Complete Run ($' + run.tariff.toFixed(2) + ')</button>' +
+                '</div>' +
+                '<div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">' +
+                    '<button class="btn btn-red" onclick="executeNoShow()">No Show</button>' +
+                    '<button class="btn btn-slate" onclick="executeNoShow()">Cancel at Door</button>' +
+                '</div>' +
+            '</div>';
+
+        applyMacro('eta');
+        renderQuickQueue();
+    }
+
+    function renderQuickQueue() {
+        var queueEl = document.getElementById('quickQueueList');
+        if (!queueEl) return;
+
+        if (STATE.runs.length === 0) {
+            queueEl.innerHTML = '<div style="font-size:12px; color:var(--text-muted); padding:4px 0;">No runs in queue.</div>';
+            return;
+        }
+
+        var html = '';
+        for (var idx = 0; idx < STATE.runs.length; idx++) {
+            var r = STATE.runs[idx];
+            var activeClass = (idx === STATE.activeRunIndex ? 'active-run' : '');
+            var completedClass = (r.status === 'COMPLETED' ? 'completed' : '');
+            var noShowClass = (r.status === 'NO_SHOW_BILLED' ? 'noshow' : '');
+            html += 
+                '<div class="roster-item ' + activeClass + ' ' + completedClass + ' ' + noShowClass + '" onclick="setActiveRun(' + idx + ')">' +
+                    '<div class="roster-left">' +
+                        '<h4>#' + (idx + 1) + ' ' + r.name + ' <span style="font-size:11px; font-weight:600; color:var(--text-muted);">(' + r.mobility + ')</span></h4>' +
+                        '<p>' + r.puAddr + ' → ' + r.doAddr + '</p>' +
+                    '</div>' +
+                    '<div class="roster-right">' +
+                        '<div class="roster-tariff">$' + r.tariff.toFixed(2) + '</div>' +
+                        '<div style="font-size:10px; font-weight:700; color:var(--text-muted);">' + r.status + '</div>' +
+                    '</div>' +
+                '</div>';
+        }
+        queueEl.innerHTML = html;
+    }
+
+    function renderRoster() {
+        var fullTable = document.getElementById('fullManifestTable');
+        if (!fullTable) return;
+
+        if (STATE.runs.length === 0) {
+            fullTable.innerHTML = '<div class="empty-queue">No runs loaded. Use Upload Manifest to ingest.</div>';
+            return;
+        }
+
+        var html = '';
+        for (var idx = 0; idx < STATE.runs.length; idx++) {
+            var r = STATE.runs[idx];
+            var activeClass = (idx === STATE.activeRunIndex ? 'active-run' : '');
+            var completedClass = (r.status === 'COMPLETED' ? 'completed' : '');
+            var noShowClass = (r.status === 'NO_SHOW_BILLED' ? 'noshow' : '');
+            html += 
+                '<div class="roster-item ' + activeClass + ' ' + completedClass + ' ' + noShowClass + '" onclick="setActiveRun(' + idx + ')">' +
+                    '<div class="roster-left">' +
+                        '<h4>#' + (idx + 1) + ' ' + r.name + ' • ' + r.phone + '</h4>' +
+                        '<p>PU: ' + r.puTime + ' (' + r.puAddr + ')</p>' +
+                        '<p>DO: ' + r.doTime + ' (' + r.doAddr + ')</p>' +
+                    '</div>' +
+                    '<div class="roster-right">' +
+                        '<div class="roster-tariff">$' + r.tariff.toFixed(2) + '</div>' +
+                        '<div style="font-size:11px; color:#38bdf8;">' + r.miles + ' mi</div>' +
+                        '<span style="font-size:10px; font-weight:800; color:var(--text-muted);">' + r.status + '</span>' +
+                    '</div>' +
+                '</div>';
+        }
+        fullTable.innerHTML = html;
+    }
+
+    function renderPhoneDirectory() {
+        var dirContainer = document.getElementById('phoneDirList');
+        if (!dirContainer) return;
+
+        var html = '';
+        var keys = Object.keys(STATE.lockedPhoneDirectory);
+        for (var i = 0; i < keys.length; i++) {
+            var name = keys[i];
+            var phone = STATE.lockedPhoneDirectory[name];
+            var cleanPhone = phone.replace(/[^0-9]/g, '');
+            html += 
+                '<div class="phone-dir-row">' +
+                    '<span class="phone-dir-name">' + name + '</span>' +
+                    '<a href="tel:' + cleanPhone + '" class="phone-call-btn" style="padding:2px 8px; font-size:11px;">' +
+                        '📞 ' + phone +
+                    '</a>' +
+                '</div>';
+        }
+        dirContainer.innerHTML = html;
+    }
+
+    updateClockDisplay();
+    setInterval(updateClockDisplay, 1000);
+    renderApp();
+</script>
+
+</body>
+</html>
+
+```
