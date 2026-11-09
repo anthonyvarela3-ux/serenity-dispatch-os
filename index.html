@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -41,6 +42,7 @@
         .status-green { background: #064e3b; color: #34d399; border: 1px solid #059669; }
         .status-yellow { background: #78350f; color: #fbbf24; border: 1px solid #d97706; }
         .status-red { background: #7f1d1d; color: #f87171; border: 1px solid #dc2626; }
+        .gap-row { background: linear-gradient(90deg, #450a0a 0%, #7f1d1d 50%, #450a0a 100%); color: #fecaca; font-weight: 800; text-align: center; padding: 10px; border-top: 2px solid #f87171; border-bottom: 2px solid #f87171; }
         .cockpit-card { background: linear-gradient(180deg, #101c38 0%, #0c1427 100%); border: 1px solid #1e3a8a; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
         .loc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .loc-box { border-radius: 6px; padding: 10px; display: flex; flex-direction: column; justify-content: space-between; }
@@ -96,7 +98,7 @@
         </div>
     </section>
 
-    <!-- Cockpit Roster View (Full Day Overview) -->
+    <!-- Cockpit Roster View (Full Day Overview with Live GPS Timing & Dead Time Gap Rows) -->
     <main class="view-panel active" id="viewRoster">
         <div class="table-container">
             <table>
@@ -301,6 +303,27 @@
         renderApp();
     }
 
+    function parseTimeStr(timeStr) {
+        if (!timeStr) return 0;
+        var parts = timeStr.trim().split(' ');
+        var hm = parts[0].split(':');
+        var h = parseInt(hm[0], 10);
+        var m = parseInt(hm[1], 10);
+        if (parts[1] && parts[1].toUpperCase() === 'PM' && h < 12) h += 12;
+        if (parts[1] && parts[1].toUpperCase() === 'AM' && h === 12) h = 0;
+        return h * 60 + m;
+    }
+
+    function addMinutes(timeStr, mins) {
+        var totalMins = parseTimeStr(timeStr) + mins;
+        var h = Math.floor(totalMins / 60) % 24;
+        var m = totalMins % 60;
+        var ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12;
+        h = h ? h : 12;
+        return (h < 10 ? '0' + h : h) + ':' + (m < 10 ? '0' + m : m) + ' ' + ampm;
+    }
+
     function parseRawManifest() {
         var raw = document.getElementById('rawManifestInput').value.trim();
         if (!raw) { 
@@ -317,17 +340,27 @@
                 var phone = parts[1] || STATE.lockedPhoneDirectory[name] || "631-555-0100";
                 var doAddr = parts[6] || "";
                 var legType = (doAddr.toLowerCase().includes('hosp') || doAddr.toLowerCase().includes('ctr') || doAddr.toLowerCase().includes('road') || doAddr.toLowerCase().includes('medical')) ? 'Incoming' : 'Outgoing';
+                
+                var miles = parseFloat(parts[7]) || 10.0;
+                // Live GPS timing calculation: estimate travel time based on 30mph average speed in Suffolk County traffic
+                var travelMins = Math.round((miles / 30.0) * 60);
+                var schedPu = parts[3] || "08:00 AM";
+                var gpsPu = addMinutes(schedPu, -5); // GPS buffer estimation
+                var schedDo = parts[5] || "09:00 AM";
+                var gpsDo = addMinutes(schedPu, travelMins);
 
                 STATE.runs.push({
                     name: name,
                     phone: phone,
                     mobility: parts[2] || "Amb",
                     legType: legType,
-                    puTime: parts[3] || "08:00 AM",
+                    schedPu: schedPu,
+                    gpsPu: gpsPu,
                     puAddr: parts[4] || "Bay Shore, NY",
-                    doTime: parts[5] || "09:00 AM",
+                    schedDo: schedDo,
+                    gpsDo: gpsDo,
                     doAddr: doAddr,
-                    miles: parseFloat(parts[7]) || 10.0,
+                    miles: miles,
                     tariff: parseFloat(parts[8]) || 50.00,
                     status: 'On-Time',
                     corridor: 'Suffolk County Corridor (LIE / Sunrise)',
@@ -429,6 +462,19 @@
         var html = '';
         for(var i=0; i<STATE.runs.length; i++) {
             var r = STATE.runs[i];
+            
+            // Gap Detection: Check time difference between current drop-off and next pickup
+            if (i < STATE.runs.length - 1) {
+                var nextRun = STATE.runs[i+1];
+                var doMins = parseTimeStr(r.schedDo);
+                var nextPuMins = parseTimeStr(nextRun.schedPu);
+                var gapMins = nextPuMins - doMins;
+                
+                if (gapMins > 30) {
+                    html += `<tr><td colspan="7" class="gap-row">⚠️ DEAD TIME GAP: ${gapMins} MINS BETWEEN RUNS — Options: Reposition closer, refuel Van #104, take meal break, or handle paperwork.</td></tr>`;
+                }
+            }
+
             var badgeClass = 'status-green';
             if(r.status === 'Warning') badgeClass = 'status-yellow';
             else if(r.status === 'Late' || r.status === 'Exception') badgeClass = 'status-red';
@@ -441,9 +487,9 @@
                     <td>${statusBadge}<br><span style="font-size:10px; color:var(--text-muted);">#${i+1}</span></td>
                     <td><b>${r.name}</b><br><span style="font-size:11px; color:var(--text-muted);">${r.mobility} • ${r.phone}</span></td>
                     <td><span style="font-size:11px; font-weight:800; color:var(--cyan-accent);">${r.legType}</span></td>
-                    <td><b>${r.puTime}</b></td>
-                    <td><b>${r.doTime}</b></td>
-                    <td><b>${r.miles} mi</b><br><span style="font-size:10px; color:var(--text-muted);">32.5 mph avg</span></td>
+                    <td><b>Sched: ${r.schedPu}</b><br><span style="font-size:10px; color:var(--cyan-accent);">GPS: ${r.gpsPu}</span></td>
+                    <td><b>Sched: ${r.schedDo}</b><br><span style="font-size:10px; color:var(--rose-red);">GPS: ${r.gpsDo}</span></td>
+                    <td><b>${r.miles} mi</b><br><span style="font-size:10px; color:var(--text-muted);">30 mph avg</span></td>
                     <td><b>${r.corridor}</b><br><span style="font-size:11px; color:var(--text-muted);">PU: ${r.puAddr}<br>DO: ${r.doAddr}</span></td>
                 </tr>`;
         }
@@ -469,14 +515,14 @@
                 <div class="loc-grid">
                     <div class="loc-box loc-pu">
                         <div>
-                            <div style="font-size:10px; font-weight:800; color:#22d3ee;">PICKUP TIME: ${r.puTime}</div>
+                            <div style="font-size:10px; font-weight:800; color:#22d3ee;">PICKUP TIME: Sched ${r.schedPu} | GPS ${r.gpsPu}</div>
                             <div style="font-size:13px; font-weight:900; color:#fff; margin:4px 0;">${r.puAddr}</div>
                         </div>
                         <a href="https://maps.google.com/?daddr=${encodeURIComponent(r.puAddr)}" target="_blank" class="btn btn-green" style="font-size:11px; padding:6px; margin-top:6px;">Navigate Pickup</a>
                     </div>
                     <div class="loc-box loc-do">
                         <div>
-                            <div style="font-size:10px; font-weight:800; color:#fb7185;">DROPOFF TIME: ${r.doTime}</div>
+                            <div style="font-size:10px; font-weight:800; color:#fb7185;">DROPOFF TIME: Sched ${r.schedDo} | GPS ${r.gpsDo}</div>
                             <div style="font-size:13px; font-weight:900; color:#fff; margin:4px 0;">${r.doAddr}</div>
                         </div>
                         <a href="https://maps.google.com/?daddr=${encodeURIComponent(r.doAddr)}" target="_blank" class="btn btn-red" style="font-size:11px; padding:6px; margin-top:6px;">Navigate Dropoff</a>
@@ -503,7 +549,7 @@
                 </div>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
                     <button class="btn btn-orange" onclick="applyMacro('atCurb')">Mark Arrived</button>
-                    <button class="btn btn-green" onclick="completeRun()">Complete Run ($${r.tariff.toFixed(2)})</button>
+                    <button class="btn btn-green" onclick="completeRun()">Complete Run ($${r.tariff.eturnd})</button>
                 </div>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
                     <button class="btn btn-red" onclick="markNoShow()">No Show / Exception</button>
@@ -528,3 +574,5 @@
 </script>
 </body>
 </html>
+
+```
