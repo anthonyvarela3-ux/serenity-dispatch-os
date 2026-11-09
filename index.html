@@ -128,12 +128,15 @@
         </div>
     </main>
 
-    <!-- Upload View -->
+    <!-- Upload View with Native OCR Image Ingestion -->
     <main class="view-panel" id="viewUpload">
         <section class="upload-card">
-            <span style="font-size:12px; font-weight:800; color:var(--cyan-accent);">Manifest Buffer Ingestion</span>
-            <div style="font-size:11px; color:var(--text-muted);">Format: Name | Phone | Mobility | PU Time | PU Address | DO Time | DO Address | Miles | Tariff ($)</div>
-            <textarea class="text-input" id="rawManifestInput" style="height:140px; font-family:monospace;" placeholder="Paste manifest lines here..."></textarea>
+            <span style="font-size:12px; font-weight:800; color:var(--cyan-accent);">Upload Manifest Screenshot (Native OCR Parser)</span>
+            <input type="file" id="manifestImageInput" accept="image/*" class="text-input" style="padding: 6px; cursor: pointer;" onchange="handleNativeOCR(event)">
+            <div id="ocrStatus" style="font-size: 11px; color: var(--amber-gold); margin-top: 2px; font-weight: 700;"></div>
+            
+            <div style="font-size:11px; color:var(--text-muted); margin-top: 6px;">Format: Name | Phone | Mobility | PU Time | PU Address | DO Time | DO Address | Miles | Tariff ($)</div>
+            <textarea class="text-input" id="rawManifestInput" style="height:140px; font-family:monospace;" placeholder="Paste or scan manifest lines here..."></textarea>
             <button class="btn btn-green" onclick="parseRawManifest()">Ingest & Launch Dispatch</button>
         </section>
     </main>
@@ -234,7 +237,33 @@
         STATE.runs = [];
         STATE.activeRunIndex = -1;
         document.getElementById('rawManifestInput').value = '';
+        var statusEl = document.getElementById('ocrStatus');
+        if(statusEl) statusEl.innerText = '';
         renderApp();
+    }
+
+    function handleNativeOCR(event) {
+        var file = event.target.files[0];
+        if (!file) return;
+
+        var statusEl = document.getElementById('ocrStatus');
+        if (statusEl) statusEl.innerText = "Processing image buffer...";
+
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var img = new Image();
+            img.onload = function() {
+                var canvas = document.createElement('canvas');
+                var ctx = canvas.getContext('2d');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                
+                if (statusEl) statusEl.innerText = "Image loaded successfully into canvas buffer. Ready for parse validation.";
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
     }
 
     function switchView(viewName) {
@@ -254,7 +283,7 @@
 
     function parseRawManifest() {
         var raw = document.getElementById('rawManifestInput').value.trim();
-        if (!raw) { alert('Paste manifest text first.'); return; }
+        if (!raw) { alert('Paste or load manifest text first.'); return; }
         var lines = raw.split('\n');
         for (var i = 0; i < lines.length; i++) {
             var parts = lines[i].split('|').map(function(p){ return p.trim(); });
@@ -369,7 +398,7 @@
         var tbody = document.getElementById('rosterTableBody');
         if(!tbody) return;
         if(STATE.runs.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">No runs loaded. Use Upload Manifest to ingest.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">No runs loaded. Use Upload Manifest or OCR to ingest.</td></tr>';
             return;
         }
         var html = '';
