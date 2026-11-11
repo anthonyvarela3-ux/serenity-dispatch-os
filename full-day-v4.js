@@ -71,7 +71,9 @@ function startAutoGPS(){
 
 let mapsETA=null;
 function currentRuns(date){
- return db.runs.filter(r=>r.date===date).sort((a,b)=>timeM(a.pu)-timeM(b.pu));
+ const runs=db.runs.filter(r=>r.date===date);
+ return window.SerenityDispatchUpdates?.sortRuns?.(runs)||
+   runs.sort((a,b)=>timeM(a.pu)-timeM(b.pu));
 }
 function intOrNull(x,min,max){
  return Number.isSafeInteger(x)&&x>=min&&x<=max?x:null;
@@ -91,7 +93,10 @@ function compute(runs,date,now,c,maps){
  return runs.map(r=>{
   const approval=window.SerenityOffice?.effective?.(r);
   const originalPickup=timeM(r.pu);
-  const pickup=Number.isFinite(approval?.pickup)?approval.pickup:originalPickup;
+  const updated=window.SerenityDispatchUpdates?.get?.(r);
+  const pickup=Number.isFinite(window.SerenityDispatchUpdates?.pickup?.(r))?
+   window.SerenityDispatchUpdates.pickup(r):
+   Number.isFinite(approval?.pickup)?approval.pickup:originalPickup;
   const target=pickup-10;
   const status=String(r.status||'');
   const closed=['Completed','Exception','Canceled','Canceled at Door','No-show'].includes(status);
@@ -120,7 +125,7 @@ function compute(runs,date,now,c,maps){
     else if(enroute!==null){readyAt=null;blocked=true;} // where did driver stop?
     else if(readyAt===null){blocked=true;}
     return {r,state:'done',pickup,target,originalPickup,arrival:actualPickup,
-      approvalState:approval?.status||'unknown',agreedPickup:approval?.agreed||null,
+      approvalState:approval?.status||'unknown',agreedPickup:approval?.agreed||null,dispatchRevisedPickup:updated?.revisedPickup||null,
       dropArrival:null,drop:null,releaseAt:grounded?released:null,
       reason:status+' · no passenger transport; billing unconfirmed',
       verifiedEnd:false,nonTransport:true,boarded:false,enroute};
@@ -131,7 +136,7 @@ function compute(runs,date,now,c,maps){
    if(endWasVerified){readyAt=verifiedDropoff;blocked=false;}
    else {readyAt=null;blocked=true;}
    return {r,state:'done',pickup,target,originalPickup,
-    approvalState:approval?.status||'unknown',agreedPickup:approval?.agreed||null,
+    approvalState:approval?.status||'unknown',agreedPickup:approval?.agreed||null,dispatchRevisedPickup:updated?.revisedPickup||null,
     arrival:arrived,boarded:boarded!==null,enroute,enrouteDropoff,
     dropArrival:actualEnd,drop:actualEnd,
     reason:endWasVerified?'Verified actual drop-off':'Closed without recorded physical drop-off',
