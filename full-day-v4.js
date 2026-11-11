@@ -157,13 +157,16 @@ function compute(runs,date,now,c,maps){
   const waitingAtCurb=arrived!==null&&boarded===null&&current!==null&&current>=arrived;
   const depart=boarded!==null?boarded:arrival!==null?
     Math.max(arrival,pickup,waitingAtCurb?current:-Infinity)+(c.buffer??0):null;
-  const drop=depart!==null && duration!==null?depart+duration+(c.buffer??0):null;
+  // Track destination arrival separately from when the vehicle is clear.
+  // The extra service buffer belongs AFTER reaching the drop-off.
+  const dropArrival=depart!==null&&duration!==null?depart+duration:null;
+  const drop=dropArrival!==null?dropArrival+(c.buffer??0):null;
   if(drop===null){blocked=true;readyAt=null;}
   else{readyAt=drop;blocked=false;}
   return {r,state:arrival===null?'missing':late>0?'late':targetMiss>0?'risk':'on',
     pickup,target,originalPickup,approvalState:approval?.status||'unknown',
     agreedPickup:approval?.agreed||null,manifestLate,
-    arrival,late,targetMiss,drop,source,drive:duration,
+    arrival,late,targetMiss,dropArrival,drop,source,drive:duration,
     waitingAtCurb,enroute,boarded:boarded!==null};
  });
 }
