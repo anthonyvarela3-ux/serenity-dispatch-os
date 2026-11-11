@@ -1,4 +1,4 @@
-name: Serenity Driver Browser QA
+name: Serenity Driver Chromium + WebKit QA
 on:
   push:
     branches:
@@ -7,7 +7,7 @@ on:
 permissions:
   contents: read
 jobs:
-  chromium-smoke:
+  browser-smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -18,7 +18,7 @@ jobs:
       - name: Install browser test dependencies
         run: |
           npm install --no-audit --no-fund
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium webkit
       - name: Run synthetic user journey tests
         run: npm run test:browser -- --reporter=line
       - name: Store failure evidence
