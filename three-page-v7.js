@@ -278,10 +278,6 @@ const oldRender=render;
 render=function(){oldRender();refresh();};
 const existingCustomerRender=renderCustomer;
 renderCustomer=function(){existingCustomerRender();};
-E('v7-navigation').addEventListener('click',event=>{
- const button=event.target.closest('[data-v7-page]');
- if(button)navigate(button.dataset.v7Page);
-});
 document.addEventListener('click',event=>{
  const button=event.target.closest?.('button');
  if(button?.dataset.v7Page){event.preventDefault();navigate(button.dataset.v7Page);return}
@@ -302,6 +298,7 @@ document.addEventListener('click',event=>{
   event.preventDefault();event.stopImmediatePropagation();
   const run=db.runs.find(r=>r.id===button.dataset.v7Id);
   window.SerenityEvents?.markEvent?.(run,button.dataset.v7Event);
+  if(button.dataset.v7Event==='dropoff'&&run?.status==='Completed')navigate('manifest');
  }
 },true);
 E('v7-manifest-rows').addEventListener('click',event=>{
