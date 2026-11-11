@@ -136,3 +136,41 @@ test('OCR can parse synthetic screenshot text, but only imports after rider-by-r
  expect((await getDb(page)).runs.length).toBe(1);
  expect((await getDb(page)).runs[0].name).toBe('TEST RIDER D');
 });
+
+test('do-not-contact preference disables passenger call and message tools',async({page})=>{
+ await fresh(page,true);await openCustomer(page);
+ await page.locator('.b3-detail summary').filter({hasText:'Contact & verified number'}).click();
+ await page.locator('#preference').selectOption('No contact');
+ await page.locator('#save-pref').click();
+ await expect(page.locator('#copy-message')).toBeDisabled();
+ await expect(page.locator('button[data-macro="eta"]')).toBeDisabled();
+ await expect(page.locator('#message')).toBeDisabled();
+ expect((await getDb(page)).people['TEST RIDER A'].preference).toBe('No contact');
+});
+
+test('same-name riders with different source phones require per-run verification',async({page})=>{
+ await page.addInitScript(()=>{
+  const d=new Date(),pad=n=>String(n).padStart(2,'0');
+  const date=[d.getFullYear(),pad(d.getMonth()+1),pad(d.getDate())].join('-');
+  const runs=[
+   {id:'collision-a',date,name:'TEST SAME NAME',pu:'8:00 AM',du:'8:45 AM',puAddr:'TEST1',doAddr:'TEST2',
+    status:'Scheduled',events:{},sourcePhone:'5551112222'},
+   {id:'collision-b',date,name:'TEST SAME NAME',pu:'10:00 AM',du:'10:45 AM',puAddr:'TEST3',doAddr:'TEST4',
+    status:'Scheduled',events:{},sourcePhone:'5553334444'}];
+  localStorage.setItem('serenity_beta1_v1',JSON.stringify({version:1,runs,
+   people:{'TEST SAME NAME':{phone:'5551112222',verified:true}},active:null,
+   shift:{start:null,end:null,rate:22.5},theme:'dark'}));
+ });
+ await page.route('https://api.weather.gov/**',r=>r.abort('failed'));
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ await page.locator('#v7-navigation [data-v7-page="manifest"]').click();
+ await page.locator('#v7-manifest button[data-v7-open="collision-b"]').click();
+ await expect(page.locator('#copy-message')).toBeDisabled();
+ await expect(page.locator('#customer-content')).toContainText('CONTACT IDENTITY CHECK');
+ await page.locator('.b3-detail summary').filter({hasText:'Contact & verified number'}).click();
+ await page.locator('#edit-phone').fill('5553334444');
+ await page.locator('#save-phone').click();
+ await expect(page.locator('#copy-message')).toBeEnabled();
+ const data=await getDb(page);
+ expect(data.runs[1].verifiedPhone).toBe('5553334444');
+});
