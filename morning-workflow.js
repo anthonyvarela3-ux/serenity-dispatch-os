@@ -10,19 +10,19 @@ css.textContent='.ms-panel{border-color:var(--accent);padding:14px 16px}.ms-top{
 document.head.appendChild(css);
 const panel=document.createElement('section');
 panel.className='panel ms-panel';panel.id='ms-panel';
-panel.innerHTML='<div class="ms-top"><div><h2>Start of Day · Home to First Pickup</h2><small>Wake up → Leave home → Garage arrival → Preparation → Leave garage → First pickup</small></div><div class="ms-pills"><span id="ms-first" class="ms-pill">First pickup: not loaded</span><span id="ms-prep" class="ms-pill">Garage prep: not recorded</span></div></div>'+
-'<p class="ms-help"><strong>Reverse-planned from first pickup, with a 10-minute early-arrival goal.</strong> Enter your actual Google Maps travel-minute estimates below. Each event can be marked now or corrected manually. Times are stored in your local backup and are <strong>not</strong> automatically treated as paid hours.</p>'+
+panel.innerHTML='<div class="ms-top"><div><h2>Full-Day Milestones · Home to Personal Car</h2><small>Wake up → Garage → First pickup → Final drop-off → Return to base</small></div><div class="ms-pills"><span id="ms-first" class="ms-pill">First pickup: not loaded</span><span id="ms-prep" class="ms-pill">Garage prep: not recorded</span><span id="ms-base" class="ms-pill">Back at base: estimate unavailable</span></div></div>'+
+'<p class="ms-help"><strong>Reverse-planned from first pickup, with a 10-minute early-arrival goal.</strong> Enter your actual Google Maps travel-minute estimates below. Each event can be marked now or corrected manually. Your shift endpoint is back at the garage where your personal car is parked, not your home. Times are stored in your local backup and are <strong>not</strong> automatically treated as paid hours.</p>'+
 '<div class="ms-plan" id="ms-plan"></div>'+
 '<div class="ms-workflow" id="ms-workflow"></div>'+
 '<div class="ms-private"><details id="ms-settings"><summary>Home, garage &amp; morning planning settings</summary>'+
 '<div class="ms-forms"><label>Wake to leave home (min)<input id="ms-wakelead" type="number" inputmode="numeric" min="0" max="240" step="1" placeholder="Manual"></label>'+
 '<label>Home → garage (Maps min)<input id="ms-commute" type="number" inputmode="numeric" min="1" max="240" step="1" placeholder="From Google Maps"></label>'+
 '<label>Preparation at garage (min)<input id="ms-prepare" type="number" inputmode="numeric" min="0" max="180" step="1" placeholder="Manual"></label>'+
-'<label>Garage → first pickup (Maps min)<input id="ms-firstdrive" type="number" inputmode="numeric" min="1" max="240" step="1" placeholder="From Google Maps"></label>'+
+'<label>Garage → first pickup (Maps min)<input id="ms-firstdrive" type="number" inputmode="numeric" min="1" max="240" step="1" placeholder="From Google Maps"></label>'+ '<label>Final drop-off → garage (Maps min)<input id="ms-returnbase" type="number" inputmode="numeric" min="1" max="240" step="1" placeholder="From Google Maps"></label>'+
 '</div><div class="ms-forms" style="grid-template-columns:repeat(2,minmax(0,1fr))"><label>Private home address<input id="ms-home" type="text" autocomplete="off" placeholder="Only stored on this device"></label>'+
 '<label>Private garage address<input id="ms-garage" type="text" autocomplete="off" placeholder="Only stored on this device"></label></div>'+
 '<button type="button" id="ms-save-settings" class="primary">Save morning settings</button>'+
-'<div class="ms-links"><a id="ms-home-map" target="_blank" rel="noopener noreferrer">Open home → garage in Google Maps</a><a id="ms-garage-map" target="_blank" rel="noopener noreferrer">Open garage → first pickup in Google Maps</a></div>'+
+'<div class="ms-links"><a id="ms-home-map" target="_blank" rel="noopener noreferrer">Open home → garage in Google Maps</a><a id="ms-garage-map" target="_blank" rel="noopener noreferrer">Open garage → first pickup in Google Maps</a><a id="ms-base-map" target="_blank" rel="noopener noreferrer">Open last drop-off → base in Google Maps</a></div>'+
 '<p class="ms-help">Google Maps opens navigation, but its traffic duration cannot be read automatically by this webpage. Copy the current driving minutes into the fields above when needed. Addresses and saved GPS pins appear in your local Export backup, not in the public GitHub code.</p>'+
 '<div class="ms-location-buttons"><button type="button" data-ms-locate="check">Check GPS location</button><button type="button" data-ms-locate="home">Save GPS pin here as Home</button><button type="button" data-ms-locate="garage">Save GPS pin here as Garage</button></div><p id="ms-location-status" class="ms-location">GPS pins are optional. Home and garage recognition works only when you request a location check or when this page receives a location refresh. It does not run continuously in the background.</p>'+
 '</details></div>';
@@ -45,7 +45,7 @@ const dayRecord=date=>db.morningDays&&db.morningDays[date]||{};
 const prefs=()=>{
  const c=db.morningConfig||{};
  const val=(s,min,max)=>Number.isSafeInteger(s)&&s>=min&&s<=max?s:null;
- return {wakeLead:val(c.wakeLead,0,240),commute:val(c.commute,1,240),prepare:val(c.prepare,0,180),firstDrive:val(c.firstDrive,1,240)};
+ return {wakeLead:val(c.wakeLead,0,240),commute:c.commute===undefined?7:val(c.commute,1,240),prepare:val(c.prepare,0,180),firstDrive:val(c.firstDrive,1,240),returnBase:val(c.returnBase,1,240)};
 };
 const firstRun=date=>db.runs.filter(r=>r.date===date).sort((a,b)=>timeM(a.pu)-timeM(b.pu))[0]||null;
 function backward(date){
@@ -60,13 +60,26 @@ function backward(date){
    ['Wake up',wake],['Leave home',departHome],['Arrive at garage',arriveGarage],['Leave garage',departGarage],['Arrive at first pickup',goal]
  ]};
 }
-const eventDefs=[['wake','Wake up'],['leaveHome','Leave home'],['arriveGarage','Arrive at garage'],['departGarage','Depart garage'],['firstArrival','Arrive at first pickup']];
+const eventDefs=[['wake','Wake up'],['leaveHome','Leave home'],['arriveGarage','Arrive at garage'],['departGarage','Depart garage'],['firstArrival','Arrive at first pickup'],['arriveBase','Back at base — personal car']];
 function renderMorning(){
  const date=E('date').value,first=firstRun(date),rec=dayRecord(date),plan=backward(date);
  const prep=old(rec.departGarage,date)!==null&&old(rec.arriveGarage,date)!==null?old(rec.departGarage,date)-old(rec.arriveGarage,date):null;
  E('ms-prep').textContent=prep===null?'Garage prep: not recorded':'Garage prep: '+(prep>=0?prep+' min':'check event order');
  E('ms-first').textContent=first?'First pickup '+first.pu+' · early target '+clock(plan.goal):'First pickup: no runs for selected date';
- E('ms-plan').innerHTML=plan.steps.length?plan.steps.map(([label,t])=>
+ const all=db.runs.filter(r=>r.date===date).sort((a,b)=>timeM(a.pu)-timeM(b.pu));
+ const last=all[all.length-1],lastForecast=window.SerenityDayForecast?.getSnapshot?.(date);
+ const lastData=lastForecast?.find(x=>x.r.id===last?.id);
+ const lastActual=last?old(last.events?.dropoff||last.events?.closed,date):null;
+ const endTrip=lastActual!==null?lastActual:lastData?.drop;
+ const returnDrive=plan.p.returnBase;
+ const plannedReturn=Number.isFinite(endTrip)&&Number.isSafeInteger(returnDrive)?endTrip+returnDrive:null;
+ const recordedReturn=old(rec.arriveBase,date);
+ const actualMark=recordedReturn!==null?'Actual '+clock(recordedReturn):null;
+ E('ms-base').textContent=actualMark?'Back at base: '+actualMark:
+  plannedReturn===null?'Back at base: add return drive time or trip estimates':'Back at base: projected '+clock(plannedReturn);
+
+ const displaySteps=plan.steps.length?[...plan.steps,['Final drop-off',Number.isFinite(endTrip)?endTrip:null],['Back at base / personal car',recordedReturn!==null?recordedReturn:plannedReturn]]:[];
+ E('ms-plan').innerHTML=displaySteps.length?displaySteps.map(([label,t])=>
   '<div class="ms-step"><small>PLANNED · '+safe(label)+'</small><b>'+clock(t)+'</b></div>').join(''):
   '<div class="ms-step"><small>No imported assignments for selected date</small><b>—</b></div>';
  let html='<table><thead><tr><th>Milestone</th><th>Actual time</th><th>Actions</th><th>Detail</th></tr></thead><tbody>';
@@ -74,7 +87,7 @@ function renderMorning(){
   const m=old(rec[key],date);
   const time=m===null?'':String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
   const blocked=key==='firstArrival'&&!first;
-  let desc=key==='wake'?'Wake-up is your personal planning marker':key==='leaveHome'?'Start of home → garage commute':key==='arriveGarage'?'Preparation period starts':key==='departGarage'?'Preparation period ends; first-leg clock begins':'Also records Arrived on your existing first trip';
+  let desc=key==='wake'?'Wake-up is your personal planning marker':key==='leaveHome'?'Start of home → garage commute':key==='arriveGarage'?'Preparation period starts':key==='departGarage'?'Preparation period ends; first-leg clock begins':key==='arriveBase'?'Return to work garage and personal car; your workday endpoint':'Also records Arrived on your existing first trip';
   html+='<tr><td><strong>'+label+'</strong></td><td><input type="time" data-ms-time="'+key+'" value="'+safe(time)+'" aria-label="'+label+' time" '+(blocked?'disabled':'')+'></td>'+
   '<td><div class="ms-actions"><button data-ms-now="'+key+'" type="button" '+(blocked?'disabled':'')+'>Mark now</button><button data-ms-save="'+key+'" type="button" '+(blocked?'disabled':'')+'>Save time</button></div></td>'+
   '<td><small>'+desc+'</small></td></tr>';
@@ -82,13 +95,13 @@ function renderMorning(){
  E('ms-workflow').innerHTML=html+'</tbody></table>';
  const d=E('ms-settings');
  if(!d.open){
-  for(const [field,k] of [['ms-wakelead','wakeLead'],['ms-commute','commute'],['ms-prepare','prepare'],['ms-firstdrive','firstDrive']]){
+  for(const [field,k] of [['ms-wakelead','wakeLead'],['ms-commute','commute'],['ms-prepare','prepare'],['ms-firstdrive','firstDrive'],['ms-returnbase','returnBase']]){
    E(field).value=plan.p[k]===null?'':String(plan.p[k]);
   }
   E('ms-home').value=typeof db.morningConfig?.home==='string'?db.morningConfig.home:'';
   E('ms-garage').value=typeof db.morningConfig?.garage==='string'?db.morningConfig.garage:'';
  }
- const cfg=db.morningConfig||{},map1=E('ms-home-map'),map2=E('ms-garage-map');
+ const cfg=db.morningConfig||{},map1=E('ms-home-map'),map2=E('ms-garage-map'),baseMap=E('ms-base-map');
  if(cfg.home&&cfg.garage){
   map1.href='https://www.google.com/maps/dir/?api=1&travelmode=driving&origin='+encodeURIComponent(cfg.home)+'&destination='+encodeURIComponent(cfg.garage);
   map1.style.display='inline';
@@ -97,6 +110,10 @@ function renderMorning(){
   map2.href='https://www.google.com/maps/dir/?api=1&travelmode=driving&origin='+encodeURIComponent(cfg.garage)+'&destination='+encodeURIComponent(first.puAddr);
   map2.style.display='inline';
  }else{map2.removeAttribute('href');map2.style.display='none';}
+ if(cfg.garage&&last&&last.doAddr){
+  baseMap.href='https://www.google.com/maps/dir/?api=1&travelmode=driving&origin='+encodeURIComponent(last.doAddr)+'&destination='+encodeURIComponent(cfg.garage);
+  baseMap.style.display='inline';
+ }else{baseMap.removeAttribute('href');baseMap.style.display='none';}
 }
 function readInt(id,min,max){
  const input=E(id).value.trim();
@@ -109,8 +126,8 @@ function readInt(id,min,max){
 E('ms-save-settings').addEventListener('click',()=>{
  try{
   const wakeLead=readInt('ms-wakelead',0,240),commute=readInt('ms-commute',1,240),
-       prepare=readInt('ms-prepare',0,180),firstDrive=readInt('ms-firstdrive',1,240);
-  db.morningConfig={...(db.morningConfig||{}),wakeLead,commute,prepare,firstDrive,
+       prepare=readInt('ms-prepare',0,180),firstDrive=readInt('ms-firstdrive',1,240),returnBase=readInt('ms-returnbase',1,240);
+  db.morningConfig={...(db.morningConfig||{}),wakeLead,commute,prepare,firstDrive,returnBase,
     home:E('ms-home').value.trim().slice(0,220),garage:E('ms-garage').value.trim().slice(0,220)};
   save();renderMorning();
  }catch(error){alert(error.message)}
