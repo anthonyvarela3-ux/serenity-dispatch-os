@@ -21,13 +21,37 @@ renderCustomer=function(){
   }
  }
  const person=db.people[norm(r.name)]||{};
- if(person.preference==='No call'||person.preference==='No contact'||person.preference==='Do not contact'){
+ const restricted=person.preference==='No contact'||person.preference==='Do not contact';
+ if(person.preference==='No call'||restricted){
   root.querySelectorAll('a[href^="tel:"]').forEach(a=>{
    a.removeAttribute('href');a.setAttribute('aria-disabled','true');
    a.style.pointerEvents='none';a.title='Passenger requested no phone calls';
   });
  }
+ if(restricted){
+  root.querySelectorAll('button[data-macro],#copy-message').forEach(b=>{
+   b.disabled=true;b.title='Passenger has a do-not-contact preference';
+  });
+  const message=root.querySelector('#message');if(message)message.disabled=true;
+  root.querySelectorAll('a[href*="voice.google.com"],a[href^="sms:"]').forEach(a=>{
+   a.removeAttribute('href');a.setAttribute('aria-disabled','true');
+   a.style.pointerEvents='none';a.title='Passenger requested no contact';
+  });
+  const warning=document.createElement('p');
+  warning.className='alert';warning.textContent='DO NOT CONTACT: passenger preference blocks call and message controls. Check dispatch if an operational emergency requires clarification.';
+  const box=root.querySelector('.b3-message')||root;
+  box.prepend(warning);
+ }
 };
+document.addEventListener('click',event=>{
+ const button=event.target.closest?.('button');
+ if(!button||(!button.dataset.macro&&button.id!=='copy-message'))return;
+ const r=db.runs.find(item=>item.id===db.active);if(!r)return;
+ const preference=db.people[norm(r.name)]?.preference;
+ if(preference!=='No contact'&&preference!=='Do not contact')return;
+ event.preventDefault();event.stopImmediatePropagation();
+ alert('Do not contact this passenger. If there is an emergency, contact the dispatch office for instructions.');
+},true);
 document.addEventListener('click',event=>{
  const btn=event.target.closest?.('#v5-dropoff');if(!btn)return;
  event.preventDefault();event.stopImmediatePropagation();
