@@ -89,7 +89,10 @@ function compute(runs,date,now,c,maps){
  let readyAt=null,blocked=false,firstOpen=true;
  const overrides=db.forecastDriveMinutes||{};
  return runs.map(r=>{
-  const pickup=timeM(r.pu),target=pickup-10;
+  const approval=window.SerenityOffice?.effective?.(r);
+  const originalPickup=timeM(r.pu);
+  const pickup=Number.isFinite(approval?.pickup)?approval.pickup:originalPickup;
+  const target=pickup-10;
   const status=String(r.status||'');
   const closed=status==='Completed'||status==='Exception';
   const arrived=atEvent(r.events&&r.events.arrived,date);
@@ -103,7 +106,9 @@ function compute(runs,date,now,c,maps){
   if(closed){
    if(actualEnd!==null){readyAt=actualEnd;blocked=false;}
    else {readyAt=null;blocked=true;}
-   return {r,state:'done',pickup,target,drop:actualEnd,reason:actualEnd===null?'No actual end time':endWasVerified?'Drop-off recorded':'Trip closed; drop-off time not verified',verifiedEnd:endWasVerified};
+   return {r,state:'done',pickup,target,originalPickup,
+    approvalState:approval?.status||'unknown',agreedPickup:approval?.agreed||null,
+    drop:actualEnd,reason:actualEnd===null?'No actual end time':endWasVerified?'Drop-off recorded':'Trip closed; drop-off time not verified',verifiedEnd:endWasVerified};
   }
   const duration=intOrNull(overrides[r.id],1,240)??c.trip;
   const manual=firstOpen && current!==null && maps && maps.date===date && maps.runId===r.id &&
@@ -129,11 +134,21 @@ function compute(runs,date,now,c,maps){
   }
   const targetMiss=arrival===null?null:Math.max(0,Math.ceil(arrival-target));
   const late=arrival===null?null:Math.max(0,Math.ceil(arrival-pickup));
-  const depart=boarded!==null?boarded:arrival!==null?Math.max(arrival,pickup)+(c.buffer??0):null;
+  const manifestLate=arrival===null?null:Math.max(0,Math.ceil(arrival-originalPickup));
+  // At-curb waiting cannot be forecast as already finished. Until "Passenger
+  // boarded" is recorded, roll forward the earliest possible departure
+  // based on the current clock if the arrival has actually been recorded.
+  const waitingAtCurb=arrived!==null&&boarded===null&&current!==null&&current>=arrived;
+  const depart=boarded!==null?boarded:arrival!==null?
+    Math.max(arrival,pickup,waitingAtCurb?current:-Infinity)+(c.buffer??0):null;
   const drop=depart!==null && duration!==null?depart+duration+(c.buffer??0):null;
   if(drop===null){blocked=true;readyAt=null;}
   else{readyAt=drop;blocked=false;}
-  return {r,state:arrival===null?'missing':late>0?'late':targetMiss>0?'risk':'on',pickup,target,arrival,late,targetMiss,drop,source,drive:duration,boarded:boarded!==null};
+  return {r,state:arrival===null?'missing':late>0?'late':targetMiss>0?'risk':'on',
+    pickup,target,originalPickup,approvalState:approval?.status||'unknown',
+    agreedPickup:approval?.agreed||null,manifestLate,
+    arrival,late,targetMiss,drop,source,drive:duration,
+    waitingAtCurb,boarded:boarded!==null};
  });
 }
 function rosterDestinationFallback(date){
@@ -178,22 +193,34 @@ function draw(){
  }
  const forecast=compute(runs,day,now,c,mapsOK?mapsETA:null);
  let late=0,risk=0,unknown=0;
- let html='<table><thead><tr><th>#</th><th>Passenger</th><th>Scheduled<br>pickup</th><th>10-min<br>early goal</th><th>Projected<br>arrival</th><th>Outlook</th><th>Serenity<br>drop-off ETA</th><th>Trip drive<br>minutes</th><th>Travel source</th></tr></thead><tbody>';
+ let html='<table><thead><tr><th>#</th><th>Passenger</th><th>Original<br>pickup</th><th>Office<br>approval</th><th>10-min<br>early goal</th><th>Projected<br>arrival</th><th>Outlook</th><th>Serenity<br>drop-off ETA</th><th>Trip drive<br>minutes</th><th>Travel source</th></tr></thead><tbody>';
  for(let i=0;i<forecast.length;i++){
   const p=forecast[i],r=p.r,isClosed=p.state==='done';
   if(p.state==='late')late++;if(p.state==='risk')risk++;if(p.state==='missing')unknown++;
-  const status=isClosed?'Closed':p.state==='late'?'Late by '+p.late+'m':p.state==='risk'?'Early goal missed '+p.targetMiss+'m':p.state==='on'?'On early target':'Estimate unavailable';
+  const status=isClosed?'Closed':
+    p.state==='late'?(p.approvalState==='approved'?'Late vs agreed '+p.late+'m':'LATE '+p.late+'m · check office approval'):
+    p.approvalState==='approved'&&p.state==='risk'?'Approved time · early goal missed '+p.targetMiss+'m':
+    p.approvalState==='approved'&&p.state==='on'?'On office-agreed time':
+    p.state==='risk'?'Early goal missed '+p.targetMiss+'m':
+    p.state==='on'?'On early target':'Estimate unavailable';
   const css=p.state==='late'?'sf-late':p.state==='risk'?'sf-risk':p.state==='on'?'sf-on':'sf-done';
   const custom=intOrNull((db.forecastDriveMinutes||{})[r.id],1,240);
+  const officeStatus=p.approvalState==='approved'?'Confirmed '+p.agreedPickup:
+    p.approvalState==='awaiting'?'Awaiting office':
+    p.approvalState==='not_approved'?'No late approval':'Not verified';
+  const officeCell='<div class="sf-office">'+escText(officeStatus)+
+    '<button type="button" data-office-run="'+escText(r.id)+'">Check / update</button></div>';
   const input=isClosed?'—':'<div class="sf-actions"><input aria-label="Trip drive minutes for '+escText(r.name)+'" inputmode="numeric" type="number" min="1" max="240" step="1" data-drive="'+escText(r.id)+'" value="'+(custom??'')+'" placeholder="'+c.trip+'"><button type="button" data-save-drive="'+escText(r.id)+'">Save</button></div>';
   html+='<tr><td>'+(i+1)+'</td><td><button data-open="'+escText(r.id)+'">'+escText(r.name)+'</button></td>'+
-     '<td>'+escText(r.pu)+'</td><td>'+clock(p.target)+'</td><td>'+clock(p.arrival)+'</td>'+
+     '<td>'+escText(r.pu)+'</td><td>'+officeCell+'</td><td>'+clock(p.target)+'</td><td>'+clock(p.arrival)+'</td>'+
      '<td><span class="sf-pill '+css+'">'+escText(status)+'</span></td>'+
      '<td>'+clock(p.drop)+(p.drop!==null&&p.drop!==undefined&&!isClosed?'<span class="sf-label">Our estimate</span>':'')+'</td>'+
      '<td>'+input+'</td><td>'+escText(isClosed?'Actual event':p.source||'Unknown')+'</td></tr>';
  }
  out.innerHTML=html+'</tbody></table>';
- summary.textContent=late+' projected late · '+risk+' early-goal misses · '+unknown+' unestimated'+(c.provisional?' · PROVISIONAL travel times':'');
+ summary.textContent=late+' late against operational pickup times · '+risk+
+  ' early-goal misses · '+unknown+' unestimated · '+forecast.filter(p=>p.approvalState==='approved').length+
+  ' office-confirmed later pickups'+(c.provisional?' · PROVISIONAL travel times':'');
  E('sf-source').textContent='Updated '+now.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})+
   ' · First active leg: '+(mapsOK?'manually entered Maps drive time':c.provisional?'provisional travel assumption':'driver travel estimate')+
   ' · Future legs: your travel assumptions · Drop-offs: your trip minutes and buffers. No scheduled drop-off values used.';
