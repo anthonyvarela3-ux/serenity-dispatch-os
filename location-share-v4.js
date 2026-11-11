@@ -3,7 +3,7 @@
 'use strict';
 if(typeof db==='undefined'||typeof renderCustomer!=='function')return;
 const css=document.createElement('style');
-css.textContent='.share-card{border-left:4px solid var(--accent);margin:0}.share-card summary{font-weight:800;font-size:16px;cursor:pointer;padding:5px 0;min-height:36px}.share-card p,.share-card li{font-size:13px;line-height:1.5}.share-card input{display:block;width:100%;margin-top:4px;min-height:44px}.share-card .share-actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin:10px 0}.share-card .share-warning{padding:8px 9px;border-left:3px solid #d97706;font-size:12px;background:var(--bg)}.share-card .share-message{width:100%;min-height:85px}.share-card .share-status{font-size:12px;color:var(--muted)}.share-card button:disabled{opacity:.5}.boarding-action{background:#0f766e;color:white;border-color:#0f766e}';
+css.textContent='.share-card{border-left:4px solid var(--accent);margin:0}.share-card summary{font-weight:800;font-size:16px;cursor:pointer;padding:5px 0;min-height:36px}.share-card p,.share-card li{font-size:13px;line-height:1.5}.share-card input{display:block;width:100%;margin-top:4px;min-height:44px}.share-card .share-actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin:10px 0}.share-card .share-warning{padding:8px 9px;border-left:3px solid #d97706;font-size:12px;background:var(--bg)}.share-card .share-message{width:100%;min-height:85px}.share-card .share-status{font-size:12px;color:var(--muted)} .share-card input[type=checkbox]{width:auto;display:inline-block;min-height:0;margin-right:6px}.share-card button:disabled{opacity:.5}.boarding-action{background:#0f766e;color:white;border-color:#0f766e}';
 document.head.appendChild(css);
 const esc=x=>String(x||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const linkValid=value=>{
@@ -50,7 +50,7 @@ renderCustomer=function(){
  '<p>For this passenger only. <strong>Serenity cannot create a Google Maps live-sharing link or send Google Voice messages automatically.</strong></p>'+
  '<div class="share-warning">'+(blocked?'DO NOT CONTACT: This passenger has opted out. Do not send a location link.':callOnly?'This passenger has not authorized SMS. Update their communication preference only if they consent.':!textPermitted?'Text preference is not confirmed. Verify that the passenger wants an SMS location link before sending.':'Text contact is selected. Confirm recipient before sending.')+'</div>'+
  '<ol><li><a href="'+esc(map)+'" target="_blank" rel="noopener">Open navigation in Google Maps</a> and start the trip to this pickup.</li><li>In Google Maps, swipe up and choose <strong>Share trip progress</strong> to share with your intended recipient. This generally ends when navigation ends.</li><li>If Maps gives you a shareable location link, paste it below, prepare the text and send it yourself using LI ResRun Google Voice.</li></ol>'+
- '<label for="share-link">Google Maps location-sharing URL<input id="share-link" type="url" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="Paste Maps sharing link; not saved"></label>'+
+ '<label for="share-link">Google Maps location-sharing URL<input id="share-link" type="url" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="Paste Maps sharing link; not saved"></label>'+ '<label style="font-weight:600"><input id="share-verify" type="checkbox">I created and verified a live Google Maps sharing link for this pickup (not an ordinary directions link).</label>'+
  '<div class="share-actions"><button id="share-prepare" type="button" '+(blocked||callOnly?'disabled':'')+'>Prepare link message</button><button id="share-copy" type="button" disabled>Copy approved message</button><a href="https://voice.google.com/messages" target="_blank" rel="noopener noreferrer" id="share-open-voice">Open Google Voice (LI ResRun)</a></div>'+
  '<textarea id="share-message" class="share-message" aria-label="Review location sharing SMS" placeholder="Prepared SMS will appear here" readonly></textarea>'+
  '<p class="share-warning">Never share without customer approval. Google Maps may keep sharing after pickup if using general Location Sharing. Stop sharing manually in Google Maps when done. Confirm LI ResRun account and passenger number before sending.</p>'+
@@ -96,7 +96,8 @@ document.addEventListener('click',async event=>{
  }
  if(!allowed && !confirm('Passenger texting preference is not confirmed. Have you confirmed they want a location-sharing SMS?'))return;
  const link=document.getElementById('share-link')?.value.trim();
- if(!linkValid(link)){alert('Paste a valid Google Maps location-sharing HTTPS link. Ordinary navigation links are not live tracking.');return;}
+ if(!linkValid(link)){alert('Paste a valid Google Maps HTTPS sharing link.');return;}
+ if(!document.getElementById('share-verify')?.checked){alert('Confirm the link is a real Google Maps live-sharing link before preparing a customer message.');return;}
  const rName=String(run.name||'').trim().split(/\s+/)[0]||'there';
  const msg='Hi '+rName+", it's Anthony from Serenity Transportation. You can follow my location as I approach your pickup here: "+link+'. Please use this link only for today’s pickup. Thank you!';
  const message=document.getElementById('share-message');
