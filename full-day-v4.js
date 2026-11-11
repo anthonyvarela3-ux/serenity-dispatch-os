@@ -97,6 +97,7 @@ function compute(runs,date,now,c,maps){
   const closed=status==='Completed'||status==='Exception';
   const arrived=atEvent(r.events&&r.events.arrived,date);
   const boarded=atEvent(r.events&&r.events.boarded,date);
+  const enroute=atEvent(r.events&&r.events.enroute,date);
   const actualEnd=atEvent(r.events&&(r.events.dropoff||r.events.closed),date);
   const endWasVerified=!!r.events?.dropoff;
   if(!Number.isFinite(pickup)){
@@ -113,7 +114,12 @@ function compute(runs,date,now,c,maps){
   const duration=intOrNull(overrides[r.id],1,240)??c.trip;
   const manual=firstOpen && current!==null && maps && maps.date===date && maps.runId===r.id &&
     now.getTime()>=maps.at && now.getTime()-maps.at<10*60000 && arrived===null;
+  const isFirstActive=firstOpen;
   const startAnchor=firstOpen && arrived===null && !manual && window.SerenityMorning?.anchor?.(date,runs,now);
+  const firstLegMinutes=isFirstActive?window.SerenityMorning?.plan?.(date)?.p?.firstDrive:null;
+  // A timestamp is an actual event; its accompanying road duration is still a
+  // driver-entered estimate, not live GPS traffic.
+  const enrouteDrive=isFirstActive?firstLegMinutes:c.reposition;
   const isAnchored=!!(startAnchor && startAnchor.runId===r.id && Number.isFinite(startAnchor.arrival));
   // Do not silently treat the generic reposition time as garage→first passenger.
   // Without an actual arrival, a fresh manual Maps ETA or a route-specific
@@ -123,8 +129,18 @@ function compute(runs,date,now,c,maps){
   let arrival=null,source='Driver estimate';
   if(arrived!==null){arrival=arrived;source='Recorded arrival';}
   else if(manual){arrival=Math.max(target,current+maps.travel);source='Google Maps — entered manually';}
+  else if(enroute!==null && enrouteDrive!==null && Number.isFinite(enrouteDrive)){
+    const theoretical=enroute+enrouteDrive;
+    // Past an unconfirmed arrival, never claim an ETA that's already gone by.
+    // "Now" is the EARLIEST possible arrival, not confirmation of arrival.
+    arrival=Math.max(target,theoretical,current===null?-Infinity:current);
+    source=current!==null&&current>theoretical?
+      'En route; assumed drive expired — recheck Maps (not arrived)':
+      (isFirstActive?'En route + verified first-leg minutes':'En route + provisional reposition minutes');
+  }
   else if(isAnchored){arrival=Math.max(target,startAnchor.arrival,current===null?-Infinity:current);source=startAnchor.source;}
-  else if(firstUnverified){arrival=null;source='First-leg travel time not verified';}
+  else if(firstUnverified){arrival=null;source=enroute!==null?
+    'En route recorded; verify first-leg travel time':'First-leg travel time not verified';}
   else if(blocked){arrival=null;source='Earlier duration unknown';}
   else if(c.reposition!==null){
     // Live day starts at current time; later legs start at the prior projected drop-off.
@@ -148,7 +164,7 @@ function compute(runs,date,now,c,maps){
     pickup,target,originalPickup,approvalState:approval?.status||'unknown',
     agreedPickup:approval?.agreed||null,manifestLate,
     arrival,late,targetMiss,drop,source,drive:duration,
-    waitingAtCurb,boarded:boarded!==null};
+    waitingAtCurb,enroute,boarded:boarded!==null};
  });
 }
 function rosterDestinationFallback(date){
