@@ -72,7 +72,7 @@ function appendAudit(events,kind,at,source,previous){
  if(events.audit.length>80)events.audit=events.audit.slice(-80);
 }
 function interpretDateTime(input){
- if(typeof input!=='string'||!/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}$/.test(input))return null;
+ if(typeof input!=='string'||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(input))return null;
  const dt=new Date(input);
  return Number.isFinite(dt.getTime())?dt:null;
 }
@@ -107,8 +107,8 @@ function markEvent(candidate,kind){
   return {ok:false,reason:'prior_progress',message:notify('Pickup progress already recorded. Use correction form if En route was missed.')};
  let question='';
  if(kind==='dropoff'){
-  question='Confirm this passenger was actually DROPPED OFF NOW?\\n\\nThis marks the local run Completed and records an actual drop-off time. It DOES NOT update RoutingBox or guarantee payment.';
-  if(!valid(events.boarded))question+='\\n\\nBoarded was not recorded. That event will remain missing; verify its official coding.';
+  question='Confirm this passenger was actually DROPPED OFF NOW?\n\nThis marks the local run Completed and records an actual drop-off time. It DOES NOT update RoutingBox or guarantee payment.';
+  if(!valid(events.boarded))question+='\n\nBoarded was not recorded. That event will remain missing; verify its official coding.';
  }else if(kind==='boarded'&&!valid(events.arrived))
   question='Pickup arrival was not recorded. Confirm this passenger actually boarded NOW? Missing arrival will remain unrecorded.';
  if(question&&!confirm(question))return {ok:false,reason:'cancelled'};
@@ -123,7 +123,7 @@ function markEvent(candidate,kind){
    run.status='Completed';
    run.events.closed=now.toISOString();
    run.events.dropoffSource='driver_now';
-   if(db.active===run.id)db.active=null;
+   // Keep the run selected until the user returns to the Manifest.
   }
  },{kind,at:now.toISOString()});
  if(result.ok)notify(kind==='dropoff'?'Drop-off recorded and run closed locally. Verify RoutingBox coding.':kind+' recorded at '+format(now.toISOString()),true);
@@ -147,7 +147,7 @@ function correct(candidate,kind,localStamp){
   notify('This time is already recorded. No change needed.',true);return {ok:true,unchanged:true};
  }
  const purpose=prior?'CORRECT the previously recorded '+kind+' time':'ENTER the previously missing '+kind+' time';
- if(!confirm(purpose+' to '+format(iso)+'?\\n\\nThis stores a driver-entered actual time with an audit record. It does not update RoutingBox.'))return {ok:false,reason:'cancelled'};
+ if(!confirm(purpose+' to '+format(iso)+'?\n\nThis stores a driver-entered actual time with an audit record. It does not update RoutingBox.'))return {ok:false,reason:'cancelled'};
  const result=commit(run,()=>{
   run.events=run.events&&typeof run.events==='object'&&!Array.isArray(run.events)?run.events:{};
   run.events[kind]=iso;
@@ -156,7 +156,7 @@ function correct(candidate,kind,localStamp){
    run.status='Completed';
    if(!valid(run.events.closed))run.events.closed=iso;
    run.events.dropoffSource='driver_manual_backfill';
-   if(db.active===run.id)db.active=null;
+   // Keep the run selected until the user returns to the Manifest.
   }else if(!isClosed(run)){
    if(kind==='boarded')run.status='Onboard';
    else if(kind==='arrived'&&run.status!=='Onboard')run.status='Arrived';
