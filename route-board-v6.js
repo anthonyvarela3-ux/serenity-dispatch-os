@@ -183,6 +183,8 @@ function serviceDateNow(){
  return d;
 }
 function markEvent(run,kind){
+ // v8: every entry point uses one validated, auditable state machine.
+ if(window.SerenityLifecycle?.markEvent)return window.SerenityLifecycle.markEvent(run,kind);
  if(!run||isClosed(run))return alert('This assignment is already closed.');
  const now=serviceDateNow();if(!now)return;
  run.events=run.events||{};
