@@ -309,6 +309,12 @@ function paintControls(r){
  const root=E('customer-content'),panel=root?.querySelector('.b3-actions'),bar=panel?.querySelector('.bar');
  if(!root||!panel||!bar)return;
  const head=panel.querySelector('h3');if(head)head.textContent='Your Five Trip Stages';
+ const back=root.querySelector('#close-customer');if(back)back.textContent='Back to Manifest';
+ // Five stage buttons own the trip state. Any older "depart/complete" buttons
+ // elsewhere in the customer header are intentionally hidden.
+ root.querySelectorAll('.b3-head button:not(#close-customer)').forEach(button=>{
+   button.style.display='none';
+ });
  const note=panel.querySelector('small');if(note)note.textContent=
   'Tap each stage as it happens. The timestamp is saved locally; nothing is sent to dispatch or the passenger.';
  panel.classList.add('v8-trip-controls');
