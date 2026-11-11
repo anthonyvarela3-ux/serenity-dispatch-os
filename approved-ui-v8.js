@@ -278,6 +278,9 @@ function paintControls(r){
  const note=panel.querySelector('small');if(note)note.textContent=
   'Tap each stage as it happens. The timestamp is saved locally; nothing is sent to dispatch or the passenger.';
  panel.classList.add('v8-trip-controls');
+ // Keep the five primary actions together in a full-width timeline below
+ // customer route/contact details, matching the approved iPad layout.
+ if(panel.parentElement!==root)root.append(panel);
  bar.classList.add('v8-stage-grid');
  if(!r){bar.innerHTML='';return;}
  const disabled=closed(r);
