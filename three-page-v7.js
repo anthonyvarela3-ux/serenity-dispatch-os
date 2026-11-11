@@ -254,20 +254,22 @@ function customerRefresh(date,runs,results){
  }
  const p=results.find(x=>x.r.id===run.id),idx=runs.findIndex(x=>x.id===run.id)+1;
  const completed=['Completed','Exception'].includes(run.status);
+ const repairNeeded=run.status==='Completed'&&!eventClock(run.events?.dropoff);
  E('v7-customer-top').innerHTML='<div class="v7-page-heading"><div><div class="v7-eyebrow">RUN #'+idx+' / DRIVER ACTIONS</div><h2>Customer</h2>'+
  '<p>'+esc(run.name)+' · Office pickup '+esc(run.pu)+' · '+(eventClock(run.events?.arrived)?'Actual arrival '+eventClock(run.events.arrived):'Serenity arrival '+clock(p?.arrival))+'</p></div>'+
  '<button data-v7-page="manifest" type="button">Back to Manifest</button></div>';
  const states=[
   ['enroute','En route',run.events?.enroute],['arrived','Arrived',run.events?.arrived],
-  ['boarded','Boarded',run.events?.boarded],['dropoff','Drop off',run.events?.dropoff]
+  ['boarded','Boarded',run.events?.boarded],['dropoff',repairNeeded?'Repair drop-off':'Drop off & finish',run.events?.dropoff]
  ];
  E('v7-customer-flow').innerHTML='<div class="v7-flow-steps">'+states.map(([kind,title,when],i)=>
-   '<button type="button" class="v7-flow-step'+(when?' done':'')+'" data-v7-event="'+kind+'" data-v7-id="'+esc(run.id)+'"'+(when||completed?' disabled':'')+'>'+
+   '<button type="button" class="v7-flow-step'+(when?' done':'')+'" '+(repairNeeded&&kind==='dropoff'?'data-v8-open-repair="dropoff"':'data-v7-event="'+kind+'" data-v7-id="'+esc(run.id)+'"')+(when||completed&&!(repairNeeded&&kind==='dropoff')?' disabled':'')+'>'+
    '<span class="v7-flow-number">'+(when?'✓':i+1)+'</span><span>'+title+'</span>'+
    '<small>'+ (when?eventClock(when):'Mark now')+'</small></button>').join('')+'</div>'+
    '<div class="v7-flow-helper"><span>These buttons log your actual events locally; confirm the official trip coding separately in RoutingBox.</span>'+
    '<button data-v7-office="'+esc(run.id)+'" type="button">Office approval</button>'+
-   '<button data-v7-action="exception" type="button"'+(completed?' disabled':'')+'>No-show / exception</button></div>';
+   '<button data-v7-action="exception" type="button"'+(completed?' disabled':'')+'>No-show / exception</button></div>'+
+   '<div class="v8-event-feedback" id="v8-event-feedback" role="status" aria-live="polite"></div>';
 }
 function refresh(){
  const day=currentDate();if(!day)return;
@@ -299,8 +301,9 @@ document.addEventListener('click',event=>{
  if(button?.dataset.v7Event){
   event.preventDefault();event.stopImmediatePropagation();
   const run=db.runs.find(r=>r.id===button.dataset.v7Id);
-  window.SerenityEvents?.markEvent?.(run,button.dataset.v7Event);
-  if(button.dataset.v7Event==='dropoff'&&run?.status==='Completed')navigate('manifest');
+  const result=window.SerenityEvents?.markEvent?.(run,button.dataset.v7Event);
+  // Only leave the Customer page when storage was verified successful.
+  if(button.dataset.v7Event==='dropoff'&&result?.ok===true&&run?.status==='Completed')navigate('manifest');
  }
 },true);
 E('v7-manifest-rows').addEventListener('click',event=>{
