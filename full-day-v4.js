@@ -98,33 +98,41 @@ function compute(runs,date,now,c,maps){
   const arrived=atEvent(r.events&&r.events.arrived,date);
   const boarded=atEvent(r.events&&r.events.boarded,date);
   const enroute=atEvent(r.events&&r.events.enroute,date);
-  const actualEnd=atEvent(r.events&&(r.events.dropoff||r.events.closed),date);
-  const endWasVerified=!!r.events?.dropoff;
+  const enrouteDropoff=atEvent(r.events&&r.events.enrouteDropoff,date);
+  const verifiedDropoff=atEvent(r.events&&r.events.dropoff,date);
+  const endWasVerified=verifiedDropoff!==null;
+  const actualEnd=endWasVerified?verifiedDropoff:null;
   if(!Number.isFinite(pickup)){
    readyAt=null;blocked=true;
    return {r,state:'missing',reason:'Invalid pickup time'};
   }
   if(closed){
-   if(actualEnd!==null){readyAt=actualEnd;blocked=false;}
+   // Closing an assignment is not proof of physical drop-off. Do not feed the
+   // administrative "closed" clock into subsequent driving forecasts.
+   if(endWasVerified){readyAt=verifiedDropoff;blocked=false;}
    else {readyAt=null;blocked=true;}
    return {r,state:'done',pickup,target,originalPickup,
     approvalState:approval?.status||'unknown',agreedPickup:approval?.agreed||null,
-    drop:actualEnd,reason:actualEnd===null?'No actual end time':endWasVerified?'Drop-off recorded':'Trip closed; drop-off time not verified',verifiedEnd:endWasVerified};
+    arrival:arrived,boarded:boarded!==null,enroute,enrouteDropoff,
+    dropArrival:actualEnd,drop:actualEnd,
+    reason:endWasVerified?'Verified actual drop-off':'Closed without recorded physical drop-off',
+    verifiedEnd:endWasVerified};
   }
   const duration=intOrNull(overrides[r.id],1,240)??c.trip;
   const manual=firstOpen && current!==null && maps && maps.date===date && maps.runId===r.id &&
     now.getTime()>=maps.at && now.getTime()-maps.at<10*60000 && arrived===null;
-  const isFirstActive=firstOpen;
-  const startAnchor=firstOpen && arrived===null && !manual && window.SerenityMorning?.anchor?.(date,runs,now);
-  const firstLegMinutes=isFirstActive?window.SerenityMorning?.plan?.(date)?.p?.firstDrive:null;
+  const isFirstAssignment=runs[0]?.id===r.id;
+  const startAnchor=isFirstAssignment && firstOpen && arrived===null &&
+    !manual && window.SerenityMorning?.anchor?.(date,runs,now);
+  const firstLegMinutes=isFirstAssignment?window.SerenityMorning?.plan?.(date)?.p?.firstDrive:null;
   // A timestamp is an actual event; its accompanying road duration is still a
   // driver-entered estimate, not live GPS traffic.
-  const enrouteDrive=isFirstActive?firstLegMinutes:c.reposition;
+  const enrouteDrive=isFirstAssignment?firstLegMinutes:c.reposition;
   const isAnchored=!!(startAnchor && startAnchor.runId===r.id && Number.isFinite(startAnchor.arrival));
   // Do not silently treat the generic reposition time as garage→first passenger.
   // Without an actual arrival, a fresh manual Maps ETA or a route-specific
   // first-leg travel estimate, the starting point of the entire day is unknown.
-  const firstUnverified=firstOpen && arrived===null && !manual && !isAnchored && readyAt===null;
+  const firstUnverified=isFirstAssignment && firstOpen && arrived===null && boarded===null && !manual && !isAnchored && readyAt===null;
   if(firstOpen)firstOpen=false;
   let arrival=null,source='Driver estimate';
   if(arrived!==null){arrival=arrived;source='Recorded arrival';}
@@ -137,7 +145,7 @@ function compute(runs,date,now,c,maps){
     arrival=Math.max(target,theoretical,current===null?-Infinity:current);
     source=current!==null&&current>theoretical?
       'En route; assumed drive expired — recheck Maps (not arrived)':
-      (isFirstActive?'En route + verified first-leg minutes':'En route + provisional reposition minutes');
+      (isFirstAssignment?'En route + verified first-leg minutes':'En route + provisional reposition minutes');
   }
   else if(isAnchored){arrival=Math.max(target,startAnchor.arrival,current===null?-Infinity:current);source=startAnchor.source;}
   else if(firstUnverified){arrival=null;source=enroute!==null?
@@ -156,8 +164,12 @@ function compute(runs,date,now,c,maps){
   // boarded" is recorded, roll forward the earliest possible departure
   // based on the current clock if the arrival has actually been recorded.
   const waitingAtCurb=arrived!==null&&boarded===null&&current!==null&&current>=arrived;
-  const depart=boarded!==null?boarded:arrival!==null?
-    Math.max(arrival,pickup,waitingAtCurb?current:-Infinity)+(c.buffer??0):null;
+  const waitingToLeave=boarded!==null&&enrouteDropoff===null&&current!==null&&current>=boarded;
+  // "Customer in car" and "en route to drop-off" are separate actual events.
+  // If the vehicle has not departed yet, do not pretend boarding started road travel.
+  const depart=enrouteDropoff!==null?enrouteDropoff:
+    boarded!==null?Math.max(boarded+(c.buffer??0),waitingToLeave?current:-Infinity):
+    arrival!==null?Math.max(arrival,pickup,waitingAtCurb?current:-Infinity)+(c.buffer??0):null;
   // Track destination arrival separately from when the vehicle is clear.
   // The extra service buffer belongs AFTER reaching the drop-off.
   const dropArrival=depart!==null&&duration!==null?depart+duration:null;
@@ -168,7 +180,7 @@ function compute(runs,date,now,c,maps){
     pickup,target,originalPickup,approvalState:approval?.status||'unknown',
     agreedPickup:approval?.agreed||null,manifestLate,
     arrival,late,targetMiss,dropArrival,drop,source,drive:duration,
-    waitingAtCurb,enroute,boarded:boarded!==null};
+    waitingAtCurb,waitingToLeave,enroute,enrouteDropoff,boarded:boarded!==null};
  });
 }
 function rosterDestinationFallback(date){
