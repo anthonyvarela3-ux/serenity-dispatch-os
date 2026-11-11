@@ -200,9 +200,9 @@ el('date').value=liveDate;el('import-date').value=liveDate;el('date').addEventLi
       return '<div class="panel review-item ' + css + '"><b>Trip ' + (i + 1) + '</b> · <span class="status">' + safe(stateName) + '</span><div class="review-grid">' + inputs + '</div></div>';
     }).join('');
     const errors = previewErrors.map(msg => '<p class="bad">' + safe(msg) + '</p>').join('');
-    const note = state.conflicts ? '<p class="bad">Potential duplicate(s) share the same passenger and times as existing trips. They will NOT import; review the existing record instead.</p>' : '';
-    const readyToCommit = state.ready > 0 && !previewErrors.length && !state.invalid;
-    one('preview-box').innerHTML = '<div class="panel"><h3>Review each trip before importing</h3><p>' + pending.length + ' extracted row(s) · ' + state.ready + ' new · ' + state.duplicates + ' duplicate(s) · ' + state.conflicts + ' possible match(es) · ' + state.invalid + ' incomplete</p>' + errors + note + cards + '<label><input type="checkbox" id="reviewed-all" style="width:auto;margin-right:6px">I checked all passenger names, dates, pickup/drop-off times, and full addresses against RoutingBox.</label><button id="commit-reviewed" class="primary" ' + (readyToCommit ? '' : 'disabled') + '>Import ' + state.ready + ' reviewed trip(s)</button><p class="muted">Exact duplicates are skipped. Possible matches and incomplete records are blocked; no existing records will be overwritten. Editing a field requires reviewing again.</p></div>';
+    const note = state.conflicts ? '<p class="bad">Possible matches will be skipped. Check the existing run or correct its information.</p>' : '';
+    const readyToCommit = state.ready > 0; // A bad card must not block other verified trips.
+    one('preview-box').innerHTML = '<div class="panel"><h3>Review each trip before importing</h3><p>' + pending.length + ' extracted row(s) · ' + state.ready + ' new · ' + state.duplicates + ' duplicate(s) · ' + state.conflicts + ' possible match(es) · ' + state.invalid + ' incomplete</p>' + errors + note + cards + '<label><input type="checkbox" id="reviewed-all" style="width:auto;margin-right:6px">I checked the passenger, date, both times and complete addresses of each trip I am adding against RoutingBox.</label><button id="commit-reviewed" class="primary" ' + (readyToCommit ? '' : 'disabled') + '>Import ' + state.ready + ' reviewed trip(s)</button><p class="muted">Only complete, unique trips are added. Duplicates and incomplete rows are skipped. Existing trips and their actual event timestamps are preserved.</p></div>';
   }
   function enterPending(rows, source, issues = []) {
     const date = one('import-date').value;
@@ -214,7 +214,9 @@ el('date').value=liveDate;el('import-date').value=liveDate;el('date').addEventLi
   function attemptCommit() {
     if (!one('reviewed-all')?.checked) return alert('Review every imported trip, then check the confirmation box.');
     const state = reviewState();
-    if (state.invalid || previewErrors.length) return alert('Correct invalid fields and review again before importing.');
+    if((state.invalid||previewErrors.length||state.conflicts)&&
+       !confirm('Some screenshot cards are incomplete, unrecognized or conflict with existing runs. '+
+         'Import ONLY the '+state.ready+' fully reviewed new trip(s)? Other rows will be skipped.'))return;
     if (!state.ready) return alert('No new trips to import.');
     const use = pending.filter((r,i) => state.statuses[i] === 'new');
     const existing = new Set(db.runs.map(fingerprint));
