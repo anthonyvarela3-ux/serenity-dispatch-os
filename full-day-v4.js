@@ -94,7 +94,9 @@ function compute(runs,date,now,c,maps){
   const pickup=Number.isFinite(approval?.pickup)?approval.pickup:originalPickup;
   const target=pickup-10;
   const status=String(r.status||'');
-  const closed=status==='Completed'||status==='Exception';
+  const closed=['Completed','Exception','Canceled','Canceled at Door','No-show'].includes(status);
+  const out=r.events?.cancelOutcome;
+  const isNonTransport=['Canceled','Canceled at Door','No-show'].includes(status);
   const arrived=atEvent(r.events&&r.events.arrived,date);
   const boarded=atEvent(r.events&&r.events.boarded,date);
   const enroute=atEvent(r.events&&r.events.enroute,date);
@@ -105,6 +107,23 @@ function compute(runs,date,now,c,maps){
   if(!Number.isFinite(pickup)){
    readyAt=null;blocked=true;
    return {r,state:'missing',reason:'Invalid pickup time'};
+  }
+  if(closed && isNonTransport){
+    // No passenger was transported: NEVER fabricate destination arrival
+    // or billable loaded miles. At-door/no-show record the actual time
+    // the driver was released to move from the pickup location.
+    const released=atEvent(out?.at,date);
+    const actualPickup=atEvent(r.events?.arrived,date);
+    const grounded=(status==='Canceled at Door'||status==='No-show') &&
+      released!==null && actualPickup!==null;
+    if(grounded){readyAt=released;blocked=false;}
+    else if(enroute!==null){readyAt=null;blocked=true;} // where did driver stop?
+    else if(readyAt===null){blocked=true;}
+    return {r,state:'done',pickup,target,originalPickup,arrival:actualPickup,
+      approvalState:approval?.status||'unknown',agreedPickup:approval?.agreed||null,
+      dropArrival:null,drop:null,releaseAt:grounded?released:null,
+      reason:status+' · no passenger transport; billing unconfirmed',
+      verifiedEnd:false,nonTransport:true,boarded:false,enroute};
   }
   if(closed){
    // Closing an assignment is not proof of physical drop-off. Do not feed the
@@ -207,7 +226,7 @@ function draw(){
  for(const [id,value] of [['sf-reposition',c.reposition],['sf-trip',c.trip],['sf-buffer',c.buffer]]){
   if(document.activeElement!==E(id))E(id).value=value===null?'':String(value);
  }
- const next=runs.find(r=>r.status!=='Completed'&&r.status!=='Exception');
+ const next=runs.find(r=>!['Completed','Exception','Canceled','Canceled at Door','No-show'].includes(r.status));
  if(next&&next.puAddr){
   link.href='https://www.google.com/maps/dir/?api=1&travelmode=driving&destination='+encodeURIComponent(next.puAddr);
   link.style.display='inline';
@@ -320,7 +339,7 @@ renderCustomer=function(){
  const pickupLabel=panels[0].querySelector('small'),dropLabel=panels[1].querySelector('small');
  const conf=config(),date=E('date').value,now=new Date();
  const all=currentRuns(activeRun.date);
- const next=all.find(r=>r.status!=='Completed'&&r.status!=='Exception');
+ const next=all.find(r=>!['Completed','Exception','Canceled','Canceled at Door','No-show'].includes(r.status));
  const mapsOK=mapsETA&&next&&mapsETA.runId===next.id&&mapsETA.date===activeRun.date&&dateLocal(now)===activeRun.date&&now.getTime()-mapsETA.at<600000&&now.getTime()>=mapsETA.at;
  let estimated=null;
  if(conf.reposition!==null&&conf.trip!==null&&conf.buffer!==null){
@@ -340,7 +359,7 @@ renderCustomer=function(){
     getSnapshot(date,now=new Date()){
       const c=config(),runs=currentRuns(date);
       if(c.reposition===null||c.trip===null||c.buffer===null||!runs.length)return null;
-      const next=runs.find(r=>r.status!=='Completed'&&r.status!=='Exception');
+      const next=runs.find(r=>!['Completed','Exception','Canceled','Canceled at Door','No-show'].includes(r.status));
       const validMaps=mapsETA&&next&&next.id===mapsETA.runId&&mapsETA.date===date&&dateLocal(now)===date&&
           now.getTime()>=mapsETA.at&&now.getTime()-mapsETA.at<600000;
       return compute(runs,date,now,c,validMaps?mapsETA:null);
