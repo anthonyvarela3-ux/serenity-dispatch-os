@@ -74,10 +74,13 @@ function compute(runs,date,now,c,maps){
   const duration=intOrNull(overrides[r.id],1,240)??c.trip;
   const manual=firstOpen && current!==null && maps && maps.date===date && maps.runId===r.id &&
     now.getTime()>=maps.at && now.getTime()-maps.at<10*60000 && arrived===null;
+  const startAnchor=firstOpen && arrived===null && !manual && window.SerenityMorning?.anchor?.(date,runs,now);
+  const isAnchored=!!(startAnchor && startAnchor.runId===r.id && Number.isFinite(startAnchor.arrival));
   if(firstOpen)firstOpen=false;
   let arrival=null,source='Driver estimate';
   if(arrived!==null){arrival=arrived;source='Recorded arrival';}
   else if(manual){arrival=Math.max(target,current+maps.travel);source='Google Maps — entered manually';}
+  else if(isAnchored){arrival=Math.max(target,startAnchor.arrival,current===null?-Infinity:current);source=startAnchor.source;}
   else if(blocked){arrival=null;source='Earlier duration unknown';}
   else if(c.reposition!==null){
     // Live day starts at current time; later legs start at the prior projected drop-off.
@@ -240,6 +243,18 @@ renderCustomer=function(){
   dropLabel.title='Driver-entered trip times and buffers. Manifest drop-off time is intentionally ignored.';
  }
 };
+// Public read-only forecast accessor for the morning/base timeline.
+  // No passenger or location data leaves the browser.
+  window.SerenityDayForecast={
+    getSnapshot(date,now=new Date()){
+      const c=config(),runs=currentRuns(date);
+      if(c.reposition===null||c.trip===null||c.buffer===null||!runs.length)return null;
+      const next=runs.find(r=>r.status!=='Completed'&&r.status!=='Exception');
+      const validMaps=mapsETA&&next&&next.id===mapsETA.runId&&mapsETA.date===date&&dateLocal(now)===date&&
+          now.getTime()>=mapsETA.at&&now.getTime()-mapsETA.at<600000;
+      return compute(runs,date,now,c,validMaps?mapsETA:null);
+    }
+  };
 const original=render;
 render=function(){original();draw();};
 E('date').addEventListener('change',draw);
