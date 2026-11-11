@@ -193,7 +193,13 @@ function overviewRefresh(date,runs,forecast){
  const late=forecast.filter(p=>p.state==='late'&&p.r?.status!=='Completed').length;
  const over30=runs.filter(r=>r.events?.arrived&&!r.events?.boarded&&!['Completed','Exception'].includes(r.status)&&
   Date.now()-new Date(r.events.arrived).getTime()>=30*60000).length;
+ const needsRepair=runs.filter(r=>r.status==='Completed'&&!eventClock(r.events?.dropoff)).length;
+ const uncoded=runs.filter(r=>['Completed','Exception'].includes(r.status)&&
+   !(db.codingVerification?.[r.id]?.verifiedAt&&db.codingVerification[r.id].date===r.date&&
+     db.codingVerification[r.id].status===r.status)).length;
  const text=[];
+ if(needsRepair)text.push('<div class="v7-priority v7-priority-danger"><b>'+needsRepair+' completed run(s) missing actual drop-off</b><p>Open the run, correct the real timestamp, and verify the official RoutingBox coding.</p></div>');
+ if(uncoded)text.push('<div class="v7-priority v7-priority-warn"><b>'+uncoded+' closed run(s) not confirmed as coded</b><p>This is a local checklist only; actual fare payment remains unverified.</p></div>');
  if(over30)text.push('<div class="v7-priority v7-priority-danger"><b>'+over30+' trip status check(s) overdue</b><p>Arrived over 30 minutes ago, without a boarding event. Verify the correct RoutingBox coding.</p></div>');
  if(unknown)text.push('<div class="v7-priority v7-priority-warn"><b>'+unknown+' ETA(s) unverified</b><p>Check the garage-to-first-pickup duration and later leg assumptions.</p></div>');
  if(late)text.push('<div class="v7-priority v7-priority-warn"><b>'+late+' projected late pickup(s)</b><p>Check office-approved revisions before contacting customers.</p></div>');
@@ -224,7 +230,7 @@ function manifestRefresh(date,runs,results){
   const arr=eventClock(r.events?.arrived),enr=eventClock(r.events?.enroute),
         board=eventClock(r.events?.boarded),drop=eventClock(r.events?.dropoff);
   const state=done?'Complete':exception?'Exception':board?'Onboard':arr?'At pickup':enr?'En route':r.status||'Scheduled';
-  const tone=done?'done':exception||p?.state==='late'?'late':p?.state==='risk'?'risk':p?.state==='missing'?'missing':'on';
+  const tone=done&&!eventClock(r.events?.dropoff)?'late':done?'done':exception||p?.state==='late'?'late':p?.state==='risk'?'risk':p?.state==='missing'?'missing':'on';
   const eta=arr||clock(p?.arrival);
   const predictedDrop=drop||clock(p?.dropArrival);
   const miles=Number.isFinite(r.miles)?r.miles.toFixed(1)+' mi':'Miles not supplied';
@@ -232,7 +238,9 @@ function manifestRefresh(date,runs,results){
   const clear=clock(p?.drop);
   const rowEsc=esc(r.id),officeTime=esc(r.pu);
   return '<tr class="v7-row v7-'+tone+'" data-v7-row="'+rowEsc+'" tabindex="0">'+
-  '<td><div class="v7-row-index">#'+(i+1)+'</div><strong>'+esc(r.name)+'</strong><small>'+esc(state)+'</small><small>'+esc(miles)+' · '+esc(drive)+'</small></td>'+
+  '<td><div class="v7-row-index">#'+(i+1)+'</div><strong>'+esc(r.name)+'</strong><small>'+esc(state)+'</small>'+
+   (done&&!drop?'<small class="v7-bad">Actual drop-off missing · repair</small>':'')+
+   '<small>'+esc(miles)+' · '+esc(drive)+'</small></td>'+
   '<td><b>'+officeTime+'</b>'+ (approved?.status==='approved'?'<small class="v7-agreed">Office agreed '+esc(approved.agreed)+'</small>':
    approved?.status==='awaiting'?'<small>Office reply pending</small>':'')+'</td>'+
   '<td><b class="'+(p?.state==='late'?'v7-bad':'')+'">'+eta+'</b>'+
