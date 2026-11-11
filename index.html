@@ -387,6 +387,8 @@ el('date').value=liveDate;el('import-date').value=liveDate;el('date').addEventLi
   document.title='Serenity Dispatch OS — Beta 5 Driver Command';
   const banner=document.getElementById('banner');
   if (banner) banner.textContent='Driver Command preview. Planning times are provisional until verified. GPS position can update every 15 seconds with permission; traffic-aware route ETA is not yet connected. Verify against RoutingBox. Use controls only while stopped.';
+  const footer=document.querySelector('footer');
+  if(footer)footer.textContent='Beta 5 field preview · GPS position updates are optional while this page is open. Traffic-aware road ETAs and automatic messaging are not connected. Verify against RoutingBox and use controls only while stopped.';
   render();
 })();
 
@@ -394,6 +396,7 @@ el('date').value=liveDate;el('import-date').value=liveDate;el('date').addEventLi
 <script src="./full-day-v4.js"></script>
 <script src="./weather-v4.js"></script>
 <script src="./location-share-v4.js"></script>
+<script src="./trip-events-v5.js"></script>
 <script src="./morning-workflow.js"></script>
 <script src="./command-center-v5.js"></script>
 </body></html>
