@@ -14,7 +14,7 @@ const eventTime=iso=>{if(!iso)return '—';const d=new Date(iso);return Number.i
 const clock=t=>{if(!Number.isFinite(t))return '—';const n=((Math.round(t)%1440)+1440)%1440,h=Math.floor(n/60);return (h%12||12)+':'+String(n%60).padStart(2,'0')+(h<12?'a':'p')+(t>=1440?' +1':'');};
 const sorted=date=>db.runs.filter(r=>r.date===date).sort((a,b)=>timeM(a.pu)-timeM(b.pu));
 const forecast=date=>{try{return window.SerenityDayForecast.getSnapshot(date)||[]}catch{return []}};
-const isClosed=r=>r.status==='Completed'||r.status==='Exception';
+const isClosed=r=>['Completed','Exception','Canceled','Canceled at Door','No-show'].includes(r.status);
 const isActual=iso=>!!(iso&&!Number.isNaN(new Date(iso).getTime()));
 const maps=s=>'https://www.google.com/maps/dir/?api=1&travelmode=driving&destination='+encodeURIComponent(s||'');
 const board=document.createElement('section');board.id='v6-board';board.className='panel v6-board';
@@ -49,7 +49,7 @@ const color=(p,r)=>{
  return 'good';
 };
 const status=(p,r)=>{
- if(isClosed(r))return r.status==='Completed'?'Trip complete':'Exception';
+ if(isClosed(r))return r.status==='Completed'?'Trip complete':r.status;
  if(isActual(r.events?.boarded))return 'Passenger onboard';
  if(isActual(r.events?.arrived))return 'Waiting at pickup';
  if(isActual(r.events?.enroute))return 'En route now';
