@@ -354,12 +354,17 @@ function updateCustomer(date,runs){
  const header=E('v8-customer-summary');
  if(header){
   const p=r?forecast(date).find(x=>x.r.id===r.id):null;
+  const ended=!!r&&closed(r),onboard=!!r&&actual(r.events?.boarded);
+  const aLabel=ended?'Actual drop-off':onboard?'Destination ETA':'Pickup ETA';
+  const aValue=ended?time(r.events?.dropoff):onboard?clock(p?.dropArrival):clock(p?.arrival);
+  const bLabel=ended?'Run status':onboard?'Customer boarded':'Destination ETA';
+  const bValue=ended?statusFor(r)[0]:onboard?time(r.events?.boarded):clock(p?.dropArrival);
   header.innerHTML=r?'<div class="v8-customer-overline">RUN #'+(runs.findIndex(x=>x.id===r.id)+1)+
    ' · '+safe(statusFor(r)[0])+'</div>'+
    '<div class="v8-customer-main"><strong>'+safe(r.name)+'</strong>'+
    '<span>Office pickup '+safe(r.pu)+' · '+safe(r.puAddr||'Address unavailable')+'</span></div>'+
-   '<div class="v8-customer-stats"><span>Next curb ETA <b>'+clock(p?.arrival)+'</b></span>'+
-   '<span>Destination ETA <b>'+clock(p?.dropArrival)+'</b></span></div>':
+   '<div class="v8-customer-stats"><span>'+aLabel+' <b>'+aValue+'</b></span>'+
+   '<span>'+bLabel+' <b>'+bValue+'</b></span></div>':
    '<div class="v8-customer-overline">Select a run in Manifest or the Customer picker</div>';
  }
  paintControls(r);
@@ -440,8 +445,8 @@ function setupEvents(){
  customer.addEventListener('click',event=>{
   if(event.target.closest('#v9-next-run')){
    event.preventDefault();event.stopImmediatePropagation();
-   const runs=sorted(E('date').value),
-         candidate=runs.find(r=>!closed(r));
+   const runs=sorted(E('date').value),currentIndex=runs.findIndex(r=>r.id===db.active),
+         candidate=runs.slice(currentIndex+1).find(r=>!closed(r));
    if(candidate){db.active=candidate.id;save();render();}
    else window.SerenityThreePage?.navigate?.('manifest');
    return;
