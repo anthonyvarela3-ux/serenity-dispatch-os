@@ -12,13 +12,13 @@ const panel=document.createElement('section');
 panel.className='panel ms-panel';panel.id='ms-panel';
 panel.innerHTML='<div class="ms-top"><div><h2>Full-Day Milestones · Home to Personal Car</h2><small>Wake up → Garage → First pickup → Final drop-off → Return to base</small></div><div class="ms-pills"><span id="ms-first" class="ms-pill">First pickup: not loaded</span><span id="ms-prep" class="ms-pill">Garage prep: not recorded</span><span id="ms-base" class="ms-pill">Back at base: estimate unavailable</span></div></div>'+
 '<p class="ms-help"><strong>Reverse-planned from first pickup, with a 10-minute early-arrival goal.</strong> Enter your actual Google Maps travel-minute estimates below. Each event can be marked now or corrected manually. Your shift endpoint is back at the garage where your personal car is parked, not your home. Times are stored in your local backup and are <strong>not</strong> automatically treated as paid hours.</p>'+
-'<div class="ms-plan" id="ms-plan"></div>'+
+'<p id="ms-weather-prep" class="ms-help">Normal garage prep: 7 minutes. Checking hourly forecast…</p>'+ '<div class="ms-plan" id="ms-plan"></div>'+
 '<div class="ms-workflow" id="ms-workflow"></div>'+
 '<div class="ms-private"><details id="ms-settings"><summary>Home, garage &amp; morning planning settings</summary>'+
 '<div class="ms-forms"><label>Wake to leave home (min)<input id="ms-wakelead" type="number" inputmode="numeric" min="0" max="240" step="1" placeholder="Manual"></label>'+
 '<label>Home → garage (Maps min)<input id="ms-commute" type="number" inputmode="numeric" min="1" max="240" step="1" placeholder="From Google Maps"></label>'+
 '<label>Preparation at garage (min)<input id="ms-prepare" type="number" inputmode="numeric" min="0" max="180" step="1" placeholder="Manual"></label>'+
-'<label>Garage → first pickup (Maps min)<input id="ms-firstdrive" type="number" inputmode="numeric" min="1" max="240" step="1" placeholder="From Google Maps"></label>'+ '<label>Final drop-off → garage (Maps min)<input id="ms-returnbase" type="number" inputmode="numeric" min="1" max="240" step="1" placeholder="From Google Maps"></label>'+
+'<label>Garage → first pickup (Maps min)<input id="ms-firstdrive" type="number" inputmode="numeric" min="1" max="240" step="1" placeholder="From Google Maps"></label>'+ '<label>Extra garage prep in bad weather (min)<input id="ms-weatherextra" type="number" inputmode="numeric" min="0" max="120" step="1" placeholder="15"></label>'+ '<label>Final drop-off → garage (Maps min)<input id="ms-returnbase" type="number" inputmode="numeric" min="1" max="240" step="1" placeholder="From Google Maps"></label>'+
 '</div><div class="ms-forms" style="grid-template-columns:repeat(2,minmax(0,1fr))"><label>Private home address<input id="ms-home" type="text" autocomplete="off" placeholder="Only stored on this device"></label>'+
 '<label>Private garage address<input id="ms-garage" type="text" autocomplete="off" placeholder="Only stored on this device"></label></div>'+
 '<button type="button" id="ms-save-settings" class="primary">Save morning settings</button>'+
@@ -45,18 +45,43 @@ const dayRecord=date=>db.morningDays&&db.morningDays[date]||{};
 const prefs=()=>{
  const c=db.morningConfig||{};
  const val=(s,min,max)=>Number.isSafeInteger(s)&&s>=min&&s<=max?s:null;
- return {wakeLead:val(c.wakeLead,0,240),commute:c.commute===undefined?7:val(c.commute,1,240),prepare:val(c.prepare,0,180),firstDrive:val(c.firstDrive,1,240),returnBase:val(c.returnBase,1,240)};
+ return {
+   wakeLead:c.wakeLead===undefined?30:val(c.wakeLead,0,240),
+   commute:c.commute===undefined?7:val(c.commute,1,240),
+   prepare:c.prepare===undefined?7:val(c.prepare,0,180),
+   firstDrive:c.firstDrive===undefined?20:val(c.firstDrive,1,240),
+   returnBase:c.returnBase===undefined?20:val(c.returnBase,1,240),
+   weatherExtra:c.weatherExtra===undefined?15:val(c.weatherExtra,0,120),
+   assumptions:c.firstDrive===undefined||c.returnBase===undefined
+ };
 };
 const firstRun=date=>db.runs.filter(r=>r.date===date).sort((a,b)=>timeM(a.pu)-timeM(b.pu))[0]||null;
+function weatherPrepFor(date,garageMinute,p){
+ const source=window.SerenityWeather;
+ if(!source||!Number.isFinite(source.asOf)||Date.now()-source.asOf>2*3600000||!Number.isFinite(garageMinute))
+   return {extra:0,reason:'Weather check pending or unavailable · normal 7-minute prep is provisional',verified:false};
+ const when=new Date(date+'T00:00:00');when.setMinutes(garageMinute);
+ const period=(source.hours||[]).find(h=>new Date(h.startTime).getTime()<=when.getTime()&&new Date(h.endTime).getTime()>when.getTime());
+ if(!period)return {extra:0,reason:'No hourly forecast for garage preparation time · review conditions',verified:false};
+ const alerts=(source.alerts||[]).join(' ');
+ const condition=String(period.shortForecast||'');
+ const hazard=/snow|sleet|ice|icy|freezing|blizzard|winter storm|thunderstorm|heavy rain|high wind|tornado|flood/i;
+ const event=hazard.test(condition)||hazard.test(alerts);
+ return {extra:event?(p.weatherExtra??0):0,
+   reason:event?'Weather prep exception: '+condition+(alerts?' · '+alerts:''):'Forecast: '+condition+' · normal garage preparation',
+   verified:true,condition,event};
+}
 function backward(date){
  const first=firstRun(date),p=prefs();
  if(!first||!Number.isFinite(timeM(first.pu)))return {first,p,steps:[]};
  const goal=timeM(first.pu)-10;
  const departGarage=p.firstDrive===null?null:goal-p.firstDrive;
- const arriveGarage=departGarage!==null&&p.prepare!==null?departGarage-p.prepare:null;
+ const weather=weatherPrepFor(date,departGarage===null?NaN:departGarage-p.prepare,p);
+ const garagePrep=p.prepare===null?null:p.prepare+weather.extra;
+ const arriveGarage=departGarage!==null&&garagePrep!==null?departGarage-garagePrep:null;
  const departHome=arriveGarage!==null&&p.commute!==null?arriveGarage-p.commute:null;
  const wake=departHome!==null&&p.wakeLead!==null?departHome-p.wakeLead:null;
- return {first,p,goal,departGarage,arriveGarage,departHome,wake,steps:[
+ return {first,p,weather,garagePrep,goal,departGarage,arriveGarage,departHome,wake,steps:[
    ['Wake up',wake],['Leave home',departHome],['Arrive at garage',arriveGarage],['Leave garage',departGarage],['Arrive at first pickup',goal]
  ]};
 }
@@ -64,6 +89,9 @@ const eventDefs=[['wake','Wake up'],['leaveHome','Leave home'],['arriveGarage','
 function renderMorning(){
  const date=E('date').value,first=firstRun(date),rec=dayRecord(date),plan=backward(date);
  const prep=old(rec.departGarage,date)!==null&&old(rec.arriveGarage,date)!==null?old(rec.departGarage,date)-old(rec.arriveGarage,date):null;
+ const weatherLabel=E('ms-weather-prep');
+ weatherLabel.textContent='Garage preparation: '+(plan.garagePrep??'—')+' min ('+(plan.p.prepare??'—')+' standard'+(plan.weather?.extra?' + '+plan.weather.extra+' weather buffer':'')+'). '+(plan.weather?.reason||'Weather forecast unavailable')+'. '+(plan.p.assumptions?'First/return drive times are starting assumptions; verify Google Maps.':'Driver-configured travel times.');
+
  E('ms-prep').textContent=prep===null?'Garage prep: not recorded':'Garage prep: '+(prep>=0?prep+' min':'check event order');
  E('ms-first').textContent=first?'First pickup '+first.pu+' · early target '+clock(plan.goal):'First pickup: no runs for selected date';
  const all=db.runs.filter(r=>r.date===date).sort((a,b)=>timeM(a.pu)-timeM(b.pu));
@@ -95,7 +123,7 @@ function renderMorning(){
  E('ms-workflow').innerHTML=html+'</tbody></table>';
  const d=E('ms-settings');
  if(!d.open){
-  for(const [field,k] of [['ms-wakelead','wakeLead'],['ms-commute','commute'],['ms-prepare','prepare'],['ms-firstdrive','firstDrive'],['ms-returnbase','returnBase']]){
+  for(const [field,k] of [['ms-wakelead','wakeLead'],['ms-commute','commute'],['ms-prepare','prepare'],['ms-firstdrive','firstDrive'],['ms-returnbase','returnBase'],['ms-weatherextra','weatherExtra']]){
    E(field).value=plan.p[k]===null?'':String(plan.p[k]);
   }
   E('ms-home').value=typeof db.morningConfig?.home==='string'?db.morningConfig.home:'';
@@ -126,8 +154,8 @@ function readInt(id,min,max){
 E('ms-save-settings').addEventListener('click',()=>{
  try{
   const wakeLead=readInt('ms-wakelead',0,240),commute=readInt('ms-commute',1,240),
-       prepare=readInt('ms-prepare',0,180),firstDrive=readInt('ms-firstdrive',1,240),returnBase=readInt('ms-returnbase',1,240);
-  db.morningConfig={...(db.morningConfig||{}),wakeLead,commute,prepare,firstDrive,returnBase,
+       prepare=readInt('ms-prepare',0,180),firstDrive=readInt('ms-firstdrive',1,240),returnBase=readInt('ms-returnbase',1,240),weatherExtra=readInt('ms-weatherextra',0,120);
+  db.morningConfig={...(db.morningConfig||{}),wakeLead,commute,prepare,firstDrive,returnBase,weatherExtra,
     home:E('ms-home').value.trim().slice(0,220),garage:E('ms-garage').value.trim().slice(0,220)};
   save();renderMorning();
  }catch(error){alert(error.message)}
@@ -223,9 +251,9 @@ window.SerenityMorning={
   const departGarage=old(rec.departGarage,date),arriveGarage=old(rec.arriveGarage,date),
         departHome=old(rec.leaveHome,date),wake=old(rec.wake,date);
   if(departGarage!==null){projected=departGarage+c.firstDrive;source='Garage departure + manual Maps time';}
-  else if(arriveGarage!==null&&c.prepare!==null){projected=Math.max(current??0,arriveGarage+c.prepare)+c.firstDrive;source='Garage preparation + manual Maps time';}
-  else if(departHome!==null&&c.commute!==null&&c.prepare!==null){projected=Math.max(current??0,departHome+c.commute+c.prepare)+c.firstDrive;source='Home departure + manual Maps time';}
-  else if(wake!==null&&c.wakeLead!==null&&c.commute!==null&&c.prepare!==null){projected=Math.max(current??0,wake+c.wakeLead+c.commute+c.prepare)+c.firstDrive;source='Wake-up estimate + manual Maps time';}
+  else if(arriveGarage!==null&&c.prepare!==null){projected=Math.max(current??0,arriveGarage+backward(date).garagePrep)+c.firstDrive;source='Garage preparation + manual Maps time';}
+  else if(departHome!==null&&c.commute!==null&&c.prepare!==null){projected=Math.max(current??0,departHome+c.commute+backward(date).garagePrep)+c.firstDrive;source='Home departure + manual Maps time';}
+  else if(wake!==null&&c.wakeLead!==null&&c.commute!==null&&c.prepare!==null){projected=Math.max(current??0,wake+c.wakeLead+c.commute+backward(date).garagePrep)+c.firstDrive;source='Wake-up estimate + manual Maps time';}
   if(projected===null)return null;
   // A fixed travel estimate becomes stale when its projected arrival is already in the past.
   if(current!==null&&current>projected+5)return null;
@@ -237,5 +265,6 @@ window.SerenityMorning={
 const priorRender=render;
 render=function(){priorRender();renderMorning();};
 E('date').addEventListener('change',renderMorning);
+window.addEventListener('serenity-weather-updated',renderMorning);
 renderMorning();
 })();
