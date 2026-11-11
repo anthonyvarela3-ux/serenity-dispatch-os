@@ -16,7 +16,11 @@ const clock=m=>{if(!Number.isFinite(m))return '—';const n=((Math.round(m)%1440
 const actual=iso=>!!iso&&Number.isFinite(new Date(iso).getTime());
 const time=iso=>actual(iso)?new Date(iso).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'—';
 const cash=x=>Number.isFinite(x)?'$'+x.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';
-const sorted=date=>db.runs.filter(r=>r.date===date).sort((a,b)=>timeM(a.pu)-timeM(b.pu));
+const sorted=date=>{
+ const runs=db.runs.filter(r=>r.date===date);
+ return window.SerenityDispatchUpdates?.sortRuns?.(runs)||
+   runs.sort((a,b)=>timeM(a.pu)-timeM(b.pu));
+};
 const forecast=date=>{try{return window.SerenityDayForecast?.getSnapshot(date)||[]}catch{return []}};
 const closed=r=>['Completed','Exception','Canceled','Canceled at Door','No-show'].includes(r.status)||actual(r.events?.dropoff);
 const allEvents=[['enroute','En Route to Pickup'],['arrived','Arrived at Pickup'],
@@ -243,7 +247,11 @@ function updateManifest(date,runs,f){
     (closedWithoutDrop?'<small class="v8-warning">Closed without verified drop-off time</small>':'')+'</td>'+
     '<td><span class="v8-major-time">'+safe(r.pu)+'</span>'+
     '<small>10-minute-early goal '+clock(p?.target)+'</small>'+
-    (office?.status==='approved'?'<small class="v8-agreed">Office agreed '+safe(office.agreed)+'</small>':'')+'</td>'+
+    (office?.status==='approved'?'<small class="v8-agreed">Office agreed '+safe(office.agreed)+'</small>':'')+
+    (window.SerenityDispatchUpdates?.get?.(r)?.revisedPickup?
+       '<small class="v8-agreed">Dispatch revised to '+safe(window.SerenityDispatchUpdates.get(r).revisedPickup)+'</small>':'')+
+    (window.SerenityDispatchUpdates?.get?.(r)?.position?
+       '<small class="v8-agreed">Dispatch order #'+window.SerenityDispatchUpdates.get(r).position+'</small>':'')+'</td>'+
     '<td><span class="v8-major-time '+(p?.state==='late'?'v8-late-text':'')+'">'+
     (actualArrived?time(e.arrived):closed(r)?'—':clock(p?.arrival))+'</span>'+
     '<small>'+(actualArrived?'Actual arrival':closed(r)?'Actual arrival not recorded':'Serenity estimate')+'</small>'+
