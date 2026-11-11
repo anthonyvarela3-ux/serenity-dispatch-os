@@ -13,7 +13,7 @@ const fmt=raw=>{
  const hour=+m[1],minutes=+m[2];
  return String(hour%12||12)+':'+String(minutes).padStart(2,'0')+(hour<12?' AM':' PM');
 };
-const identical=(a,b)=>[a.date,a.name,a.pu,a.puAddr,a.du,a.doAddr].every(k=>norm(a[k])===norm(b[k]));
+const identical=(a,b)=>['date','name','pu','puAddr','du','doAddr'].every(k=>norm(a[k])===norm(b[k]));
 const possible=(a,b)=>a.date===b.date&&norm(a.name)===norm(b.name)&&
  norm(a.pu)===norm(b.pu)&&norm(a.du)===norm(b.du);
 const terminal=r=>['Completed','Canceled','Canceled at Door','No-show','Exception'].includes(r.status);
