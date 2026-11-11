@@ -24,7 +24,11 @@ const simpleTime=iso=>{
  return Number.isFinite(d.getTime())?d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'—';
 };
 const validEvent=iso=>!!iso&&Number.isFinite(new Date(iso).getTime());
-const sorted=date=>db.runs.filter(r=>r.date===date).sort((a,b)=>timeM(a.pu)-timeM(b.pu));
+const sorted=date=>{
+ const runs=db.runs.filter(r=>r.date===date);
+ return window.SerenityDispatchUpdates?.sortRuns?.(runs)||
+   runs.sort((a,b)=>timeM(a.pu)-timeM(b.pu));
+};
 const isClosed=r=>['Completed','Exception','Canceled','Canceled at Door','No-show'].includes(r.status);
 const forecasts=date=>{try{return window.SerenityDayForecast.getSnapshot(date)||[]}catch{return []}};
 const durationM=(run)=>Number.isSafeInteger(db.forecastDriveMinutes?.[run.id])?db.forecastDriveMinutes[run.id]:
