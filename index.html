@@ -1,5 +1,63 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Serenity Dispatch OS — Safety Beta 1</title><style>
 :root{font-family:system-ui,-apple-system,sans-serif;color-scheme:dark;--bg:#08111e;--panel:#122139;--border:#30415a;--text:#f3f7ff;--muted:#b4c4d7;--accent:#14b8a6}body{margin:0;background:var(--bg);color:var(--text);font-size:16px}body.light{color-scheme:light;--bg:#f1f5f9;--panel:#fff;--border:#b8c7d7;--text:#17263a;--muted:#43566b;--accent:#0f766e}header,main{max-width:1180px;margin:auto;padding:14px}header{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}h1{font-size:22px;margin:0}h2{font-size:20px;margin:0 0 10px}h3{font-size:17px;margin:0 0 8px}p{line-height:1.45}small,.muted{color:var(--muted)}.bar,.actions,.two{display:flex;flex-wrap:wrap;gap:9px}.two>*{flex:1 1 270px}button,input,textarea,select{font:inherit}button{border:1px solid var(--border);border-radius:9px;padding:11px 13px;background:var(--panel);color:var(--text);cursor:pointer;min-height:44px}button.primary{background:#0f766e;color:white}button.warn{background:#92400e;color:white}button.danger{background:#991b1b;color:white}button:disabled{opacity:.5;cursor:not-allowed}input,textarea,select{border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:7px;padding:10px;max-width:100%;box-sizing:border-box}input[type=file]{width:100%}textarea{width:100%;min-height:85px}label{display:block;margin:10px 0 4px;font-weight:650}.panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px;margin:10px 0}.notice{border-left:5px solid #d97706;padding:10px;background:var(--panel);margin:10px 0}.status{display:inline-block;border:1px solid var(--border);border-radius:7px;padding:3px 7px;font-size:12px;font-weight:700}.done{color:#34d399}.alert{color:#fbbf24}.bad{color:#fb7185}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:760px}th,td{padding:10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}tr[data-id]{cursor:pointer}tr[data-id]:hover{background:#64748b25}.hidden{display:none!important}.big{font-size:26px;font-weight:800}.field{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.field input{flex:1 1 210px}.gap{background:#7f1d1d;color:white;font-weight:700;text-align:center}a{color:var(--accent);font-weight:700}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.metrics .panel{margin:0}.metrics strong{display:block;font-size:19px}@media(max-width:700px){.metrics{grid-template-columns:repeat(2,1fr)}header,main{padding:9px}h1{font-size:19px}}@media(prefers-color-scheme:light){body:not(.dark):not(.light){color-scheme:light;--bg:#f1f5f9;--panel:#fff;--border:#b8c7d7;--text:#17263a;--muted:#43566b;--accent:#0f766e}}
+</style><style>
+/* Serenity Beta 3 — landscape-first Customer Window. Works without changing data model. */
+header,main{max-width:1480px}
+header{padding-top:10px;padding-bottom:8px}
+#customer-content.b3-layout{background:transparent;border:0;padding:0;margin:10px 0}
+.b3-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 18px;background:var(--panel);border:1px solid var(--border);border-radius:14px;margin-bottom:10px}
+.b3-head .bar{align-items:center;flex:1}
+.b3-head h2{font-size:clamp(23px,2.2vw,32px);margin:0;letter-spacing:-.03em}
+.b3-head p{margin:0;display:flex;align-items:center;flex-wrap:wrap;gap:7px}
+.b3-head .status{padding:7px 11px;font-size:13px}
+.b3-grid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(360px,.92fr);gap:12px;align-items:start}
+.b3-main,.b3-side{min-width:0;display:flex;flex-direction:column;gap:12px}
+.b3-grid .panel{margin:0;padding:15px;border-radius:12px}
+.b3-route{gap:10px}
+.b3-route .panel{min-width:0;border-left:4px solid var(--accent);display:flex;flex-direction:column;gap:8px}
+.b3-route .panel:nth-child(2){border-left-color:#ef6b78}
+.b3-route .big{margin:6px 0;font-size:clamp(17px,1.55vw,24px);line-height:1.25;overflow-wrap:anywhere;letter-spacing:-.02em}
+.b3-route a{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:7px 12px;text-decoration:none;background:#0f766e;color:white;border-radius:8px;text-align:center}
+.b3-route .panel:nth-child(2) a{background:#aa3143}
+.b3-message>h3,.b3-actions>h3{margin-bottom:12px}
+.b3-message .bar{gap:7px}
+.b3-message button[data-macro]{flex:1 1 120px;min-height:48px;font-weight:750}
+.b3-message #message{min-height:92px;margin:10px 0 8px;line-height:1.4}
+.b3-message .b3-quick{margin-bottom:10px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.62fr);gap:8px}
+.b3-message .b3-quick>*{display:flex;align-items:center;justify-content:center;min-height:52px;padding:8px 10px;border-radius:9px;text-align:center}
+.b3-message .b3-quick #ready{background:#0f766e;color:white;border-color:#0f766e;font-weight:800}
+.b3-message .b3-quick a{background:var(--bg);border:1px solid var(--border);font-weight:750;text-decoration:none}
+.b3-message .b3-quick [aria-disabled="true"]{opacity:.55;cursor:not-allowed}
+.b3-voice-hint{display:block;font-size:12px;color:var(--muted);margin:7px 0}
+.b3-detail{border:1px solid var(--border);border-radius:12px;background:var(--panel);overflow:hidden}
+.b3-detail>summary{padding:14px 16px;cursor:pointer;font-weight:800;min-height:50px;display:list-item;list-style-position:inside}
+.b3-detail>summary:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.b3-detail .panel{margin:0;border:0;border-top:1px solid var(--border);border-radius:0}
+.b3-detail .field{align-items:stretch}
+.b3-detail .field input{min-width:0}
+.b3-notepreview{font-size:12px;color:var(--muted);font-weight:500;margin-left:7px}
+.b3-actions .bar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.b3-actions button{min-height:54px;font-weight:800;padding:10px 7px}
+.b3-actions small{display:block;margin-top:9px}
+/* iPad landscape: location cards side by side, actionable panel beside them. */
+@media(min-width:980px) and (orientation:landscape){
+  .b3-route{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .b3-route .panel{min-height:210px}
+  .b3-route a{margin-top:auto}
+}
+/* Portrait and smaller windows remain usable instead of forcing tiny columns. */
+@media(max-width:979px),(orientation:portrait){
+  .b3-grid{grid-template-columns:1fr}
+  .b3-head{flex-direction:column;align-items:stretch}
+  .b3-route{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:640px){
+  .b3-route{grid-template-columns:1fr}
+  .b3-actions .bar{grid-template-columns:1fr 1fr}
+  .b3-head{padding:12px}
+  .b3-message .b3-quick{grid-template-columns:1fr 1fr}
+}
+
 </style></head><body><header><div><h1>Serenity Dispatch OS</h1><small>Driver Beta 1 · local-only · no automatic SMS or GPS ETA</small></div><div class="bar"><button id="theme">Day / Night</button><button id="export">Export backup</button><label style="margin:0"><span class="hidden">Restore</span><input type="file" id="restore" accept="application/json,.json" aria-label="Restore backup" style="max-width:180px"></label></div></header><main><div class="notice" id="banner">Safety beta: review all trip details before using. Imported screenshots are NOT automatically read in this version.</div><nav class="bar"><button id="nav-roster" class="primary">Daily Master</button><button id="nav-customer">Customer Window</button><button id="nav-import">Manifest Import</button><button id="nav-directory">Knowledge Base</button></nav><section class="metrics"><div class="panel"><small>Completed</small><strong id="metric-complete">0 / 0</strong></div><div class="panel"><small>Scheduled miles</small><strong id="metric-miles">—</strong></div><div class="panel"><small>Completed tariff</small><strong id="metric-gross">—</strong></div><div class="panel"><small>Driver labor</small><strong id="metric-labor">—</strong></div></section><section id="roster"><div class="panel"><div class="bar" style="justify-content:space-between;align-items:center"><h2>Daily Master</h2><div class="field"><label for="date" style="margin:0">Service date</label><input type="date" id="date"></div></div><div class="bar"><button id="shift-start">Leave Work</button><button id="shift-end">Arrive Home</button><span id="shift-info" class="muted"></span></div><div class="tablewrap"><table><thead><tr><th># / Status</th><th>Passenger</th><th>Pickup</th><th>Drop-off</th><th>Contact</th><th>Actions</th></tr></thead><tbody id="rows"></tbody></table></div></div></section><section id="customer" class="hidden"><div id="customer-content" class="panel"><h2>Customer Window</h2><p>Select a run from Daily Master.</p></div></section><section id="import" class="hidden"><div class="panel"><h2>Manifest Import — Review First</h2><p>This beta accepts structured pipe-separated rows. Screenshot OCR is not implemented yet; uploading an image will never substitute an old sample manifest. Use the synthetic seven-run fixture to test the interface; do not publish real passenger data.</p><label for="import-date">Service date</label><input id="import-date" type="date"><label for="manifest-image">Reference screenshot (no OCR)</label><input type="file" id="manifest-image" accept="image/*" multiple><p id="image-info" class="muted"></p><label for="raw">One trip per line: Name | Pickup time | Pickup address | Drop-off time | Drop-off address | Phone (optional) | Miles (optional) | Tariff (optional)</label><textarea id="raw" rows="9" style="min-height:220px" spellcheck="false"></textarea><div class="bar"><button id="load-test">Load synthetic 7-run test</button><button class="primary" id="preview">Review import</button></div><div id="preview-box"></div></div></section><section id="directory" class="hidden"><div class="panel"><h2>Knowledge Base</h2><p>Verified phone corrections and passenger notes are stored in this browser only. Do not use as the sole permanent copy. Export encrypted-device-protected backups regularly; the export file itself is not encrypted.</p><div id="directory-list"></div></div></section><footer class="muted" style="padding:14px 0">Safety Beta 1 · No live location, OCR, cloud sync, or Google Voice delivery confirmation. Use only while safely stopped.</footer></main><script>
 'use strict';
 const KEY='serenity_beta1_v1';
@@ -255,4 +313,80 @@ el('date').value='2026-11-11';el('import-date').value='2026-11-11';el('date').ad
 })();
 
 </script>
-</body></html>
+<script>
+/* Serenity Beta 3: wraps existing Beta 2 presentation; retains proven OCR/import logic. */
+(() => {
+  'use strict';
+  const PROFILE = Object.freeze({driver: 'Anthony', service: 'Serenity Transportation', voiceAccount: 'LI ResRun'});
+  const drafts = new Map();
+  const givenName = run => String(run.name || '').trim().split(/\s+/)[0] || 'there';
+  macros.eta = run => `Hi ${givenName(run)}, it's ${PROFILE.driver} from ${PROFILE.service}. I'll be your driver today. I'm approximately 10 minutes away from your pickup. Please be ready when I arrive. Thank you!`;
+  macros.curb = run => `Hi ${givenName(run)}, it's ${PROFILE.driver} from ${PROFILE.service}. I've arrived at your pickup location and am outside. Please let me know when you're ready.`;
+  macros.confirm = run => `Hi ${givenName(run)}, it's ${PROFILE.driver} from ${PROFILE.service}. I'm confirming your scheduled pickup at ${run.pu} from ${run.puAddr}. Please let me know if these details are correct. Thank you!`;
+  macros.late = run => `Hi ${givenName(run)}, it's ${PROFILE.driver} from ${PROFILE.service}. I'm running behind schedule. I'll share an updated arrival time as soon as I have one. Thank you for your patience.`;
+  const originalRenderCustomer = renderCustomer;
+  renderCustomer = function () {
+    originalRenderCustomer();
+    const root = document.getElementById('customer-content');
+    const run = db.runs.find(record => record.id === db.active);
+    if (!run || !root || !root.querySelector('#message')) return;
+    const children = [...root.children];
+    if (children.length !== 7) return; // Fail safe: leave existing layout unchanged if markup changes.
+    const [heading, status, locations, contact, message, notes, tripActions] = children;
+    root.classList.add('b3-layout');
+    const head = document.createElement('div'); head.className = 'b3-head'; head.append(heading, status);
+    const grid = document.createElement('div'); grid.className = 'b3-grid';
+    const primary = document.createElement('div'); primary.className = 'b3-main';
+    const side = document.createElement('div'); side.className = 'b3-side';
+    locations.classList.add('b3-route');
+    tripActions.classList.add('b3-actions');
+    message.classList.add('b3-message');
+    const quick = document.createElement('div'); quick.className = 'b3-quick';
+    const ready = contact.querySelector('#ready');
+    if (ready) quick.append(ready);
+    const phone = contact.querySelector('a');
+    if (phone && phone.textContent.trim() === 'Call passenger') {
+      if (!/^tel:\+?[0-9()%+\-]+$/i.test(phone.getAttribute('href') || '')) {
+        phone.removeAttribute('href');phone.textContent = 'No valid phone';phone.setAttribute('aria-disabled','true');
+      }
+      quick.append(phone);
+    }
+    message.insertBefore(quick, message.querySelector('h3'));
+    const hint = document.createElement('small');hint.className='b3-voice-hint';
+    hint.textContent = `Google Voice account: ${PROFILE.voiceAccount} — confirm the correct account before sending. Messages identify you as ${PROFILE.driver} from ${PROFILE.service}.`;
+    message.append(hint);
+    const field = message.querySelector('#message');
+    field.value = drafts.has(run.id) ? drafts.get(run.id) : macros.eta(run);
+    function asDetails(panel, title, preview) {
+      const details=document.createElement('details');details.className='b3-detail';
+      const summary=document.createElement('summary');summary.textContent=title;
+      if(preview){const span=document.createElement('span');span.className='b3-notepreview';span.textContent=preview;summary.append(span)}
+      const oldHeading=panel.querySelector('h3');if(oldHeading) oldHeading.remove();
+      details.append(summary,panel);return details;
+    }
+    const person=db.people[String(run.name||'').trim().toUpperCase()]||{};
+    primary.append(locations,tripActions,asDetails(notes,'Pickup intelligence & notes',person.notes?String(person.notes).slice(0,66):''));
+    side.append(message,asDetails(contact,'Contact & verified number',person.verified?'Verified number on file':''));
+    grid.append(primary,side);root.replaceChildren(head,grid);
+  };
+  document.addEventListener('input', event => {
+    if(event.target?.id==='message' && db.active) drafts.set(db.active,event.target.value);
+  });
+  document.addEventListener('click', event => {
+    const macro=event.target.closest?.('button[data-macro]');
+    if(macro && db.active && document.getElementById('message')) drafts.set(db.active,document.getElementById('message').value);
+  });
+  document.addEventListener('click', event => {
+    const btn=event.target.closest?.('button');
+    if (!btn || !['complete','exception'].includes(btn.id)) return;
+    const description=btn.id==='complete'?'complete this assignment':'mark this assignment as a no-show / exception';
+    if (!window.confirm(`Are you sure you want to ${description}?`)) { event.preventDefault();event.stopImmediatePropagation(); }
+  },true);
+  document.querySelector('header small').textContent = 'Driver Beta 3 · landscape-first preview · manual Google Voice · no live GPS ETA';
+  document.title='Serenity Dispatch OS — Beta 3 Landscape Preview';
+  const banner=document.getElementById('banner');
+  if (banner) banner.textContent='Beta 3 preview: landscape-first Customer Window. Verify passengers, times and addresses against RoutingBox. No automatic SMS or live GPS ETA.';
+  render();
+})();
+
+</script></body></html>
