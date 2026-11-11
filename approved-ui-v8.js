@@ -394,6 +394,9 @@ function refresh(){
 }
 function recordStage(run,kind){
  if(!run||closed(run))return alert('This run is already completed or closed.');
+ if(kind==='dropoff'&&window.SerenityFinish?.open){
+   window.SerenityFinish.open(run.id);return;
+ }
  const date=E('date').value,now=new Date();
  if(!isDay(date)||run.date!==date)return alert('Record NOW requires today’s selected service date.');
  run.events=run.events||{};
