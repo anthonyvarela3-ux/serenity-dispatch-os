@@ -284,6 +284,8 @@ function manifestUpdate(date,runs,f){
   const p=byId.get(r.id),op=operationalTime(r),closed=isClosed(r);
   const actualArrival=validEvent(r.events?.arrived)?simpleTime(r.events.arrived):null;
   const actualDrop=validEvent(r.events?.dropoff)?simpleTime(r.events.dropoff):null;
+  const enroute=validEvent(r.events?.enroute)?simpleTime(r.events.enroute):null;
+  const boarded=validEvent(r.events?.boarded)?simpleTime(r.events.boarded):null;
   const effect=consequences(p,f[i+1],i);
   const status=closed?'Closed':!p||p.state==='missing'?'Unknown':p.state==='late'?'Late':
    p.state==='risk'?'Early goal missed':'On target';
@@ -298,7 +300,9 @@ function manifestUpdate(date,runs,f){
    '<td><div class="v7-table-time '+(tone==='risk'?'v7-text-risk':'')+'">'+
    (actualArrival||clock(p?.arrival))+'</div>'+
    '<small>'+(actualArrival?'Actual curb arrival':'Serenity estimate')+'</small>'+
-   '<span class="v7-row-chip '+tone+'">'+esc(status)+(p?.state==='late'?' · +'+p.late+'m':'')+'</span></td>'+
+   '<span class="v7-row-chip '+tone+'">'+esc(status)+(p?.state==='late'?' · +'+p.late+'m':'')+'</span>'+
+   (enroute?'<small>En route actual '+enroute+'</small>':'')+
+   (boarded?'<small>Boarded actual '+boarded+'</small>':'')+'</td>'+
    '<td><small>Office: '+esc(r.du||'—')+'</small><div class="v7-table-time">'+
     (actualDrop||clock(p?.dropArrival??p?.drop))+'</div>'+
    '<small>'+(actualDrop?'Actual drop-off':'Estimated drop-off')+'</small>'+
