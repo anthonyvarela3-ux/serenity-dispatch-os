@@ -18,7 +18,7 @@ card.innerHTML=
  '<label>Default trip driving (min)<input id="sf-trip" type="number" min="1" max="240" step="1" inputmode="numeric" placeholder="Set estimate"></label>'+
  '<label>Boarding / unloading buffer (min)<input id="sf-buffer" type="number" min="0" max="60" step="1" inputmode="numeric" placeholder="Set estimate"></label>'+
  '<button type="button" id="sf-save" class="primary">Save estimates</button>'+
- '<button type="button" id="sf-refresh" class="primary">Refresh GPS &amp; Forecast</button>'+
+ '<button type="button" id="sf-refresh" class="primary">Refresh GPS &amp; Forecast</button>'+ '<button type="button" id="sf-auto-gps">Start GPS every 15s</button>'+
  '<span id="sf-gps" class="sf-gps">GPS off</span></div>'+
  '<div class="sf-controls"><a id="sf-map" target="_blank" rel="noopener noreferrer">Check next pickup in Google Maps</a><label>Google Maps drive minutes to next pickup<input id="sf-map-min" type="number" min="1" max="240" step="1" inputmode="numeric" placeholder="From Maps"></label><button type="button" id="sf-map-apply">Use Maps driving time</button><span class="sf-gps" id="sf-map-note">Manual entry · expires after 10 minutes.</span></div>'+
  '<div class="sf-data" id="sf-data"><p class="sf-note">Configure estimates to calculate the day.</p></div>'+
@@ -39,7 +39,36 @@ function clock(n){
  return String(h%12||12)+':'+String(r%60).padStart(2,'0')+(h<12?' AM':' PM')+(n>=1440?' +1 day':'');
 }
 const escText=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const gps={last:null,requesting:false,error:null};
+const gps={last:null,requesting:false,error:null,auto:false,interval:null};
+function fixGPS(){
+ if(gps.requesting||document.hidden)return;
+ if(!navigator.geolocation){gps.error='Location unavailable in browser';draw();return;}
+ gps.requesting=true;gps.error=null;draw();
+ navigator.geolocation.getCurrentPosition(p=>{
+   gps.requesting=false;gps.last=p;gps.error=null;draw();
+   window.dispatchEvent(new CustomEvent('serenity-location-refresh',{detail:{latitude:p.coords.latitude,longitude:p.coords.longitude,accuracy:p.coords.accuracy}}));
+ },e=>{
+   gps.requesting=false;gps.error=e.code===1?'permission denied':e.code===2?'unavailable':'timed out';
+   if(e.code===1)stopAutoGPS();
+   draw();
+ },{enableHighAccuracy:true,maximumAge:0,timeout:12000});
+}
+function stopAutoGPS(){
+ gps.auto=false;
+ if(gps.interval!==null)clearInterval(gps.interval);
+ gps.interval=null;
+ const btn=document.getElementById('sf-auto-gps');
+ if(btn)btn.textContent='Start GPS every 15s';
+}
+function startAutoGPS(){
+ gps.auto=true;
+ const btn=document.getElementById('sf-auto-gps');
+ if(btn)btn.textContent='Stop 15s GPS';
+ if(gps.interval!==null)clearInterval(gps.interval);
+ gps.interval=setInterval(()=>{if(gps.auto&&!document.hidden)fixGPS()},15000);
+ fixGPS();
+}
+
 let mapsETA=null;
 function currentRuns(date){
  return db.runs.filter(r=>r.date===date).sort((a,b)=>timeM(a.pu)-timeM(b.pu));
@@ -117,6 +146,7 @@ function draw(){
  f.textContent=gps.error?'GPS: '+gps.error:gps.last?(elapsed<120000?'GPS fix '+Math.round(elapsed/1000)+'s ago · ±'+Math.round(gps.last.coords.accuracy)+'m':'GPS position stale · refresh'):'GPS off · tap refresh';
  E('sf-refresh').disabled=gps.requesting;
  E('sf-refresh').textContent=gps.requesting?'Requesting GPS…':'Refresh GPS & Forecast';
+ E('sf-auto-gps').textContent=gps.auto?'Stop 15s GPS':'Start GPS every 15s';
  for(const [id,value] of [['sf-reposition',c.reposition],['sf-trip',c.trip],['sf-buffer',c.buffer]]){
   if(document.activeElement!==E(id))E(id).value=value===null?'':String(value);
  }
@@ -204,19 +234,11 @@ E('sf-map-apply').addEventListener('click',()=>{
  if(travel===null)return alert('Enter the drive minutes shown in Google Maps (1–240).');
  mapsETA={date:day,runId:r.id,travel,at:now.getTime()};draw();
 });
-E('sf-refresh').addEventListener('click',()=>{
- draw();
- if(gps.requesting)return;
- if(!navigator.geolocation){gps.error='Location unavailable in browser';draw();return;}
- gps.requesting=true;gps.error=null;draw();
- navigator.geolocation.getCurrentPosition(p=>{
-   gps.requesting=false;gps.last=p;gps.error=null;draw();
-   // Update local weather panel without retaining GPS trails or passenger information.
-   window.dispatchEvent(new CustomEvent('serenity-location-refresh',{detail:{latitude:p.coords.latitude,longitude:p.coords.longitude}}));
- },e=>{
-   gps.requesting=false;gps.error=e.code===1?'permission denied':e.code===2?'unavailable':'timed out';draw();
- },{enableHighAccuracy:true,maximumAge:0,timeout:20000});
+E('sf-refresh').addEventListener('click',fixGPS);
+E('sf-auto-gps').addEventListener('click',()=>{
+ if(gps.auto)stopAutoGPS();else startAutoGPS();
 });
+
 const originalCustomer=renderCustomer;
 renderCustomer=function(){
  originalCustomer();
@@ -258,8 +280,8 @@ renderCustomer=function(){
 const original=render;
 render=function(){original();draw();};
 E('date').addEventListener('change',draw);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)draw();});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){draw();if(gps.auto)fixGPS();}});
 const timer=setInterval(()=>{if(!document.hidden)draw();},60000);
-window.addEventListener('pagehide',()=>clearInterval(timer));
+window.addEventListener('pagehide',()=>{clearInterval(timer);stopAutoGPS();});
 draw();
 })();
