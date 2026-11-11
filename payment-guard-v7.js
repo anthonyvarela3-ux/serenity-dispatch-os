@@ -23,6 +23,9 @@ const snoozes=()=>db.guardSnooze||(db.guardSnooze={});
 let watchId=null,lastFix=null,lastHeadline='',alarmContext=null,lastRiskHash='',lastSound=0;
 const progress=new Map();
 function assess(r,at=Date.now()){
+ // Old open trips can be reviewed historically without triggering
+ // today's foreground emergency alarm.
+ if(!r||r.date!==localDate(new Date(at)))return null;
  if(!isOpen(r)||!validEvent(r.events?.arrived)||validEvent(r.events?.boarded))return null;
  const age=at-new Date(r.events.arrived).getTime();
  if(age<0)return null;
