@@ -99,7 +99,11 @@ document.addEventListener('click',async e=>{let t=e.target.closest('button');if(
  }
  if(b==='complete'||b==='exception'){mutate(()=>{r.status=b==='complete'?'Completed':'Exception';r.events=r.events||{};r.events.closed=new Date().toISOString();db.active=null});return show('roster')}});
 const liveDay=new Date();const liveDate=[liveDay.getFullYear(),String(liveDay.getMonth()+1).padStart(2,'0'),String(liveDay.getDate()).padStart(2,'0')].join('-');
-el('date').value=liveDate;el('import-date').value=liveDate;el('date').addEventListener('change',render);el('manifest-image').addEventListener('change',e=>el('image-info').textContent=e.target.files.length+' reference image(s) selected. OCR not active; enter or load transcription below.');el('restore').addEventListener('change',async e=>{let f=e.target.files[0];if(!f)return;try{let v=JSON.parse(await f.text());if(v.version!==1||!Array.isArray(v.runs)||!v.people||!v.shift)throw Error('Invalid backup format');if(!confirm('Restore backup? This replaces local beta data. Export current data first.'))return;
+el('date').value=liveDate;el('import-date').value=liveDate;el('date').addEventListener('change',render);el('manifest-image').addEventListener('change',e=>el('image-info').textContent=e.target.files.length+' reference image(s) selected. OCR not active; enter or load transcription below.');el('restore').addEventListener('change',async e=>{let f=e.target.files[0];if(!f)return;try{let v=JSON.parse(await f.text());if(v.version!==1||!Array.isArray(v.runs)||!v.people||!v.shift)throw Error('Invalid backup format');
+ if(!v.runs.every(r=>r&&typeof r==='object'&&typeof r.id==='string'&&r.id&&
+  typeof r.date==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(r.date)&&
+  typeof r.name==='string'&&typeof r.pu==='string'))
+  throw Error('Backup has an invalid trip record. Current records were not replaced.');if(!confirm('Restore backup? This replaces local beta data. Export current data first.'))return;
  const previous=db;db=v;
  if(!save()){db=previous;throw Error('Restore cancelled because local storage could not save the imported data');}
  document.body.className=db.theme==='auto'?'':db.theme;render();alert('Backup restored and verified locally')}catch(err){alert('Restore failed: '+err.message)}});document.body.className=db.theme==='auto'?'':db.theme;render();
@@ -411,7 +415,8 @@ el('date').value=liveDate;el('import-date').value=liveDate;el('date').addEventLi
   render();
 })();
 
-</script><script src="./vehicle-maintenance.js"></script>
+</script><script src="./data-health-v8.js"></script>
+<script src="./vehicle-maintenance.js"></script>
 <script src="./office-clearance-v5.js"></script>
 <script src="./full-day-v4.js"></script>
 <script src="./weather-v4.js"></script>
