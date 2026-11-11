@@ -78,7 +78,8 @@ function weatherPrepFor(date,garageMinute,p){
 function backward(date){
  const first=firstRun(date),p=prefs(date);
  if(!first||!Number.isFinite(timeM(first.pu)))return {first,p,steps:[]};
- const goal=timeM(first.pu)-10;
+ const approved=window.SerenityOffice?.effective?.(first);
+ const goal=(Number.isFinite(approved?.pickup)?approved.pickup:timeM(first.pu))-10;
  const departGarage=p.firstDrive===null?null:goal-p.firstDrive;
  const weather=weatherPrepFor(date,departGarage===null?NaN:departGarage-p.prepare,p);
  const garagePrep=p.prepare===null?null:p.prepare+weather.extra;
@@ -97,7 +98,10 @@ function renderMorning(){
  weatherLabel.textContent='Garage preparation: '+(plan.garagePrep??'—')+' min ('+(plan.p.prepare??'—')+' standard'+(plan.weather?.extra?' + '+plan.weather.extra+' weather buffer':'')+'). '+(plan.weather?.reason||'Weather forecast unavailable')+'. '+(plan.p.assumptions?'First/return drive times are starting assumptions; verify Google Maps.':'Driver-configured travel times.');
 
  E('ms-prep').textContent=prep===null?'Garage prep: not recorded':'Garage prep: '+(prep>=0?prep+' min':'check event order');
- E('ms-first').textContent=first?'First pickup '+first.pu+' · early target '+clock(plan.goal):'First pickup: no runs for selected date';
+ E('ms-first').textContent=first?
+  'First pickup '+first.pu+
+  (window.SerenityOffice?.effective?.(first)?.status==='approved'?' · office agreed '+window.SerenityOffice.effective(first).agreed:'')+
+  ' · early target '+clock(plan.goal):'First pickup: no runs for selected date';
  const all=db.runs.filter(r=>r.date===date).sort((a,b)=>timeM(a.pu)-timeM(b.pu));
  const last=all[all.length-1],lastForecast=window.SerenityDayForecast?.getSnapshot?.(date);
  const lastData=lastForecast?.find(x=>x.r.id===last?.id);
