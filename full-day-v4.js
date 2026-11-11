@@ -110,11 +110,16 @@ function compute(runs,date,now,c,maps){
     now.getTime()>=maps.at && now.getTime()-maps.at<10*60000 && arrived===null;
   const startAnchor=firstOpen && arrived===null && !manual && window.SerenityMorning?.anchor?.(date,runs,now);
   const isAnchored=!!(startAnchor && startAnchor.runId===r.id && Number.isFinite(startAnchor.arrival));
+  // Do not silently treat the generic reposition time as garage→first passenger.
+  // Without an actual arrival, a fresh manual Maps ETA or a route-specific
+  // first-leg travel estimate, the starting point of the entire day is unknown.
+  const firstUnverified=firstOpen && arrived===null && !manual && !isAnchored && readyAt===null;
   if(firstOpen)firstOpen=false;
   let arrival=null,source='Driver estimate';
   if(arrived!==null){arrival=arrived;source='Recorded arrival';}
   else if(manual){arrival=Math.max(target,current+maps.travel);source='Google Maps — entered manually';}
   else if(isAnchored){arrival=Math.max(target,startAnchor.arrival,current===null?-Infinity:current);source=startAnchor.source;}
+  else if(firstUnverified){arrival=null;source='First-leg travel time not verified';}
   else if(blocked){arrival=null;source='Earlier duration unknown';}
   else if(c.reposition!==null){
     // Live day starts at current time; later legs start at the prior projected drop-off.
