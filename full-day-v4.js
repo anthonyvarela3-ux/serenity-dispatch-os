@@ -128,6 +128,7 @@ function compute(runs,date,now,c,maps){
   if(firstOpen)firstOpen=false;
   let arrival=null,source='Driver estimate';
   if(arrived!==null){arrival=arrived;source='Recorded arrival';}
+  else if(boarded!==null){arrival=boarded;source='Actual boarding recorded · arrival time missing';}
   else if(manual){arrival=Math.max(target,current+maps.travel);source='Google Maps — entered manually';}
   else if(enroute!==null && enrouteDrive!==null && Number.isFinite(enrouteDrive)){
     const theoretical=enroute+enrouteDrive;
