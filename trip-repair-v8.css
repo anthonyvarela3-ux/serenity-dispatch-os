@@ -1,0 +1,31 @@
+/* Serenity v8 trip closing and repair: accessible, visible, reversible local UI */
+html.v7-app .v8-event-feedback{padding:3px 5px;font-size:12px;line-height:1.45;color:var(--muted)}
+html.v7-app .v8-event-feedback:not(:empty){margin:11px 0 0;padding:12px 14px;border:1px solid var(--border);border-radius:9px;background:var(--panel)}
+html.v7-app .v8-event-feedback[data-state=error]{border-left:4px solid #ee768e;color:#f3a5b6}
+html.v7-app .v8-event-feedback[data-state=saved]{border-left:4px solid #53c7a6}
+html.v7-app .v8-repair-panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:15px 17px;margin:12px 0 18px;box-shadow:0 5px 16px #00000012}
+html.v7-app .v8-missing{background:color-mix(in srgb,var(--panel) 75%,#bf6a39);border:1px solid #c79560;border-left:4px solid #edaa54;border-radius:10px;padding:13px 14px;margin:0 0 13px}
+html.v7-app .v8-missing strong{font-size:14px;font-weight:850}
+html.v7-app .v8-missing p{font-size:12px;line-height:1.48;color:var(--text);margin:7px 0 11px}
+html.v7-app .v8-missing button{min-height:44px;font-size:12px;font-weight:820}
+html.v7-app .v8-repair-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+html.v7-app .v8-repair-top h3{font-size:16px;letter-spacing:-.02em;margin:0 0 6px}
+html.v7-app .v8-repair-top p{font-size:11.5px;color:var(--muted);line-height:1.5;margin:0}
+html.v7-app .v8-repair-top button{font-size:12px;min-height:44px;padding:9px 12px;font-weight:800}
+html.v7-app .v8-repair-form{padding:12px 0 5px;margin:14px 0 0;border-top:1px solid var(--border)}
+html.v7-app .v8-repair-form p{font-size:12px;color:var(--muted);line-height:1.5;margin:2px 0 11px}
+html.v7-app .v8-repair-fields{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
+html.v7-app .v8-repair-fields label{font-size:11px;display:flex;flex-direction:column;gap:5px;margin:0;font-weight:750}
+html.v7-app .v8-repair-fields input,html.v7-app .v8-repair-fields select{width:100%;min-height:44px;font-size:12px}
+html.v7-app .v8-repair-fields button{font-size:12px;min-height:44px;white-space:nowrap;font-weight:820}
+html.v7-app .v8-repair-form .v8-note{font-size:11px;margin:10px 0}
+html.v7-app .v8-repair-footer{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px;padding-top:13px;border-top:1px solid var(--border);flex-wrap:wrap}
+html.v7-app .v8-repair-footer>div{flex:1 1 245px}
+html.v7-app .v8-repair-footer strong{font-size:12px}
+html.v7-app .v8-repair-footer p{font-size:11px;line-height:1.43;margin:4px 0;color:var(--muted)}
+html.v7-app .v8-repair-footer button{font-size:12px;min-height:44px;padding:9px 12px;font-weight:780}
+html.v7-app #v8-repair-result{font-size:12px;line-height:1.45;color:var(--accent)}
+html.v7-app .v7-flow-step[data-v8-open-repair]{border-color:#e4a458;background:color-mix(in srgb,var(--panel) 82%,#d89b47)}
+html.v7-app body.light .v8-event-feedback[data-state=error]{color:#a72f46}
+@media(max-width:780px){html.v7-app .v8-repair-fields{grid-template-columns:1fr 1fr}html.v7-app .v8-repair-fields button{grid-column:1/-1}}
+@media(max-width:480px){html.v7-app .v8-repair-fields{grid-template-columns:1fr}html.v7-app .v8-repair-fields button{grid-column:auto}}
