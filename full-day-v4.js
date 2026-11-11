@@ -94,6 +94,18 @@ function compute(runs,date,now,c,maps){
   return {r,state:arrival===null?'missing':late>0?'late':targetMiss>0?'risk':'on',pickup,target,arrival,late,targetMiss,drop,source,drive:duration,boarded:boarded!==null};
  });
 }
+function rosterDestinationFallback(date){
+ const rows=E('rows'),table=rows&&rows.closest('table'),header=table&&table.querySelectorAll('thead th');
+ if(header&&header[3])header[3].textContent='Destination / Serenity ETA';
+ if(!rows)return;
+ const byId=new Map(db.runs.filter(r=>r.date===date).map(r=>[String(r.id),r]));
+ rows.querySelectorAll('tr[data-id]').forEach(row=>{
+  const run=byId.get(row.dataset.id),cell=row.cells[3];
+  if(!run||!cell)return;
+  cell.replaceChildren(document.createTextNode('Serenity ETA: configure estimates'),document.createElement('br'));
+  const small=document.createElement('small');small.textContent=String(run.doAddr||'');cell.appendChild(small);
+ });
+}
 function draw(){
  const day=E('date').value,now=new Date(),runs=currentRuns(day),c=config();
  const out=E('sf-data'),summary=E('sf-summary'),hint=E('sf-map-note'),link=E('sf-map');
@@ -117,6 +129,7 @@ function draw(){
     mapsETA?'Maps estimate expired or trip changed · recheck Google Maps':'Manually enter the current Google Maps drive time · no traffic API connected';
  if(!runs.length){summary.textContent='No trips on selected date';out.innerHTML='<p class="sf-note">Import today’s manifest to forecast assignments.</p>';return;}
  if(c.reposition===null||c.trip===null||c.buffer===null){
+  rosterDestinationFallback(day);
   summary.textContent='Enter your driving estimates';
   out.innerHTML='<p class="sf-note">Set your typical travel-between-stops minutes, trip driving minutes and boarding/unloading buffer above. Each trip can then have its own estimate.</p>';return;
  }
@@ -201,6 +214,32 @@ E('sf-refresh').addEventListener('click',()=>{
    gps.requesting=false;gps.error=e.code===1?'permission denied':e.code===2?'unavailable':'timed out';draw();
  },{enableHighAccuracy:true,maximumAge:0,timeout:20000});
 });
+const originalCustomer=renderCustomer;
+renderCustomer=function(){
+ originalCustomer();
+ const activeRun=db.runs.find(r=>r.id===db.active),root=document.getElementById('customer-content');
+ if(!activeRun||!root)return;
+ const route=root.querySelector('.b3-route')||root.querySelector('.two');
+ if(!route)return;
+ const panels=[...route.querySelectorAll(':scope > .panel')];
+ if(panels.length<2)return;
+ const pickupLabel=panels[0].querySelector('small'),dropLabel=panels[1].querySelector('small');
+ const conf=config(),date=E('date').value,now=new Date();
+ const all=currentRuns(activeRun.date);
+ const next=all.find(r=>r.status!=='Completed'&&r.status!=='Exception');
+ const mapsOK=mapsETA&&next&&mapsETA.runId===next.id&&mapsETA.date===activeRun.date&&dateLocal(now)===activeRun.date&&now.getTime()-mapsETA.at<600000&&now.getTime()>=mapsETA.at;
+ let estimated=null;
+ if(conf.reposition!==null&&conf.trip!==null&&conf.buffer!==null){
+  estimated=compute(all,activeRun.date,now,conf,mapsOK?mapsETA:null).find(p=>p.r.id===activeRun.id);
+ }
+ if(pickupLabel){
+  pickupLabel.textContent='SCHEDULED PICKUP · '+activeRun.pu+' · PROJECTED ARRIVAL '+clock(estimated&&estimated.arrival);
+ }
+ if(dropLabel){
+  dropLabel.textContent='SERENITY DROP-OFF ESTIMATE · '+clock(estimated&&estimated.drop);
+  dropLabel.title='Driver-entered trip times and buffers. Manifest drop-off time is intentionally ignored.';
+ }
+};
 const original=render;
 render=function(){original();draw();};
 E('date').addEventListener('change',draw);
