@@ -197,7 +197,7 @@ function overviewRefresh(date,runs,forecast){
  if(over30)text.push('<div class="v7-priority v7-priority-danger"><b>'+over30+' trip status check(s) overdue</b><p>Arrived over 30 minutes ago, without a boarding event. Verify the correct RoutingBox coding.</p></div>');
  if(unknown)text.push('<div class="v7-priority v7-priority-warn"><b>'+unknown+' ETA(s) unverified</b><p>Check the garage-to-first-pickup duration and later leg assumptions.</p></div>');
  if(late)text.push('<div class="v7-priority v7-priority-warn"><b>'+late+' projected late pickup(s)</b><p>Check office-approved revisions before contacting customers.</p></div>');
- if(!text.length)text.push('<div class="v7-priority v7-priority-good"><b>No immediate forecast exceptions identified</b><p>Traffic estimates remain provisional; review the manifest before relying on any free time.</p></div>');
+ if(!text.length)text.push('<div class="v7-priority v7-priority-good"><b>'+(runs.length?'No immediate forecast exceptions identified':'Awaiting today’s manifest')+'</b><p>Traffic estimates remain provisional; review the manifest before relying on any free time.</p></div>');
  E('v7-priority-content').innerHTML=text.join('');
 }
 function impact(p,next,idx){
@@ -227,14 +227,16 @@ function manifestRefresh(date,runs,results){
   const tone=done?'done':exception||p?.state==='late'?'late':p?.state==='risk'?'risk':p?.state==='missing'?'missing':'on';
   const eta=arr||clock(p?.arrival);
   const predictedDrop=drop||clock(p?.dropArrival);
+  const miles=Number.isFinite(r.miles)?r.miles.toFixed(1)+' mi':'Miles not supplied';
+  const drive=Number.isFinite(p?.drive)?p.drive+'m estimated trip':'Trip time not verified';
   const clear=clock(p?.drop);
   const rowEsc=esc(r.id),officeTime=esc(r.pu);
   return '<tr class="v7-row v7-'+tone+'" data-v7-row="'+rowEsc+'" tabindex="0">'+
-  '<td><div class="v7-row-index">#'+(i+1)+'</div><strong>'+esc(r.name)+'</strong><small>'+esc(state)+'</small></td>'+
+  '<td><div class="v7-row-index">#'+(i+1)+'</div><strong>'+esc(r.name)+'</strong><small>'+esc(state)+'</small><small>'+esc(miles)+' · '+esc(drive)+'</small></td>'+
   '<td><b>'+officeTime+'</b>'+ (approved?.status==='approved'?'<small class="v7-agreed">Office agreed '+esc(approved.agreed)+'</small>':
    approved?.status==='awaiting'?'<small>Office reply pending</small>':'')+'</td>'+
   '<td><b class="'+(p?.state==='late'?'v7-bad':'')+'">'+eta+'</b>'+
-  '<small>'+(arr?'Actual arrival':p?.state==='missing'?'Not estimated':p?.late>0?'+'+p.late+'m after target':p?.targetMiss>0?'Early goal missed':'Forecast · 10m early goal')+'</small></td>'+
+  '<small>'+(arr?'Actual arrival':p?.state==='missing'?'Not estimated':p?.late>0?'+'+p.late+'m late vs scheduled/agreed':p?.targetMiss>0?'Early goal missed':'Forecast · 10m early goal')+'</small></td>'+
   '<td><b>'+esc(r.du||'—')+'</b><small>Original office field</small></td>'+
   '<td><b>'+predictedDrop+'</b><small>'+(drop?'Actual drop-off':'Forecast destination')+'</small><small>Vehicle clear ~'+clear+'</small></td>'+
   '<td class="v7-events">'+(enr?'<span>En route '+enr+'</span>':'')+(arr?'<span>Arrived '+arr+'</span>':'')+
@@ -253,7 +255,7 @@ function customerRefresh(date,runs,results){
  const p=results.find(x=>x.r.id===run.id),idx=runs.findIndex(x=>x.id===run.id)+1;
  const completed=['Completed','Exception'].includes(run.status);
  E('v7-customer-top').innerHTML='<div class="v7-page-heading"><div><div class="v7-eyebrow">RUN #'+idx+' / DRIVER ACTIONS</div><h2>Customer</h2>'+
- '<p>'+esc(run.name)+' · Office pickup '+esc(run.pu)+' · Serenity arrival '+clock(p?.arrival)+'</p></div>'+
+ '<p>'+esc(run.name)+' · Office pickup '+esc(run.pu)+' · '+(eventClock(run.events?.arrived)?'Actual arrival '+eventClock(run.events.arrived):'Serenity arrival '+clock(p?.arrival))+'</p></div>'+
  '<button data-v7-page="manifest" type="button">Back to Manifest</button></div>';
  const states=[
   ['enroute','En route',run.events?.enroute],['arrived','Arrived',run.events?.arrived],
