@@ -55,6 +55,12 @@ async function retrieve(force=false){
   state.updated=Date.now();
   // Alerts are optional: a request error should not hide a usable forecast.
   E('wx-alert').textContent='';
+  const weatherPayload={asOf:Date.now(),label:state.label,hours:periods.slice(0,48).map(p=>({
+   startTime:p.startTime,endTime:p.endTime,shortForecast:p.shortForecast||'',
+   precipitation:p.probabilityOfPrecipitation?.value??null
+  })),alerts:[]};
+  window.SerenityWeather=weatherPayload;
+  window.dispatchEvent(new Event('serenity-weather-updated'));
   try{
     const alerts=await fetch('https://api.weather.gov/alerts/active?point='+lat+','+lon,options);
     if(alerts.ok){
@@ -62,6 +68,8 @@ async function retrieve(force=false){
       if(token===state.requestId&&items.length){
         const titles=items.slice(0,2).map(x=>x?.properties?.event||'Weather alert');
         E('wx-alert').textContent='Weather alert: '+titles.join(' · ')+' · Tap NWS details to review';
+        weatherPayload.alerts=titles;
+        window.dispatchEvent(new Event('serenity-weather-updated'));
       }
     }
   }catch(_){}
@@ -92,9 +100,14 @@ E('wx-location').addEventListener('click',()=>{
 });
 window.addEventListener('serenity-location-refresh',e=>{
  const loc=e.detail||{};
- if(Date.now()-state.lastLoc<90000)return;
+ if(!Number.isFinite(loc.latitude)||!Number.isFinite(loc.longitude))return;
+ // Avoid unnecessary weather requests on every 15s GPS fix. Refresh for a
+ // significantly new region, otherwise follow the 15-minute weather cadence.
+ const delta=Math.hypot((loc.latitude-state.lat)*111,(loc.longitude-state.lon)*85);
+ if(Date.now()-state.lastLoc<900000 && delta<3)return;
  state.lastLoc=Date.now();
- setLocation(loc.latitude,loc.longitude);
+ if(delta>=3)setLocation(loc.latitude,loc.longitude);
+ else retrieve(false);
 });
 const timer=setInterval(()=>{if(!document.hidden)retrieve(false);},15*60000);
 window.addEventListener('pagehide',()=>clearInterval(timer));
