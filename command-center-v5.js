@@ -20,7 +20,7 @@ const hero=document.createElement('section');hero.className='v5-hero';hero.id='v
 hero.innerHTML='<div class="v5-top"><div><div class="v5-overline">SERENITY / DRIVER COMMAND</div><div class="v5-title" id="v5-title">Your day, under control.</div><div class="v5-subtitle" id="v5-subtitle">Import your dispatch to build the full shift automatically.</div></div>'+
 '<div class="v5-top-actions" id="v5-top-actions"><button type="button" id="v5-import">Import manifest</button></div></div>'+
 '<div class="v5-data-fresh"><span class="v5-dot"></span><span id="v5-data-status">GPS position is not a Google Maps road ETA. Driving times may be provisional.</span></div>'+
-'<div class="v5-kpis">'+
+'<div class="v5-microstats" aria-label="Shift operational metrics"><span>Completed <b id="v5-stat-completed">—</b></span><span>Scheduled miles <b id="v5-stat-miles">—</b></span><span>Completed tariff <b id="v5-stat-gross">—</b></span><span>Driver labor <b id="v5-stat-labor">—</b></span></div>'+ '<div class="v5-kpis">'+
 '<div class="v5-kpi"><small>Wake-up target</small><strong id="v5-wake">—</strong><em>30 minutes to get ready</em></div>'+
 '<div class="v5-kpi"><small>Leave the garage</small><strong id="v5-garage">—</strong><em id="v5-garage-desc">7-minute standard preparation</em></div>'+
 '<div class="v5-kpi"><small>First pickup target</small><strong id="v5-first">—</strong><em>10 minutes before scheduled</em></div>'+
@@ -167,6 +167,10 @@ function refresh(){
  E('v5-subtitle').textContent=first?runs.length+' assigned runs · first pickup '+first.pu+
  ' · 10-minute-early arrival target':'Import the manifest once. We’ll reverse-plan the morning and forecast the rest of your shift.';
  E('v5-data-status').textContent=sourceLabel()+' · Refreshed '+new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+ for(const [oldId,newId] of [['metric-complete','v5-stat-completed'],['metric-miles','v5-stat-miles'],['metric-gross','v5-stat-gross'],['metric-labor','v5-stat-labor']]){
+  const source=E(oldId),target=E(newId);
+  if(source&&target)target.textContent=source.textContent;
+ }
  dayMilestones(date,forecast);
  renderAlerts(date,forecast);
  renderSidework(forecast);
