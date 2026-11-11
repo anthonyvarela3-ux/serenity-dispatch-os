@@ -34,7 +34,7 @@ async function setup(page,{status='Scheduled',completedWithoutDropoff=false,arri
 async function openRun(page){
  await page.locator('#v7-navigation [data-v7-page="manifest"]').click();
  await expect(page.locator('#v7-manifest')).toBeVisible();
- await page.locator('button[data-v7-open="synthetic-1"]').click();
+ await page.locator('#v7-manifest button[data-v7-open="synthetic-1"]').click();
  await expect(page.locator('#customer')).toBeVisible();
  await expect(page.locator('#v7-customer-flow')).toBeVisible();
 }
@@ -49,7 +49,7 @@ test('three-page navigation and synthetic shift summary',async({page})=>{
  await page.locator('#v7-navigation [data-v7-page="manifest"]').click();
  await expect(page.locator('#v7-manifest')).toBeVisible();
  await expect(page.locator('#v7-overview')).toBeHidden();
- await page.locator('button[data-v7-open="synthetic-1"]').click();
+ await page.locator('#v7-manifest button[data-v7-open="synthetic-1"]').click();
  await expect(page.locator('#customer')).toBeVisible();
  await expect(page.locator('#v7-manifest')).toBeHidden();
  await page.locator('#v7-navigation [data-v7-page="overview"]').click();
