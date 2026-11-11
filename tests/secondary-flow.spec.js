@@ -21,7 +21,7 @@ async function openCustomer(page){
  await page.locator('#v7-manifest button[data-v7-open="patient-test"]').click();
  await expect(page.locator('#customer')).toBeVisible();
 }
-const getDb=page=>page.evaluate(()=>JSON.parse(localStorage.getItem('serenity_beta1_v1')));
+const getDb=page=>page.evaluate(()=>{const value=localStorage.getItem('serenity_beta1_v1');return value?JSON.parse(value):{runs:[]};});
 
 test('manual import requires explicit review, persists once, ignores exact duplicates',async({page})=>{
  await fresh(page);
@@ -63,10 +63,13 @@ test('restore accepts valid JSON and rejects bad trip records without replacing 
 
 test('Customer can save verified phone number, contact preference and trip notes',async({page})=>{
  await fresh(page,true);await openCustomer(page);
+ await page.locator('.b3-detail summary').filter({hasText:'Contact & verified number'}).click();
  await page.locator('#edit-phone').fill('5559876543');
  await page.locator('#save-phone').click();
+ await page.locator('.b3-detail summary').filter({hasText:'Contact & verified number'}).click();
  await page.locator('#preference').selectOption('No call');
  await page.locator('#save-pref').click();
+ await page.locator('.b3-detail summary').filter({hasText:'Pickup intelligence & notes'}).click();
  await page.locator('#trip-notes').fill('Driver-only test note');
  await page.locator('#save-trip-notes').click();
  const db=await getDb(page);
