@@ -38,6 +38,8 @@ function update(run,input){
  if(state==='unknown'){delete db.officeClearances[run.id];return}
  const agreedPickup=state==='approved'?canonicalTime(input.agreedPickup):null;
  if(state==='approved'&&!agreedPickup)throw Error('Enter the office-confirmed revised pickup time.');
+ if(state==='approved'&&Number.isFinite(timeM(run.pu))&&timeM(agreedPickup)<=timeM(run.pu))
+  throw Error('The approved later pickup must be later than the original office pickup.');
  if(state==='approved'&&!input.driverConfirmed)throw Error('Confirm you received actual approval from dispatch.');
  const source=String(input.source||'').trim();
  if(state==='approved'&&!source)throw Error('Select how dispatch confirmed the later pickup.');
