@@ -7,7 +7,7 @@ renderCustomer=function(){
  old();
  const r=db.runs.find(item=>item.id===db.active);
  const root=document.getElementById('customer-content');
- if(!root||!r||r.status==='Completed'||r.status==='Exception')return;
+ if(!root||!r||['Completed','Exception','Canceled','Canceled at Door','No-show'].includes(r.status))return;
  const actions=root.querySelector('.b3-actions .bar');
  if(actions){
   if(!actions.querySelector('#v5-dropoff')){
