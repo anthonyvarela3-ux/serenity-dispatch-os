@@ -384,19 +384,21 @@ el('date').value=liveDate;el('import-date').value=liveDate;el('date').addEventLi
     if (!window.confirm(`Are you sure you want to ${description}?`)) { event.preventDefault();event.stopImmediatePropagation(); }
   },true);
   document.querySelector('header small').textContent = 'Driver Beta 5 · full-day command center · manual Google Voice · no traffic-routing API';
-  document.title='Serenity Dispatch OS — Beta 5 Driver Command';
+  document.title='Serenity Dispatch OS — November 11 Driver Field Build';
   const banner=document.getElementById('banner');
-  if (banner) banner.textContent='Driver Command preview. Planning times are provisional until verified. GPS position can update every 15 seconds with permission; traffic-aware route ETA is not yet connected. Verify against RoutingBox. Use controls only while stopped.';
+  if (banner) banner.textContent='Driver Field Build · office-approved later pickups require your explicit confirmation · original manifest always retained. Road ETAs remain provisional without connected traffic routing. Use controls only while safely stopped.';
   const footer=document.querySelector('footer');
   if(footer)footer.textContent='Beta 5 field preview · GPS position updates are optional while this page is open. Traffic-aware road ETAs and automatic messaging are not connected. Verify against RoutingBox and use controls only while stopped.';
   render();
 })();
 
 </script><script src="./vehicle-maintenance.js"></script>
+<script src="./office-clearance-v5.js"></script>
 <script src="./full-day-v4.js"></script>
 <script src="./weather-v4.js"></script>
 <script src="./location-share-v4.js"></script>
 <script src="./trip-events-v5.js"></script>
 <script src="./morning-workflow.js"></script>
 <script src="./command-center-v5.js"></script>
+<script src="./office-clearance-ui-v5.js"></script>
 </body></html>
