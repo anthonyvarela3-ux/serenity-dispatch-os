@@ -257,14 +257,18 @@ function updateManifest(date,runs,f){
     '<td><div class="v8-impact '+impactTone+'"><strong>'+safe(impactText)+'</strong>'+
     '<small>'+(impactTone==='unverified'?'Insufficient trusted times':
      'Subject to verified travel and office arrangements')+'</small></div></td>'+
-    '<td><button type="button" class="v8-customer-open" data-v7-run="'+safe(r.id)+'">Customer</button></td></tr>');
+    '<td><div class="v9-manifest-actions"><button type="button" class="v8-customer-open" data-v7-run="'+safe(r.id)+'">Customer</button>'+
+ '<button type="button" class="v9-cancel" data-v9-cancel="'+safe(r.id)+'"'+
+ (r.status==='Completed'?' disabled':'')+'>Cancel</button>'+
+ '<button type="button" class="v9-no-show" data-v9-noshow="'+safe(r.id)+'"'+
+ (r.status==='Completed'?' disabled':'')+'>No-show</button></div></td></tr>');
  }
  E('v7-manifest-rows').innerHTML=cells.length?cells.join(''):
   '<tr><td colspan="7" class="v7-empty">No runs found for this date. Import today’s manifest to begin.</td></tr>';
  const header=manifest.querySelector('thead tr');
  if(header)header.innerHTML='<th>RUN / PASSENGER</th><th>STATUS / ACTUAL TIMES</th>'+
  '<th>OFFICE PICKUP</th><th>ARRIVAL ETA / ACTUAL</th><th>DROP-OFF ETA / ACTUAL</th>'+
- '<th>NEXT RUN IMPACT</th><th>OPEN</th>';
+ '<th>NEXT RUN IMPACT</th><th>RUN ACTIONS</th>';
  const cnt=runs.filter(r=>r.status==='Completed').length,unestimated=f.filter(x=>x.state==='missing').length;
  const canceled=runs.filter(r=>['Canceled','Canceled at Door','No-show'].includes(r.status)).length;
  E('v7-manifest-subtitle').textContent=runs.length+' scheduled runs · '+cnt+
@@ -296,7 +300,7 @@ function updateProgress(r){
 function paintControls(r){
  const root=E('customer-content'),panel=root?.querySelector('.b3-actions'),bar=panel?.querySelector('.bar');
  if(!root||!panel||!bar)return;
- const head=panel.querySelector('h3');if(head)head.textContent='Trip Controls · Five Actual Events';
+ const head=panel.querySelector('h3');if(head)head.textContent='Your Five Trip Stages';
  const note=panel.querySelector('small');if(note)note.textContent=
   'Tap each stage as it happens. The timestamp is saved locally; nothing is sent to dispatch or the passenger.';
  panel.classList.add('v8-trip-controls');
@@ -310,23 +314,25 @@ function paintControls(r){
   const completed=actual(r.events?.[kind]);
   const previous=i===0||actual(r.events?.[allEvents[i-1][0]]);
   const current=!completed&&previous&&!disabled;
+  const text=kind==='dropoff'?'Customer Out of Car · FINISH & CLOSE':label;
   return '<button type="button" data-v8-stage="'+kind+'" data-v8-run="'+safe(r.id)+'" '+
    (completed||disabled?'disabled':'')+' class="v8-stage '+(completed?'completed':current?'current':'future')+'">'+
    '<span class="v8-stage-symbol">'+(completed?'✓':String(i+1))+'</span>'+
-   '<strong>'+safe(label)+'</strong><small>'+(completed?time(r.events[kind]):disabled?'Closed':'Record now')+
+   '<strong>'+safe(text)+'</strong><small>'+(completed?time(r.events[kind]):disabled?'Closed':kind==='dropoff'?'Records drop-off and completes run':'Record now')+
    '</small></button>';
  }).join('');
- // Keep the historical no-show / exception function without cluttering
- // the five primary timeline actions.
- let more=panel.querySelector('.v8-more');
- if(!more){
-  more=document.createElement('details');more.className='v8-more';
-  more.innerHTML='<summary>Other trip actions</summary>'+
-   '<div class="v8-extra-actions"><button type="button" id="v8-office-check">Check office-approved pickup</button>'+
-   '<button type="button" id="v8-exception">No-show / exception</button></div>';
-  panel.append(more);
+ // All cancellation/no-show actions are on Manifest, not the Customer trip card.
+ panel.querySelector('.v8-more')?.remove();
+ const existing=panel.querySelector('.v9-completion-banner');
+ if(existing)existing.remove();
+ if(r.status==='Completed'){
+  const success=document.createElement('div');success.className='v9-completion-banner';
+  success.innerHTML='<strong>✓ Run completed'+(actual(r.events?.dropoff)?' · actual drop-off '+time(r.events.dropoff):' · drop-off time not recorded')+'</strong>'+
+   '<span>This run is closed. The next pending assignment is available through Manifest.</span>'+
+   '<button type="button" id="v9-next-run">Open next run</button>';
+  bar.after(success);
  }
- more.querySelector('#v8-exception').disabled=disabled;
+
 }
 function updateCustomer(date,runs){
  const r=runs.find(r=>r.id===db.active);
@@ -381,7 +387,7 @@ function recordStage(run,kind){
    allEvents[n][1]+' time now, leaving the missing step blank?'))return;
  }
  if(kind==='dropoff'){
-  if(!confirm('Confirm the customer is OUT OF THE CAR now? This will save the actual drop-off time and close the run.'))return;
+  if(!confirm('Finish & close this run? Confirm the customer has exited the car. Serenity will record the actual drop-off NOW and mark this assignment Completed.'))return;
   const iso=now.toISOString();
   run.events.dropoff=iso;run.events.closed=iso;run.status='Completed';
   if(db.active!==run.id)db.active=run.id;
@@ -408,7 +414,24 @@ function setupEvents(){
   db.payoutBaselines[date]={amount,savedAt:new Date().toISOString(),runCount:rs.length};
   save();render();
  },true);
+ const manifestActions=E('v7-manifest-table');
+ manifestActions?.addEventListener('click',event=>{
+  const cancel=event.target.closest('button[data-v9-cancel]'),
+        noShow=event.target.closest('button[data-v9-noshow]');
+  if(!cancel&&!noShow)return;
+  event.preventDefault();event.stopImmediatePropagation();
+  const runId=(cancel||noShow).dataset.v9Cancel||(cancel||noShow).dataset.v9Noshow;
+  window.SerenityMASOutcomes?.open?.(runId,noShow?'noShow':'cancel');
+ },true);
  customer.addEventListener('click',event=>{
+  if(event.target.closest('#v9-next-run')){
+   event.preventDefault();event.stopImmediatePropagation();
+   const runs=sorted(E('date').value),
+         candidate=runs.find(r=>!closed(r));
+   if(candidate){db.active=candidate.id;save();render();}
+   else window.SerenityThreePage?.navigate?.('manifest');
+   return;
+  }
   const button=event.target.closest('button[data-v8-stage]');
   if(button){
     event.preventDefault();event.stopImmediatePropagation();
