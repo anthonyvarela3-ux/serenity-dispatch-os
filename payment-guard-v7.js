@@ -20,7 +20,7 @@ const settings=()=>db.paymentProtection||{};
 const savedPins=()=>db.guardPins||(db.guardPins={});
 const departed=()=>db.guardDeparted||(db.guardDeparted={});
 const snoozes=()=>db.guardSnooze||(db.guardSnooze={});
-let watchId=null,lastFix=null,lastHeadline='',alarmContext=null,lastRiskHash='',lastSound=0;
+let watchId=null,lastFix=null,lastHeadline='',alarmContext=null,lastRiskHash='',lastSound=0,gpsStatusMessage='';
 const progress=new Map();
 function assess(r,at=Date.now()){
  // Old open trips can be reviewed historically without triggering
@@ -58,6 +58,7 @@ function capturePickupFix(r,fix){
  save();
 }
 function onPosition(position){
+ gpsStatusMessage='';
  const x=position.coords,now=Date.now();
  if(!x||!Number.isFinite(x.latitude)||!Number.isFinite(x.longitude)||!Number.isFinite(x.accuracy))return;
  if(x.accuracy>options.maxAccuracy)return;
@@ -85,7 +86,7 @@ function onPosition(position){
  updateSettings();
 }
 function onGeoError(err){
- E('v7-guard-gps-state').textContent='Location unavailable: '+(err?.message||'permission or device error')+
+ gpsStatusMessage='Location unavailable: '+(err?.message||'permission or device error')+
  '. The 30-minute in-app status check still works when this page is active.';
  // Do not repeatedly request permission after a denial.
  if(err?.code===1){
@@ -143,10 +144,10 @@ function updateSettings(){
  const gps=!!settings().gps,sound=!!settings().sound;
  E('v7-toggle-gps').textContent=gps?'Turn off movement alerts':'Enable movement alerts';
  E('v7-toggle-sound').textContent=sound?'Turn off sound':'Enable optional sound';
- if(gps)E('v7-guard-gps-state').textContent=watchId!==null?
-  'GPS movement check ON while Serenity is open. Two reliable fixes farther than 400m from the recorded pickup can raise a warning.':
-  'GPS enabled but not currently receiving location. The 30-minute timer remains in effect.';
- else E('v7-guard-gps-state').textContent='GPS movement check off. The 30-minute in-app Arrived-status alert still works while Serenity is open.';
+ if(gps)E('v7-guard-gps-state').textContent=gpsStatusMessage|| (watchId!==null?
+  (lastFix?'GPS movement check ON while Serenity is open. Two reliable fixes farther than 400m from the recorded pickup can raise a warning.':'GPS watch active; awaiting reliable location fix. The 30-minute timer is still active.'):
+  'GPS enabled but not currently receiving location. The 30-minute timer remains in effect.');
+ else E('v7-guard-gps-state').textContent=gpsStatusMessage||'GPS movement check off. The 30-minute in-app Arrived-status alert still works while Serenity is open.';
 }
 function showRisk(risk){
  const r=db.runs.find(x=>x.id===risk.runId);
@@ -161,12 +162,12 @@ function showRisk(risk){
   'Arrived '+risk.ageMinutes+' minutes ago, but no boarding event is recorded. If the rider is still waiting, record that. If they boarded or the trip ended, check the real events and the official app.';
  host.innerHTML='<div class="v7-urgent" role="alert"><div class="v7-urgent-icon">!</div>'+
  '<div class="v7-urgent-copy"><strong>'+headline+'</strong>'+
- '<p>Run #'+index+' · '+esc(r.name)+' · '+esc(message)+'</p>'+
+ '<p>Run #'+index+' · '+esc(message)+'</p>'+
  '<small>Correct local events and verify coding in RoutingBox. Recording here alone does not secure payment.</small></div>'+
  '<div class="v7-urgent-actions"><button type="button" class="primary" data-v7-guard="open" data-id="'+esc(r.id)+'">Open run</button>'+
  '<button type="button" data-v7-guard="board" data-id="'+esc(r.id)+'">Boarded now</button>'+
  '<button type="button" data-v7-guard="wait" data-id="'+esc(r.id)+'">Still waiting · 10m</button>'+
- '<button type="button" data-v7-guard="exception" data-id="'+esc(r.id)+'">Review exception</button></div></div>';
+ '<button type="button" data-v7-guard="exception" data-id="'+esc(r.id)+'">Review exception</button>'+ (isMove?'<button type="button" data-v7-guard="gps-error" data-id="'+esc(r.id)+'">False GPS alert</button>':'')+'</div></div>';
  if(lastHeadline!==risk.runId+':'+risk.cause){
   beep();lastHeadline=risk.runId+':'+risk.cause;
  }
@@ -195,10 +196,15 @@ function clearOrSnooze(kind,id){
   return;
  }
  if(kind==='board'){
-  // Never infer an earlier time from movement. Use the same actual-time
-  // driver action as the Customer page (with appropriate confirmations).
+  // Never infer an earlier time from movement.
+  if(!confirm('Confirm the passenger has actually boarded NOW? This records the current time locally, not an earlier departure.'))return;
   window.SerenityEvents.markEvent(run,'boarded');
   tick();return;
+ }
+ if(kind==='gps-error'){
+  delete departed()[id];delete savedPins()[id];progress.delete(id);
+  snoozes()[id]={until:Date.now()+options.snoozeMs,reason:'driver_rejected_gps_departure',at:new Date().toISOString()};
+  save();tick();return;
  }
  if(kind==='wait'){
   snoozes()[id]={until:Date.now()+options.snoozeMs,
