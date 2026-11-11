@@ -25,8 +25,12 @@ function notify(message,ok=false){
 function clone(value){return JSON.parse(JSON.stringify(value));}
 function commit(run,mutate,meta){
  const backup=clone(run);
+ const oldCoding=db.codingVerification?.[run.id]?clone(db.codingVerification[run.id]):null;
  try{
   mutate();
+  // An edited actual, changed completion, or reopened exception must be
+  // checked again in the external office application.
+  if(db.codingVerification?.[run.id])delete db.codingVerification[run.id];
   // A successful in-memory change is not a successful saved trip.
   const data=JSON.stringify(db);
   localStorage.setItem(key,data);
@@ -40,6 +44,10 @@ function commit(run,mutate,meta){
  }catch(err){
   Object.keys(run).forEach(k=>delete run[k]);
   Object.assign(run,backup);
+  if(db.codingVerification){
+   if(oldCoding)db.codingVerification[run.id]=oldCoding;
+   else delete db.codingVerification[run.id];
+  }
   notify('Trip change could not be saved. Original data restored. Check iPad storage and export a backup. '+(err?.message||''));return {ok:false,reason:'storage'};
  }
  try{render()}catch(err){
