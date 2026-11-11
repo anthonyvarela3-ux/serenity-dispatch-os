@@ -224,6 +224,8 @@ function updateManifest(date,runs,f){
    ['Pickup departure',e.enroute],['At pickup',e.arrived],
    ['In car',e.boarded],['To drop-off',e.enrouteDropoff],['Out of car',e.dropoff]
   ].filter(([name,v])=>actual(v)).map(([name,v])=>'<div>'+safe(name)+' '+safe(time(v))+'</div>');
+  if(actual(e.closed)&&!actual(e.dropoff))
+   actualLines.push('<div>Closed in app '+safe(time(e.closed))+' · not a verified drop-off</div>');
   const [impactTone,impactText]=nextImpact(p,f[i+1],i);
   const risk=p?.state==='late'?' · '+p.late+'m after '+(p.approvalState==='approved'?'agreed':'office')+' time':
     p?.state==='risk'?' · early target missed':'';
