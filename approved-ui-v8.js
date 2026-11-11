@@ -18,7 +18,7 @@ const time=iso=>actual(iso)?new Date(iso).toLocaleTimeString([],{hour:'numeric',
 const cash=x=>Number.isFinite(x)?'$'+x.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';
 const sorted=date=>db.runs.filter(r=>r.date===date).sort((a,b)=>timeM(a.pu)-timeM(b.pu));
 const forecast=date=>{try{return window.SerenityDayForecast?.getSnapshot(date)||[]}catch{return []}};
-const closed=r=>r.status==='Completed'||r.status==='Exception'||actual(r.events?.dropoff);
+const closed=r=>['Completed','Exception','Canceled','Canceled at Door','No-show'].includes(r.status)||actual(r.events?.dropoff);
 const allEvents=[['enroute','En Route to Pickup'],['arrived','Arrived at Pickup'],
  ['boarded','Customer In Car'],['enrouteDropoff','En Route to Drop-off'],
  ['dropoff','Customer Out of Car']];
@@ -170,6 +170,9 @@ function statusFor(r){
  const ev=r.events||{};
  if(r.status==='Completed')return ['Completed','done'];
  if(r.status==='Exception')return ['Exception','warn'];
+ if(r.status==='Canceled')return ['Canceled','warn'];
+ if(r.status==='Canceled at Door')return ['Canceled at Door','warn'];
+ if(r.status==='No-show')return ['No-show','warn'];
  if(actual(ev.dropoff))return ['Completed','done'];
  if(actual(ev.enrouteDropoff))return ['En route to drop-off','ongoing'];
  if(actual(ev.boarded))return ['Customer in car','ongoing'];
@@ -226,6 +229,9 @@ function updateManifest(date,runs,f){
   ].filter(([name,v])=>actual(v)).map(([name,v])=>'<div>'+safe(name)+' '+safe(time(v))+'</div>');
   if(actual(e.closed)&&!actual(e.dropoff))
    actualLines.push('<div>Closed in app '+safe(time(e.closed))+' · not a verified drop-off</div>');
+  if(e.cancelOutcome?.at&&actual(e.cancelOutcome.at))
+   actualLines.push('<div>'+safe(r.status)+' '+safe(time(e.cancelOutcome.at))+
+    ' · no passenger transported</div>');
   const [impactTone,impactText]=nextImpact(p,f[i+1],i);
   const risk=p?.state==='late'?' · '+p.late+'m after '+(p.approvalState==='approved'?'agreed':'office')+' time':
     p?.state==='risk'?' · early target missed':'';
@@ -243,8 +249,10 @@ function updateManifest(date,runs,f){
     '<small>'+(actualArrived?'Actual arrival':closed(r)?'Actual arrival not recorded':'Serenity estimate')+'</small>'+
     (closed(r)?'':'<small class="v8-risk-line">'+safe(risk||'Planning estimate')+'</small>')+'</td>'+
     '<td><small>Office drop-off '+safe(r.du||'—')+'</small>'+
-    '<span class="v8-major-time">'+(verifiedDrop?time(e.dropoff):closed(r)?'—':clock(p?.dropArrival??p?.drop))+'</span>'+
-    '<small>'+(verifiedDrop?'Verified actual drop-off':closed(r)?'Drop-off time not recorded':'Est. destination arrival')+'</small>'+
+    '<span class="v8-major-time">'+(verifiedDrop?time(e.dropoff):closed(r)?'Not transported':clock(p?.dropArrival??p?.drop))+'</span>'+
+    '<small>'+(verifiedDrop?'Verified actual drop-off':closed(r)?
+    (['Canceled','Canceled at Door','No-show'].includes(r.status)?'No billable passenger transport':'Drop-off time not recorded'):
+    'Est. destination arrival')+'</small>'+
     (!closed(r)?'<small>Clear for next '+clock(p?.drop)+'</small>':'')+'</td>'+
     '<td><div class="v8-impact '+impactTone+'"><strong>'+safe(impactText)+'</strong>'+
     '<small>'+(impactTone==='unverified'?'Insufficient trusted times':
@@ -258,8 +266,9 @@ function updateManifest(date,runs,f){
  '<th>OFFICE PICKUP</th><th>ARRIVAL ETA / ACTUAL</th><th>DROP-OFF ETA / ACTUAL</th>'+
  '<th>NEXT RUN IMPACT</th><th>OPEN</th>';
  const cnt=runs.filter(r=>r.status==='Completed').length,unestimated=f.filter(x=>x.state==='missing').length;
+ const canceled=runs.filter(r=>['Canceled','Canceled at Door','No-show'].includes(r.status)).length;
  E('v7-manifest-subtitle').textContent=runs.length+' scheduled runs · '+cnt+
-  ' completed · all times shown against original office schedule';
+  ' completed · '+canceled+' canceled/no-show · original office schedule retained';
  E('v7-manifest-risk').textContent=unestimated?unestimated+' ETAs unverified':
    f.filter(x=>x.state==='late').length+' projected late';
  // Once the first assignment is finished, don't keep demanding a garage-to-
