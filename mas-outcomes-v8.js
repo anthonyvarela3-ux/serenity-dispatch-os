@@ -15,7 +15,7 @@ const localTime=s=>hasTime(s)?new Date(s).toLocaleTimeString([],{hour:'numeric',
 const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ended=r=>['Completed','Exception','Canceled','Canceled at Door','No-show'].includes(r.status)||hasTime(r.events?.dropoff);
 let selected=null;
-const latestRun=()=>db.runs.find(r=>r.id===db.active&&r.date===E('date')?.value);
+const latestRun=()=>selected?db.runs.find(r=>r.id===selected.id&&r.date===E('date')?.value):null;
 const scheduledMs=r=>{
  const mins=timeM(r.pu),base=new Date(r.date+'T00:00:00');
  if(!Number.isFinite(mins)||!Number.isFinite(base.getTime()))return null;
@@ -28,7 +28,7 @@ const waitDeadline=r=>{
  return Math.max(arrived,scheduled)+15*60000;
 };
 function validate(run,choice,now){
- if(!run)return 'Open the customer run first.';
+ if(!run)return 'Select the assignment from the Manifest first.';
  if(ended(run))return 'This assignment is already closed. Correct the prior outcome first if it was entered in error.';
  if(dayOf(now)!==run.date)return 'Record NOW only on today’s selected service date.';
  if(hasTime(run.events?.boarded)||hasTime(run.events?.enrouteDropoff)||hasTime(run.events?.dropoff))
@@ -53,6 +53,7 @@ function showEditor(run){
  const code=selected?.id===run?.id?selected?.choice:null;
  if(!code||!cases[code])return '';
  const item=cases[code],now=new Date(),error=validate(run,code,now);
+ const needsArrival=(code==='door'||code==='noShow')&&!hasTime(run.events?.arrived);
  const deadline=code==='noShow'?waitDeadline(run):null;
  const wait=deadline===null?'No arrival recorded':
   now.getTime()<deadline?'Wait until '+localTime(new Date(deadline).toISOString()):
@@ -63,7 +64,15 @@ function showEditor(run){
   '<div class="mas-event-facts"><span>Scheduled pickup <b>'+safe(run.pu)+'</b></span>'+
   '<span>Actual curb arrival <b>'+safe(localTime(run.events?.arrived))+'</b></span>'+
   (code==='noShow'?'<span>MAS waiting check <b>'+safe(wait)+'</b></span>':'')+'</div>'+
-  (error?'<p class="mas-blocker">'+safe(error)+'</p>':'')+
+  (error?'<p class="mas-blocker">'+safe(error)+(needsArrival?
+   ' Enter your genuine arrival time below to complete this check.':'')+'</p>':'')+
+  (code==='cancel'||code==='door'?
+   '<div class="mas-outcome-choice"><button type="button" data-mas-choice="cancel">Canceled before arrival</button>'+
+   '<button type="button" data-mas-choice="door">Canceled at door</button></div>':'')+
+  (needsArrival?'<div class="mas-arrival-entry"><label>Actual time you reached pickup (today)'+
+   '<input type="time" id="mas-arrival-time"></label>'+
+   '<label class="mas-ack"><input type="checkbox" id="mas-arrival-confirm">'+
+   'This is my actual arrival time, not an estimated time.</label></div>':'')+
   '<div class="mas-form-grid">'+
   '<label>'+(code==='noShow'?'What was observed?':'Who confirmed the cancellation?')+
   '<select id="mas-source"><option value="">Choose one</option>'+
@@ -93,50 +102,63 @@ function showEditor(run){
   '<label>Operational note (optional; omit health details)<textarea id="mas-note" maxlength="360" rows="2" placeholder="Brief factual description of what happened"></textarea></label>'+
   '<label class="mas-ack"><input id="mas-ack" type="checkbox">'+
   'I confirm no passenger was transported on this assignment.</label>'+
-  '<div class="mas-form-actions"><button type="button" id="mas-save"'+(error?' disabled':'')+
+  '<div class="mas-form-actions"><button type="button" id="mas-save"'+(error&&!needsArrival?' disabled':'')+
   '>Record '+safe(item.title)+' now</button>'+
   '<button type="button" id="mas-dismiss-secondary">Go back</button></div>'+
   '<p class="mas-notice">MAS: no passenger transport charge is calculated. Any separate contractual reimbursement requires verification. This local log does not substitute for the MAS official trip app, GPS evidence, office notification, or attestation.</p>'+
   '<p id="mas-feedback" aria-live="polite" class="mas-feedback"></p></div>';
 }
 function renderPanel(){
- const root=E('customer-content'),run=latestRun();
- if(!root)return;
- root.querySelector('#v8-exception')?.remove(); // Replace ambiguous legacy action.
- let panel=root.querySelector('#mas-outcomes');
- if(!run){panel?.remove();return}
+ const table=E('v7-manifest-table'),run=latestRun();
+ const root=E('roster');if(!root||!table)return;
+ // No cancellation controls or MAS outcome form on Customer.
+ E('customer-content')?.querySelector('#mas-outcomes')?.remove();
+ let panel=E('mas-outcomes');
+ if(!run){panel?.remove();return;}
  if(!panel){
   panel=document.createElement('section');panel.id='mas-outcomes';
-  panel.className='mas-outcomes panel';
-  const trip=root.querySelector('.v8-trip-controls');
-  if(trip)trip.after(panel);else root.append(panel);
+  panel.className='mas-outcomes panel v9-manifest-outcomes';
+  table.after(panel);
  }
- const type=cases[selected?.choice],out=run.events?.cancelOutcome;
- if(selected?.id!==run.id)selected=null;
+ const type=cases[selected?.choice],out=run.events?.cancelOutcome,
+  runs=db.runs.filter(r=>r.date===run.date).sort((a,b)=>timeM(a.pu)-timeM(b.pu)),
+  number=runs.findIndex(r=>r.id===run.id)+1;
  const stopped=['Canceled','Canceled at Door','No-show'].includes(run.status);
- const name=stopped?run.status:'Exception Outcomes · No Passenger Transport';
- panel.innerHTML='<div class="mas-title"><div><span class="mas-eyebrow">MAS / NON-TRANSPORT OUTCOME</span>'+
- '<h3>'+safe(name)+'</h3></div><span class="mas-mute">Does not change RoutingBox</span></div>'+
- (stopped?'<p class="mas-closed-detail">Recorded '+safe(localTime(out?.at))+
-  '. Reason: '+safe(out?.source||'Unspecified')+
-  '. Reporting: '+safe(out?.reported||'Not reported')+
-  '. <strong>No transported-passenger fare counted.</strong></p>'+
-  '<div class="mas-actions"><button type="button" id="mas-correct">Correct erroneous outcome</button></div>':
- '<p class="mas-intro">Use only if the passenger did not travel. Each outcome is separately recorded; '+
- 'it will appear in Manifest and will not be counted as a completed passenger trip.</p>'+
- '<div class="mas-actions"><button type="button" data-mas-choice="cancel"'+(ended(run)?' disabled':'')+
-  '>Cancel</button><button type="button" data-mas-choice="door"'+(ended(run)?' disabled':'')+
-  '>Cancel at Door</button><button type="button" data-mas-choice="noShow"'+(ended(run)?' disabled':'')+
-  '>No-show</button></div>'+
- (ended(run)?'<p class="mas-intro">This run is already closed. No new outcome can be recorded.</p>':'')+
- (type&&selected?.id===run.id?showEditor(run):''))+
- '<p class="mas-policy">MAS No-show: wait at least 15 minutes after the later of the original scheduled pickup and actual curb arrival. '+
- 'Keep the official MAS trip/GPS record and inform dispatch; no claim is filed by Serenity.</p>';
-}
-function record(run){
+ panel.innerHTML='<div class="mas-title"><div><span class="mas-eyebrow">MANIFEST · EXCEPTION / DISPATCH CANCELLATION</span>'+
+  '<h3>Run #'+number+' · '+safe(run.name)+'</h3><p class="mas-intro">'+
+  safe(run.pu)+' office pickup · '+safe(run.puAddr||'No address provided')+
+  '</p></div><button type="button" id="mas-dismiss">Close</button></div>'+
+ (stopped?'<p class="mas-closed-detail"><b>'+safe(run.status)+'</b> · recorded '+
+   safe(localTime(out?.at))+'. Reason: '+safe(out?.source||'Not documented')+
+   '. Reporting: '+safe(out?.reported||'Unknown')+
+   '. No transported-passenger fare counted.</p>'+
+   '<div class="mas-actions"><button type="button" id="mas-correct">Correct recorded outcome</button></div>':
+  '<div class="mas-actions"><button type="button" data-mas-choice="cancel">Cancel / At Door</button>'+
+   '<button type="button" data-mas-choice="noShow">No-show</button></div>'+
+   (type?showEditor(run):''))+
+ '<p class="mas-policy">A dispatch cancellation or revised order is not the same as an actual passenger trip. '+
+ 'Serenity keeps original office details, local event evidence and transportation billing separate. '+
+ 'For MAS No-show, validate the full waiting window in the official MAS workflow.</p>';
+}function record(run){
  if(!selected||selected.id!==run.id||!cases[selected.choice])return;
- const kind=selected.choice,now=new Date(),error=validate(run,kind,now);
- if(error){alert(error);renderPanel();return}
+ const kind=selected.choice,now=new Date();
+ // A No-show or Cancel at Door can be documented directly from Manifest
+ // without forcing the driver to navigate to the Customer screen.
+ let arrivalNew=null;
+ if((kind==='door'||kind==='noShow')&&!hasTime(run.events?.arrived)){
+  const raw=E('mas-arrival-time')?.value||'';
+  if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(raw)||!E('mas-arrival-confirm')?.checked){
+   E('mas-feedback').textContent='Enter the real arrival time and confirm it is an actual event.';return;
+  }
+  const candidate=new Date(run.date+'T'+raw+':00');
+  if(!Number.isFinite(candidate.getTime())||candidate.getTime()>now.getTime()){
+   E('mas-feedback').textContent='Actual arrival time cannot be invalid or in the future.';return;
+  }
+  arrivalNew=candidate.toISOString();
+ }
+ const checkRun=arrivalNew?{...run,events:{...(run.events||{}),arrived:arrivalNew}}:run;
+ const error=validate(checkRun,kind,now);
+ if(error){E('mas-feedback').textContent=error;return}
  const source=E('mas-source')?.value||'',contact=E('mas-contact')?.value||'',
   reported=E('mas-reported')?.value||'Not yet reported',
   note=E('mas-note')?.value.trim().slice(0,360)||'',
@@ -147,9 +169,13 @@ function record(run){
  const label=cases[kind].title;
  if(!confirm('Record '+label+' for this run at '+now.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})+
   '? This closes the assignment as NOT TRANSPORTED, without adding its tariff to earned revenue.'))return;
- const arrived=hasTime(run.events?.arrived)?new Date(run.events.arrived).getTime():null,
+ const arrived=hasTime(checkRun.events?.arrived)?new Date(checkRun.events.arrived).getTime():null,
   scheduled=scheduledMs(run);
  run.events=run.events||{};
+ if(arrivalNew){
+  run.events.arrived=arrivalNew;
+  run.events.arrivalSource='driver_confirmed_from_manifest';
+ }
  run.events.cancelOutcome={
   type:kind,status:cases[kind].status,at:now.toISOString(),source,contact,reported,note,
   originalPickup:run.pu,arrivalAt:arrived===null?null:run.events.arrived,
@@ -191,10 +217,18 @@ document.addEventListener('click',event=>{
  if(element.id==='mas-correct'){correct(run);return}
  if(element.id==='mas-dismiss'||element.id==='mas-dismiss-secondary'){selected=null;renderPanel();}
 },true);
+function open(id,choice='cancel'){
+ const run=db.runs.find(r=>r.id===id&&r.date===E('date')?.value);
+ if(!run)return alert('Choose a manifest assignment on the selected service date.');
+ const mode=choice==='noShow'?'noShow':
+   hasTime(run.events?.arrived)?'door':'cancel';
+ selected={id:run.id,choice:mode};
+ window.SerenityThreePage?.navigate?.('manifest');
+ renderPanel();
+ E('mas-outcomes')?.scrollIntoView({block:'center',behavior:'smooth'});
+}
 const oldRender=render;
 render=function(){oldRender();renderPanel();};
-const oldCustomer=renderCustomer;
-renderCustomer=function(){oldCustomer();renderPanel();};
 renderPanel();
-window.SerenityMASOutcomes={waitDeadline,validate};
+window.SerenityMASOutcomes={waitDeadline,validate,open,close:()=>{selected=null;renderPanel();}};
 })();
