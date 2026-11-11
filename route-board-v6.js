@@ -205,6 +205,8 @@ function markEvent(run,kind){
   if(db.active===run.id)db.active=null;
  }
  save();render();
+ window.dispatchEvent(new CustomEvent('serenity-trip-event',
+  {detail:{runId:run.id,kind,date:run.date,at:now.toISOString()}}));
 }
 function correctEnroute(run){
  if(!run||!isActual(run.events?.enroute))return alert('Record an En route departure first.');
@@ -269,6 +271,7 @@ document.addEventListener('click',event=>{
  if(!target)return;
  event.preventDefault();event.stopImmediatePropagation();handle(target.dataset.v6Act,target.dataset.v6Id);
 },true);
+window.SerenityEvents={markEvent};
 const prior=render;
 render=function(){prior();refreshBoard();};
 E('date').addEventListener('change',refreshBoard);
