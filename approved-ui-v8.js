@@ -260,6 +260,17 @@ function updateManifest(date,runs,f){
   ' completed · all times shown against original office schedule';
  E('v7-manifest-risk').textContent=unestimated?unestimated+' ETAs unverified':
    f.filter(x=>x.state==='late').length+' projected late';
+ // Once the first assignment is finished, don't keep demanding a garage-to-
+ // first-passenger check for a drive that already happened.
+ const notice=E('v7-manifest-notice');
+ if(notice&&runs.length&&closed(runs[0])){
+  if(unestimated){
+   notice.classList.remove('hidden');
+   notice.innerHTML='<div><strong>Later-run ETAs need verified events</strong>'+
+    '<p>An earlier assignment was closed without a recorded physical drop-off, or a later driving time is unknown. '+
+    'Record actual en-route/arrival events or check Google Maps before relying on downstream forecasts.</p></div>';
+  }else notice.classList.add('hidden');
+ }
 }
 function updateProgress(r){
  const p=E('v7-customer-progress');if(!p)return;
