@@ -29,7 +29,7 @@ const originalHeading=legacy?.querySelector('.field');
 if(originalHeading&&E('date'))hero.querySelector('#v5-top-actions').prepend(originalHeading);
 const topRow=document.createElement('div');topRow.className='v5-sectionrow';topRow.id='v5-top-row';
 const alerts=document.createElement('section');alerts.className='panel v5-insights';alerts.id='v5-alerts';
-alerts.innerHTML='<div class="v5-sectionhead"><h2>Dispatch Watch</h2><span class="v5-pill" id="v5-watch-badge">Evaluating runs</span></div><div id="v5-alert-list"></div><div id="v5-review" class="v5-draft hidden"><strong id="v5-review-title">Dispatch review</strong><p id="v5-review-hint">Review the underlying assumptions and contact the office if needed.</p><textarea id="v5-review-text" aria-label="Prepared dispatch issue message"></textarea><div class="bar"><button type="button" id="v5-copy-review" class="primary">Copy dispatch note</button><button type="button" id="v5-office-informed">Mark office informed</button><button type="button" id="v5-review-close">Close</button></div><p id="v5-review-feedback"></p></div>';
+alerts.innerHTML='<div class="v5-sectionhead"><h2>Dispatch Watch</h2><span class="v5-pill" id="v5-watch-badge">Evaluating runs</span></div><div id="v5-alert-list"></div><div id="v5-review" class="v5-draft hidden"><strong id="v5-review-title">Dispatch review</strong><p id="v5-review-hint">Review the underlying assumptions and contact the office if needed.</p><textarea id="v5-review-text" aria-label="Prepared dispatch issue message"></textarea><div class="bar"><button type="button" id="v5-check-office" class="primary">Check office approval</button><button type="button" id="v5-copy-review">Copy dispatch note</button><button type="button" id="v5-office-informed">Mark office informed</button><button type="button" id="v5-review-close">Close</button></div><p id="v5-review-feedback"></p></div>';
 const side=document.createElement('section');side.className='panel v5-sidework';side.id='v5-sidework';
 side.innerHTML='<div class="v5-sectionhead"><h2>Productive Downtime</h2><span class="v5-pill">Side work</span></div><div class="v5-gap" id="v5-gap">—</div><strong id="v5-gap-title">Checking usable gaps</strong><p id="v5-gap-desc">Stops, travel, and a safety margin come first.</p>';
 topRow.append(alerts,side);
@@ -83,13 +83,18 @@ function reviewFor(idx,date,forecasts){
  const p=forecasts.find(x=>x.r?.id===idx);if(!p)return null;
  const runs=db.runs.filter(r=>r.date===date).sort((a,b)=>timeM(a.pu)-timeM(b.pu));
  const order=runs.findIndex(r=>r.id===idx)+1;
- const status=p.late>0?'projected '+p.late+' minutes AFTER the scheduled pickup':
+ const status=p.late>0?'projected '+p.late+' minutes AFTER the '+
+ (p.approvalState==='approved'?'office-confirmed revised pickup':'original scheduled pickup'):
  p.targetMiss>0?'projected '+p.targetMiss+' minutes behind our 10-minute-early target':
- 'on the early-arrival target';
- const message='Serenity driver forecast — Run #'+order+' ('+p.r.name+'). Scheduled pickup: '+p.r.pu+
- '. Projected curb arrival: '+clock(p.arrival)+'; '+status+
- '. This is a driver planning projection using '+(p.source||'available timing assumptions')+
- ', not an office-approved schedule change. Please review feasibility and advise if any assignment needs adjustment. — Anthony, Serenity Transportation';
+ 'on the agreed or scheduled early-arrival target';
+ const office=p.approvalState==='approved'?'Office-confirmed pickup: '+p.agreedPickup+'. ':
+ 'Office approval of any later pickup has NOT been verified. ';
+ const ask=p.approvalState==='approved'?'Please review downstream assignments and advise if further adjustment is needed.':
+ 'Has the office already agreed to a later pickup with the rider? Please confirm the authorized time before I notify the passenger or request a change.';
+ const message='Serenity driver schedule check — Run #'+order+' ('+p.r.name+'). Original pickup: '+p.r.pu+
+ '. '+office+'Projected curb arrival: '+clock(p.arrival)+'; '+status+
+ '. Forecast source: '+(p.source||'driver assumptions')+'. '+ask+
+ ' — Anthony, Serenity Transportation';
  return {p,order,status,message};
 }
 function openReview(idx){
@@ -97,8 +102,10 @@ function openReview(idx){
  if(!details)return;
  selection={id:idx,date};
  E('v5-review-title').textContent='Review Run #'+details.order+' · '+details.p.r.name;
- E('v5-review-hint').textContent='Scheduled '+details.p.r.pu+' · predicted '+clock(details.p.arrival)+
- ' · '+details.status+'. Nothing has been sent; confirm routing and passenger details before reporting to the office.';
+ E('v5-review-hint').textContent='Original '+details.p.r.pu+
+ (details.p.agreedPickup?' · OFFICE AGREED '+details.p.agreedPickup:' · office approval unverified')+
+ ' · predicted '+clock(details.p.arrival)+' · '+details.status+
+ '. Nothing has been sent; check office permission and routing before contacting the passenger.';
  E('v5-review-text').value=details.message;
  E('v5-review-feedback').textContent='';
  E('v5-review').classList.remove('hidden');
@@ -143,13 +150,24 @@ function renderAlerts(date,forecast){
  badge.textContent=actualLate?actualLate+' projected late':scored.length?scored.length+' early-target risks':'No predicted lateness';
  badge.className='v5-pill '+(actualLate?'bad':scored.length?'warn':'ok');
  if(!scored.length){
-  list.innerHTML='<div class="v5-alertrow"><div class="v5-alertcontent"><strong>No projected pickup delays under the current assumptions.</strong><small>Recheck estimates when a passenger boards late, traffic changes, or dispatch revises a run.</small></div></div>';return;
+  const cleared=forecast.filter(p=>p.approvalState==='approved').length;
+  list.innerHTML='<div class="v5-alertrow"><div class="v5-alertcontent"><strong>No projected pickup delays against the currently agreed times.</strong><small>'+
+  (cleared?cleared+' office-confirmed later pickup(s) are recorded. ':'')+
+  'Recheck estimates when a passenger boards late, traffic changes, or dispatch revises a run.</small></div></div>';return;
  }
  const runs=forecast.map(p=>p.r);
  list.innerHTML=scored.slice(0,3).map(p=>{
-  const n=runs.findIndex(r=>r.id===p.r.id)+1,notice=p.state==='late'?'Projected '+p.late+' minutes late':'Early-arrival target missed by '+p.targetMiss+' minutes';
+  const n=runs.findIndex(r=>r.id===p.r.id)+1,
+  notice=p.state==='late'?
+    (p.approvalState==='approved'?'Projected '+p.late+'m AFTER office-agreed '+p.agreedPickup:
+     'Projected '+p.late+'m late · check office approval'):
+    (p.approvalState==='approved'?'Agreed '+p.agreedPickup+' · ':'')+'Early-arrival target missed '+p.targetMiss+'m';
   const informed=db.dispatchReviews?.[p.r.id];
   return '<div class="v5-alertrow '+(p.state==='late'?'critical':'caution')+'"><div class="v5-alertcontent"><strong>Run #'+n+' · '+safe(p.r.name)+' · '+safe(notice)+'</strong><small>Scheduled '+safe(p.r.pu)+' → forecast '+clock(p.arrival)+' · '+safe(p.source||'driver assumption')+
+    (p.approvalState==='awaiting'?' · Awaiting office reply':
+     p.approvalState==='approved'?' · Office-approved time recorded':
+     p.approvalState==='not_approved'?' · Office did NOT approve a later pickup':
+     p.state==='late'?' · Approval unknown':'')+
     (informed?.state==='informed'?' · Office informed (driver marked)':'')+
    '</small></div><button type="button" class="primary" data-v5-review="'+safe(p.r.id)+'">Review options</button></div>';
  }).join('')+(scored.length>3?'<p class="v5-mini" style="margin-top:8px">+'+(scored.length-3)+' more affected runs appear in the full-day outlook below.</p>':'');
@@ -254,6 +272,9 @@ alerts.addEventListener('click',event=>{
  event.preventDefault();event.stopImmediatePropagation();openReview(action.dataset.v5Review);
 },true);
 E('v5-review-close').addEventListener('click',()=>{E('v5-review').classList.add('hidden');selection=null;});
+E('v5-check-office').addEventListener('click',()=>{
+ if(selection&&window.SerenityOfficeUI?.open)window.SerenityOfficeUI.open(selection.id);
+});
 E('v5-copy-review').addEventListener('click',async()=>{
  const text=E('v5-review-text').value;
  try{await navigator.clipboard.writeText(text);E('v5-review-feedback').textContent='Copied. Review before sending to the office. Nothing was sent by Serenity.';}
