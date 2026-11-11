@@ -11,14 +11,14 @@ document.head.appendChild(css);
 const panel=document.createElement('section');
 panel.className='panel ms-panel';panel.id='ms-panel';
 panel.innerHTML='<div class="ms-top"><div><h2>Full-Day Milestones · Home to Personal Car</h2><small>Wake up → Garage → First pickup → Final drop-off → Return to base</small></div><div class="ms-pills"><span id="ms-first" class="ms-pill">First pickup: not loaded</span><span id="ms-prep" class="ms-pill">Garage prep: not recorded</span><span id="ms-base" class="ms-pill">Back at base: estimate unavailable</span></div></div>'+
-'<p class="ms-help"><strong>Reverse-planned from first pickup, with a 10-minute early-arrival goal.</strong> Enter your actual Google Maps travel-minute estimates below. Each event can be marked now or corrected manually. Your shift endpoint is back at the garage where your personal car is parked, not your home. Times are stored in your local backup and are <strong>not</strong> automatically treated as paid hours.</p>'+
+'<p class="ms-help"><strong>Reverse-planned from first pickup, with a 10-minute early-arrival goal.</strong> Enter your actual Google Maps travel-minute estimates below. Each event can be marked now or corrected manually. Your shift endpoint is back at the garage where your personal car is parked, not your home. Times are stored in your local backup and are <strong>not</strong> automatically treated as paid hours. A different first pickup needs a new Maps travel-time check; yesterday’s first-leg duration is never reused.</p>'+
 '<p id="ms-weather-prep" class="ms-help">Normal garage prep: 7 minutes. Checking hourly forecast…</p>'+ '<div class="ms-plan" id="ms-plan"></div>'+
 '<div class="ms-workflow" id="ms-workflow"></div>'+
 '<div class="ms-private"><details id="ms-settings"><summary>Home, garage &amp; morning planning settings</summary>'+
 '<div class="ms-forms"><label>Wake to leave home (min)<input id="ms-wakelead" type="number" inputmode="numeric" min="0" max="240" step="1" placeholder="Manual"></label>'+
 '<label>Home → garage (Maps min)<input id="ms-commute" type="number" inputmode="numeric" min="1" max="240" step="1" placeholder="From Google Maps"></label>'+
 '<label>Preparation at garage (min)<input id="ms-prepare" type="number" inputmode="numeric" min="0" max="180" step="1" placeholder="Manual"></label>'+
-'<label>Garage → first pickup (Maps min)<input id="ms-firstdrive" type="number" inputmode="numeric" min="1" max="240" step="1" placeholder="From Google Maps"></label>'+ '<label>Extra garage prep in bad weather (min)<input id="ms-weatherextra" type="number" inputmode="numeric" min="0" max="120" step="1" placeholder="15"></label>'+ '<label>Final drop-off → garage (Maps min)<input id="ms-returnbase" type="number" inputmode="numeric" min="1" max="240" step="1" placeholder="From Google Maps"></label>'+
+'<label>Garage → today’s first pickup (verify Maps time)<input id="ms-firstdrive" type="number" inputmode="numeric" min="1" max="240" step="1" placeholder="From Google Maps"></label>'+ '<label>Extra garage prep in bad weather (min)<input id="ms-weatherextra" type="number" inputmode="numeric" min="0" max="120" step="1" placeholder="15"></label>'+ '<label>Final drop-off → garage (Maps min)<input id="ms-returnbase" type="number" inputmode="numeric" min="1" max="240" step="1" placeholder="From Google Maps"></label>'+
 '</div><div class="ms-forms" style="grid-template-columns:repeat(2,minmax(0,1fr))"><label>Private home address<input id="ms-home" type="text" autocomplete="off" placeholder="Only stored on this device"></label>'+
 '<label>Private garage address<input id="ms-garage" type="text" autocomplete="off" placeholder="Only stored on this device"></label></div>'+
 '<button type="button" id="ms-save-settings" class="primary">Save morning settings</button>'+
@@ -42,17 +42,21 @@ const old=(iso,date)=>{
  return Number.isFinite(d.getTime())&&dateLocal(d)===date?mins(d):null;
 };
 const dayRecord=date=>db.morningDays&&db.morningDays[date]||{};
-const prefs=()=>{
+const prefs=(date)=>{
  const c=db.morningConfig||{};
+ const first=firstRun(date),leg=db.morningFirstLegs?.[date];
+ const hasVerifiedLeg=!!(first&&leg&&leg.runId===first.id&&
+  leg.pickupAddr===first.puAddr&&leg.garage===String(c.garage||'').trim()&&
+  Number.isSafeInteger(leg.minutes)&&leg.minutes>=1&&leg.minutes<=240);
  const val=(s,min,max)=>Number.isSafeInteger(s)&&s>=min&&s<=max?s:null;
  return {
    wakeLead:c.wakeLead===undefined?30:val(c.wakeLead,0,240),
    commute:c.commute===undefined?7:val(c.commute,1,240),
    prepare:c.prepare===undefined?7:val(c.prepare,0,180),
-   firstDrive:c.firstDrive===undefined?20:val(c.firstDrive,1,240),
-   returnBase:c.returnBase===undefined?20:val(c.returnBase,1,240),
+   firstDrive:hasVerifiedLeg?leg.minutes:null,
+   returnBase:val(c.returnBase,1,240),
    weatherExtra:c.weatherExtra===undefined?15:val(c.weatherExtra,0,120),
-   assumptions:c.firstDrive===undefined||c.returnBase===undefined
+   assumptions:!hasVerifiedLeg||!Number.isSafeInteger(c.returnBase)
  };
 };
 const firstRun=date=>db.runs.filter(r=>r.date===date).sort((a,b)=>timeM(a.pu)-timeM(b.pu))[0]||null;
@@ -72,7 +76,7 @@ function weatherPrepFor(date,garageMinute,p){
    verified:true,condition,event};
 }
 function backward(date){
- const first=firstRun(date),p=prefs();
+ const first=firstRun(date),p=prefs(date);
  if(!first||!Number.isFinite(timeM(first.pu)))return {first,p,steps:[]};
  const goal=timeM(first.pu)-10;
  const departGarage=p.firstDrive===null?null:goal-p.firstDrive;
@@ -155,9 +159,15 @@ E('ms-save-settings').addEventListener('click',()=>{
  try{
   const wakeLead=readInt('ms-wakelead',0,240),commute=readInt('ms-commute',1,240),
        prepare=readInt('ms-prepare',0,180),firstDrive=readInt('ms-firstdrive',1,240),returnBase=readInt('ms-returnbase',1,240),weatherExtra=readInt('ms-weatherextra',0,120);
-  db.morningConfig={...(db.morningConfig||{}),wakeLead,commute,prepare,firstDrive,returnBase,weatherExtra,
-    home:E('ms-home').value.trim().slice(0,220),garage:E('ms-garage').value.trim().slice(0,220)};
-  save();renderMorning();
+  const date=E('date').value,garage=E('ms-garage').value.trim().slice(0,220),first=firstRun(date);
+  db.morningConfig={...(db.morningConfig||{}),wakeLead,commute,prepare,returnBase,weatherExtra,
+    home:E('ms-home').value.trim().slice(0,220),garage};
+  delete db.morningConfig.firstDrive; // Legacy global minutes are unsafe for a new first destination.
+  db.morningFirstLegs=db.morningFirstLegs||{};
+  if(firstDrive!==null&&first&&garage&&first.puAddr)
+    db.morningFirstLegs[date]={runId:first.id,pickupAddr:first.puAddr,garage,minutes:firstDrive,checkedAt:new Date().toISOString(),source:'driver_verified_google_maps'};
+  else delete db.morningFirstLegs[date];
+  save();render();
  }catch(error){alert(error.message)}
 });
 function stamp(date,minutes){
@@ -241,7 +251,7 @@ window.addEventListener('serenity-location-refresh',e=>{
 });
 window.SerenityMorning={
  anchor(date,allRuns,now){
-  const first=firstRun(date),c=prefs(),rec=dayRecord(date);
+  const first=firstRun(date),c=prefs(date),rec=dayRecord(date);
   if(!first||first.status==='Completed'||first.status==='Exception'||allRuns[0]?.id!==first.id)return null;
   const actualArrival=old(rec.firstArrival,date);
   if(actualArrival!==null)return {runId:first.id,arrival:actualArrival,source:'First pickup actual'};
