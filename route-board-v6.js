@@ -12,7 +12,11 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&
 const dateLocal=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
 const eventTime=iso=>{if(!iso)return '—';const d=new Date(iso);return Number.isNaN(d.getTime())?'—':d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});};
 const clock=t=>{if(!Number.isFinite(t))return '—';const n=((Math.round(t)%1440)+1440)%1440,h=Math.floor(n/60);return (h%12||12)+':'+String(n%60).padStart(2,'0')+(h<12?'a':'p')+(t>=1440?' +1':'');};
-const sorted=date=>db.runs.filter(r=>r.date===date).sort((a,b)=>timeM(a.pu)-timeM(b.pu));
+const sorted=date=>{
+ const runs=db.runs.filter(r=>r.date===date);
+ return window.SerenityDispatchUpdates?.sortRuns?.(runs)||
+   runs.sort((a,b)=>timeM(a.pu)-timeM(b.pu));
+};
 const forecast=date=>{try{return window.SerenityDayForecast.getSnapshot(date)||[]}catch{return []}};
 const isClosed=r=>['Completed','Exception','Canceled','Canceled at Door','No-show'].includes(r.status);
 const isActual=iso=>!!(iso&&!Number.isNaN(new Date(iso).getTime()));
