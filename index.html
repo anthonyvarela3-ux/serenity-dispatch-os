@@ -382,13 +382,15 @@ el('date').value='2026-11-11';el('import-date').value='2026-11-11';el('date').ad
     const description=btn.id==='complete'?'complete this assignment':'mark this assignment as a no-show / exception';
     if (!window.confirm(`Are you sure you want to ${description}?`)) { event.preventDefault();event.stopImmediatePropagation(); }
   },true);
-  document.querySelector('header small').textContent = 'Driver Beta 3 · landscape-first preview · manual Google Voice · no live GPS ETA';
-  document.title='Serenity Dispatch OS — Beta 3 Landscape Preview';
+  document.querySelector('header small').textContent = 'Driver Beta 4 · landscape iPad · driver-calculated forecasts · no automatic SMS';
+  document.title='Serenity Dispatch OS — Beta 4 Field Test';
   const banner=document.getElementById('banner');
-  if (banner) banner.textContent='Beta 3 preview: landscape-first Customer Window. Verify passengers, times and addresses against RoutingBox. No automatic SMS or live GPS ETA.';
+  if (banner) banner.textContent='Beta 4 field-test preview: verify times and addresses against RoutingBox. Weather is from NWS; arrival and drop-off forecasts use your driving assumptions and manually entered Maps travel time. No automatic SMS or live road ETA.';
   render();
 })();
 
 </script><script src="./vehicle-maintenance.js"></script>
-<script src="./day-forecast.js"></script>
+<script src="./full-day-v4.js"></script>
+<script src="./weather-v4.js"></script>
+<script src="./location-share-v4.js"></script>
 </body></html>
