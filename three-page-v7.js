@@ -25,7 +25,7 @@ const simpleTime=iso=>{
 };
 const validEvent=iso=>!!iso&&Number.isFinite(new Date(iso).getTime());
 const sorted=date=>db.runs.filter(r=>r.date===date).sort((a,b)=>timeM(a.pu)-timeM(b.pu));
-const isClosed=r=>r.status==='Completed'||r.status==='Exception';
+const isClosed=r=>['Completed','Exception','Canceled','Canceled at Door','No-show'].includes(r.status);
 const forecasts=date=>{try{return window.SerenityDayForecast.getSnapshot(date)||[]}catch{return []}};
 const durationM=(run)=>Number.isSafeInteger(db.forecastDriveMinutes?.[run.id])?db.forecastDriveMinutes[run.id]:
  Number.isSafeInteger(db.forecastV4?.trip)?db.forecastV4.trip:20;
@@ -164,7 +164,7 @@ function chosenRun(date){
  return {run:next||null,active:false};
 }
 function eventStatus(r){
- if(isClosed(r))return r.status==='Completed'?'Completed':'Exception';
+ if(isClosed(r))return r.status;
  if(validEvent(r.events?.boarded))return 'Passenger onboard';
  if(validEvent(r.events?.arrived))return 'Arrived · waiting for passenger';
  if(validEvent(r.events?.enroute))return 'En route to pickup';
