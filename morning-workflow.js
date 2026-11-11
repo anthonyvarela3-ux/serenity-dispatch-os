@@ -264,6 +264,18 @@ window.SerenityMorning={
   else if(arriveGarage!==null&&c.prepare!==null){projected=Math.max(current??0,arriveGarage+backward(date).garagePrep)+c.firstDrive;source='Garage preparation + manual Maps time';}
   else if(departHome!==null&&c.commute!==null&&c.prepare!==null){projected=Math.max(current??0,departHome+c.commute+backward(date).garagePrep)+c.firstDrive;source='Home departure + manual Maps time';}
   else if(wake!==null&&c.wakeLead!==null&&c.commute!==null&&c.prepare!==null){projected=Math.max(current??0,wake+c.wakeLead+c.commute+backward(date).garagePrep)+c.firstDrive;source='Wake-up estimate + manual Maps time';}
+  if(projected===null){
+    // Before the planned garage departure, use the first pickup's verified
+    // route-specific duration to construct a PLAN, not a live GPS ETA.
+    // Once that departure time passes without a confirmed event, stop
+    // asserting the planned first arrival is still achievable.
+    const planned=backward(date);
+    if(Number.isFinite(planned.departGarage) &&
+       (current===null||current<=planned.departGarage)){
+      projected=planned.goal;
+      source='Garage departure plan + route-specific manual Maps time';
+    }
+  }
   if(projected===null)return null;
   // A fixed travel estimate becomes stale when its projected arrival is already in the past.
   if(current!==null&&current>projected+5)return null;
