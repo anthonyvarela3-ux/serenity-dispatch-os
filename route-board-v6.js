@@ -36,7 +36,7 @@ else roster.prepend(board);
 // list of future runs from overpowering the new quick-scan manifest.
 const detailsCard=E('sf-card');
 if(detailsCard&&!detailsCard.parentElement?.classList.contains('v6-advanced')){
- const details=document.createElement('details');details.className='v6-advanced';
+ const details=document.createElement('details');details.className='v6-advanced';details.id='v6-advanced';
  const summary=document.createElement('summary');summary.textContent='Advanced · adjust road minutes, trip buffers and detailed forecast';
  detailsCard.replaceWith(details);details.append(summary,detailsCard);
 }
