@@ -50,18 +50,31 @@ if(ms){
   ms.appendChild(more);
  }
 }
+const firstReview=document.createElement('section');firstReview.id='v5-first-review';firstReview.className='panel v5-first-review';
+firstReview.innerHTML='<div class="v5-sectionhead"><h2>Verify First Route · Garage → Pickup #1</h2><span class="v5-pill warn" id="v5-first-badge">Travel time not verified</span></div>'+
+'<p id="v5-first-destination" class="v5-first-destination">Waiting for your dispatch manifest</p>'+
+'<p class="v5-mini">The original 20-minute estimate was a generic placeholder. Do not use it for this route. Set your garage address once, open the actual pickup address in Google Maps, then enter the driving minutes shown there. The corrected minutes will rebuild your wake-up and entire day.</p>'+
+'<div class="v5-first-controls"><label>Garage starting address<input id="v5-first-origin" type="text" autocomplete="off" placeholder="Enter your garage address (stored only in this browser)"></label>'+
+'<button type="button" id="v5-save-origin">Save garage</button>'+
+'<a id="v5-open-route" target="_blank" rel="noopener noreferrer" aria-disabled="true">Check route in Google Maps</a>'+
+'<label>Maps travel minutes<input id="v5-first-minutes" type="number" inputmode="numeric" min="1" max="240" step="1" placeholder="Enter Maps time"></label>'+
+'<button type="button" class="primary" id="v5-apply-first">Apply to entire day</button></div>'+
+'<p id="v5-first-feedback" class="v5-mini">First-leg ETA unverified. No departure or wake-up time will be presented as ready until you verify this route.</p>';
 roster.prepend(hero);
-hero.after(topRow);
+hero.after(firstReview);
+firstReview.after(topRow);
 topRow.after(ms||sf);
 if(ms)ms.after(sf);
 sf.after(support);
 support.after(legacyDetails);
 let selection=null;
 const sourceLabel=()=>{
- const c=db.forecastV4||{},m=db.morningConfig||{};
- return c.trip===undefined||c.reposition===undefined||m.firstDrive===undefined||m.returnBase===undefined?
- 'Provisional driving assumptions · verify against Google Maps. GPS position does not provide traffic ETAs.':
- 'Driver-entered travel estimates · road/traffic service not connected.';
+ const date=E('date')?.value;
+ const first=db.runs.filter(r=>r.date===date).sort((a,b)=>timeM(a.pu)-timeM(b.pu))[0];
+ const m=db.morningConfig||{},leg=db.morningFirstLegs?.[date];
+ const verified=first&&leg&&leg.runId===first.id&&leg.pickupAddr===first.puAddr&&leg.garage===m.garage;
+ return verified?'First pickup: route-specific manual Maps time · downstream forecasts use assumptions; no live traffic API.':
+ 'First pickup route UNVERIFIED · automatic morning and day projections blocked until checked in Maps.';
 };
 function snapshot(date){
  try{return window.SerenityDayForecast?.getSnapshot?.(date)||null}catch{return null}
@@ -100,7 +113,7 @@ function dayMilestones(date,forecast){
  const recordedM=recorded&&Number.isFinite(recorded.getTime())&&
  [recorded.getFullYear(),String(recorded.getMonth()+1).padStart(2,'0'),String(recorded.getDate()).padStart(2,'0')].join('-')===date?
  recorded.getHours()*60+recorded.getMinutes():null;
- const returnMinutes=config.returnBase===undefined?20:config.returnBase;
+ const returnMinutes=Number.isSafeInteger(config.returnBase)?config.returnBase:null;
  const final=Number.isFinite(last?.drop)&&Number.isSafeInteger(returnMinutes)?last.drop+returnMinutes:null;
  E('v5-wake').textContent=clock(morning?.wake);
  E('v5-garage').textContent=clock(morning?.departGarage);
@@ -117,6 +130,12 @@ function renderAlerts(date,forecast){
  if(!forecast||!forecast.length){
   badge.textContent='Awaiting manifest';badge.className='v5-pill';
   list.innerHTML='<p class="v5-mini">Import today’s dispatch to check the entire schedule, including hours-ahead risk.</p>';return;
+ }
+ const unknown=forecast.filter(p=>p.state==='missing');
+ if(unknown.length){
+  badge.textContent='Travel check needed';badge.className='v5-pill warn';
+  list.innerHTML='<div class="v5-alertrow caution"><div class="v5-alertcontent"><strong>Schedule cannot be validated yet: '+unknown.length+' run(s) have missing projections.</strong><small>Verify the first garage-to-pickup travel time above, then check later trip durations. Serenity is withholding guessed lateness predictions.</small></div><button type="button" id="v5-review-first" class="primary">Review first route</button></div>';
+  return;
  }
  const scored=forecast.filter(p=>p.state==='late'||p.state==='risk')
  .sort((a,b)=>(b.late||0)-(a.late||0)||(b.targetMiss||0)-(a.targetMiss||0));
@@ -159,6 +178,29 @@ function renderSidework(forecast){
   'Possible task: quick interior tidy-up or paperwork.')+
  ' Do not use until location and next pickup are confirmed.';
 }
+function refreshFirstLeg(date,first){
+ const box=E('v5-first-review');
+ box.style.display=first?'block':'none';
+ if(!first)return;
+ const origin=String(db.morningConfig?.garage||'').trim();
+ const leg=db.morningFirstLegs?.[date];
+ const verified=!!(leg&&leg.runId===first.id&&leg.pickupAddr===first.puAddr&&leg.garage===origin&&
+  Number.isSafeInteger(leg.minutes)&&leg.minutes>=1&&leg.minutes<=240);
+ E('v5-first-badge').textContent=verified?'Verified for this first run · '+leg.minutes+' min':'Verify route before departure';
+ E('v5-first-badge').className='v5-pill '+(verified?'ok':'warn');
+ E('v5-first-destination').textContent='First pickup: '+first.pu+' · '+String(first.puAddr||'Address unavailable');
+ if(document.activeElement!==E('v5-first-origin'))E('v5-first-origin').value=origin;
+ if(document.activeElement!==E('v5-first-minutes'))E('v5-first-minutes').value=verified?String(leg.minutes):'';
+ const link=E('v5-open-route');
+ if(origin&&first.puAddr){
+  link.href='https://www.google.com/maps/dir/?api=1&travelmode=driving&origin='+encodeURIComponent(origin)+'&destination='+encodeURIComponent(first.puAddr);
+  link.removeAttribute('aria-disabled');link.style.pointerEvents='auto';link.style.opacity='1';
+ }else{
+  link.removeAttribute('href');link.setAttribute('aria-disabled','true');link.style.pointerEvents='none';link.style.opacity='.5';
+ }
+ E('v5-first-feedback').textContent=verified?'Saved for this service date and first destination. Different first pickup requires a new Maps check. Traffic may change; recheck before departure.':
+ origin?'Open Google Maps to this exact pickup, check its travel time, and apply the driving minutes.':'Enter and save your garage address once to get an accurate route link.';
+}
 function refresh(){
  const date=E('date')?.value;if(!date)return;
  const runs=db.runs.filter(r=>r.date===date);
@@ -167,6 +209,7 @@ function refresh(){
  E('v5-subtitle').textContent=first?runs.length+' assigned runs · first pickup '+first.pu+
  ' · 10-minute-early arrival target':'Import the manifest once. We’ll reverse-plan the morning and forecast the rest of your shift.';
  E('v5-data-status').textContent=sourceLabel()+' · Refreshed '+new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+ refreshFirstLeg(date,first);
  for(const [oldId,newId] of [['metric-complete','v5-stat-completed'],['metric-miles','v5-stat-miles'],['metric-gross','v5-stat-gross'],['metric-labor','v5-stat-labor']]){
   const source=E(oldId),target=E(newId);
   if(source&&target)target.textContent=source.textContent;
@@ -176,6 +219,35 @@ function refresh(){
  renderSidework(forecast);
 }
 E('v5-import').addEventListener('click',()=>show('import'));
+E('v5-save-origin').addEventListener('click',()=>{
+ const value=E('v5-first-origin').value.trim();
+ if(value.length<8)return alert('Enter your full garage street address first.');
+ db.morningConfig={...(db.morningConfig||{}),garage:value.slice(0,220)};
+ save();render();
+});
+E('v5-apply-first').addEventListener('click',()=>{
+ const date=E('date').value;
+ const first=db.runs.filter(r=>r.date===date).sort((a,b)=>timeM(a.pu)-timeM(b.pu))[0];
+ const garage=String(db.morningConfig?.garage||'').trim();
+ if(!first||!first.puAddr)return alert('Import a first run with a valid pickup address before checking its route.');
+ if(!garage)return alert('Save your garage address before entering the travel time.');
+ const raw=E('v5-first-minutes').value.trim();
+ const val=Number(raw);
+ if(!/^[0-9]+$/.test(raw)||!Number.isSafeInteger(val)||val<1||val>240)
+  return alert('Enter the whole-number garage-to-first-pickup driving minutes displayed in Google Maps (1–240).');
+ db.morningFirstLegs=db.morningFirstLegs||{};
+ db.morningFirstLegs[date]={runId:first.id,pickupAddr:first.puAddr,garage,minutes:val,
+  checkedAt:new Date().toISOString(),source:'driver_verified_google_maps'};
+ db.morningConfig=db.morningConfig||{};
+ delete db.morningConfig.firstDrive;
+ save();render();
+});
+alerts.addEventListener('click',event=>{
+ if(event.target?.id==='v5-review-first'){
+  E('v5-first-review').scrollIntoView({block:'center',behavior:'smooth'});
+  E('v5-first-minutes').focus();return;
+ }
+},true);
 alerts.addEventListener('click',event=>{
  const action=event.target.closest('button[data-v5-review]');
  if(!action)return;
