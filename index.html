@@ -26,4 +26,233 @@ function renderDirectory(){let keys=Object.keys(db.people).sort();el('directory-
 function active(){return db.runs.find(x=>x.id===db.active)}function mutate(fn){fn();save();render()}
 document.addEventListener('click',async e=>{let t=e.target.closest('button');if(!t){let row=e.target.closest('tr[data-id]');if(row){db.active=row.dataset.id;save();return show('customer')}return;}let b=t.id;if(b.startsWith('nav-'))return show(b.slice(4));if(b==='back'||b==='close-customer')return show('roster');if(t.dataset.open){db.active=t.dataset.open;save();return show('customer')}if(b==='theme'){db.theme=db.theme==='auto'?'light':db.theme==='light'?'dark':'auto';document.body.className=db.theme==='auto'?'':db.theme;save();return}if(b==='load-test'){el('raw').value=TEST;el('import-date').value='2026-11-11';return}if(b==='preview'){let d=el('import-date').value;if(!d)return alert('Select a service date');let v=parse(el('raw').value,d);pending=v.errors.length?[]:v.runs;let seen=new Set(db.runs.map(key)),batch=new Set(),dups=0;let newRuns=pending.filter(r=>{let k=key(r);if(seen.has(k)||batch.has(k)){dups++;return false}batch.add(k);return true});pending=newRuns;el('preview-box').innerHTML='<div class="panel"><h3>Import review</h3><p>'+v.runs.length+' valid rows · '+dups+' duplicate(s) skipped · '+v.errors.length+' error(s)</p>'+v.errors.map(x=>'<p class="bad">'+esc(x)+'</p>').join('')+'<p>'+pending.map(r=>esc(r.name+' · '+r.pu+' · '+r.puAddr)).join('<br>')+'</p>'+(pending.length?'<button class="primary" id="commit">Confirm '+pending.length+' new trips</button>':'<p>No new trips to import.</p>')+'</div>';return}if(b==='commit'){let keys=new Set(db.runs.map(key));let add=pending.filter(r=>!keys.has(key(r)));db.runs.push(...add);pending=[];save();el('date').value=el('import-date').value;alert('Added '+add.length+' trips. Existing trips preserved.');return show('roster')}if(b==='shift-start'){if(db.shift.start&&!db.shift.end)return alert('Shift already started');if(db.shift.start&&db.shift.end&&!confirm('Start a new shift? Export your backup first.'))return;db.shift={start:new Date().toISOString(),end:null,rate:22.5};save();return render()}if(b==='shift-end'){if(!db.shift.start)return alert('Start shift first');if(!db.shift.end){db.shift.end=new Date().toISOString();save()}return render()}if(b==='export'){let blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='serenity-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return}let r=active();if(!r)return;if(t.dataset.macro){el('message').value=macros[t.dataset.macro](r);return}if(b==='copy-message'){try{await navigator.clipboard.writeText(el('message').value);alert('Copied. Open Google Voice and paste before sending.')}catch{el('message').select();alert('Select and copy the message manually.')}return}if(b==='save-phone'){let val=el('edit-phone').value.trim(),digits=val.replace(/\D/g,'');if(digits.length!==10&&!(digits.length===11&&digits[0]==='1'))return alert('Enter a valid 10-digit US phone number');mutate(()=>{let p=db.people[norm(r.name)]||{};db.people[norm(r.name)]={...p,phone:val,verified:true,updatedAt:new Date().toISOString()}});return}if(b==='save-pref'){mutate(()=>{let k=norm(r.name),p=db.people[k]||{};db.people[k]={...p,preference:el('preference').value}});return}if(b==='save-customer-notes'){let note=el('customer-notes').value;mutate(()=>{let k=norm(r.name),p=db.people[k]||{};db.people[k]={...p,notes:note}});return}if(b==='save-trip-notes'){let note=el('trip-notes').value;mutate(()=>{r.notes=note});return}if(b==='ready')return mutate(()=>{r.ready=!r.ready;r.events.ready=r.ready?new Date().toISOString():null});if(b==='arrived')return mutate(()=>{r.events.arrived=new Date().toISOString();r.status='Arrived'});if(b==='complete'||b==='exception'){mutate(()=>{r.status=b==='complete'?'Completed':'Exception';r.events.closed=new Date().toISOString();db.active=null});return show('roster')}});
 el('date').value='2026-11-11';el('import-date').value='2026-11-11';el('date').addEventListener('change',render);el('manifest-image').addEventListener('change',e=>el('image-info').textContent=e.target.files.length+' reference image(s) selected. OCR not active; enter or load transcription below.');el('restore').addEventListener('change',async e=>{let f=e.target.files[0];if(!f)return;try{let v=JSON.parse(await f.text());if(v.version!==1||!Array.isArray(v.runs)||!v.people||!v.shift)throw Error('Invalid backup format');if(!confirm('Restore backup? This replaces local beta data. Export current data first.'))return;db=v;save();document.body.className=db.theme==='auto'?'':db.theme;render();alert('Backup restored')}catch(err){alert('Restore failed: '+err.message)}});document.body.className=db.theme==='auto'?'':db.theme;render();
-</script></body></html>
+</script><script>
+/* Serenity Beta 2 OCR and review workflow. This script augments Safety Beta 1. */
+'use strict';
+(() => {
+  const one = document.getElementById.bind(document);
+  const panel = one('import').querySelector('.panel');
+  const intro = panel.querySelector('p');
+  intro.textContent = 'Select one or more RoutingBox screenshots, then Read screenshots (OCR). Recognition runs on this device after loading the OCR engine. Every field must be checked before importing. No sample runs are substituted for screenshots.';
+  const oldLabel = panel.querySelector('label[for="manifest-image"]');
+  oldLabel.textContent = 'RoutingBox screenshot(s) — choose up to four, including overlaps';
+  const ocrControls = document.createElement('div');
+  ocrControls.innerHTML = '<div class="bar"><button type="button" class="primary" id="read-ocr">Read screenshots (OCR)</button><button type="button" id="remove-test">Remove synthetic test runs</button></div><p class="muted" role="status" aria-live="polite" id="ocr-progress">No screenshots processed yet.</p><details><summary>View raw OCR text for troubleshooting</summary><textarea id="ocr-raw" rows="8" readonly aria-label="Raw OCR text"></textarea></details>';
+  one('image-info').after(ocrControls);
+  one('banner').textContent = 'Beta 2: OCR is a draft only. Check every name, time and address, then explicitly approve import. No automatic SMS or live GPS ETA.';
+  document.querySelector('header small').textContent = 'Driver Beta 2 · screenshot review · local-only · no automatic SMS or GPS ETA';
+  document.querySelector('footer').textContent = 'Safety Beta 2 · Screenshot OCR needs internet to load its browser engine. No live GPS, cloud synchronization, or Google Voice delivery confirmation. Use only while safely stopped.';
+  document.title = 'Serenity Dispatch OS — Safety Beta 2';
+  const style = document.createElement('style');
+  style.textContent = '.review-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.review-grid label{margin:0;font-size:12px}.review-grid label input{width:100%;margin-top:4px}.review-item{border-left:4px solid #64748b}.review-item.review-bad{border-left-color:#fb7185}.review-item.review-dupe{border-left-color:#fbbf24}@media(max-width:700px){.review-grid{grid-template-columns:1fr}}';
+  document.head.appendChild(style);
+
+  const progress = msg => { one('ocr-progress').textContent = msg; };
+  const normalize = value => String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  // Service date, passenger, BOTH times and BOTH addresses distinguish two runs for one passenger.
+  const fingerprint = run => [run.date, run.name, run.pu, run.puAddr, run.du, run.doAddr].map(normalize).join('|');
+  const nearFingerprint = run => [run.date, run.name, run.pu, run.du].map(normalize).join('|');
+  const validRun = run => Boolean(run.date && String(run.name || '').trim() && String(run.puAddr || '').trim() && String(run.doAddr || '').trim() && Number.isFinite(timeM(run.pu)) && Number.isFinite(timeM(run.du)) && timeM(run.du) >= timeM(run.pu));
+  const safe = s => esc(s ?? '');
+  let previewErrors = [];
+  let lastSource = 'manual';
+
+  function cleanLine(line) {
+    return String(line).replace(/[\u2013\u2014]/g, '-').replace(/[\u00a0\t]/g, ' ').replace(/\s{2,}/g, ' ').trim();
+  }
+  function clock(line, type) {
+    const rx = type === 'PU' ? /^P\s*U\s*[:;,.-]?\s*(\d{1,2})\s*[:.]\s*(\d{2})\s*(A\s*M|P\s*M)\b/i : /^D\s*[O0]\s*[:;,.-]?\s*(\d{1,2})\s*[:.]\s*(\d{2})\s*(A\s*M|P\s*M)\b/i;
+    const hit = String(line).match(rx);
+    if (!hit) return null;
+    const hh = +hit[1], mm = +hit[2];
+    if (hh < 1 || hh > 12 || mm > 59) return null;
+    return String(hh).padStart(2, '0') + ':' + hit[2] + ' ' + hit[3].replace(/\s/g, '').toUpperCase();
+  }
+  function isName(line) {
+    const s = cleanLine(line).replace(/\bTomorrow\b/ig, '').trim();
+    if (/\d|:|\b(NY|ASSIGNED|ROUTINGBOX|MOBILE|VEHICLE|SEARCH|PU|DO)\b/i.test(s)) return false;
+    if (s.length < 5 || s.length > 65) return false;
+    const words = s.match(/[A-Za-z][A-Za-z'\-]+/g) || [];
+    return words.length >= 2 && /^[A-Z\s'\-.]+$/.test(s);
+  }
+  function stripUi(line) {
+    return cleanLine(line).replace(/\bTomorrow\b/ig, '').trim();
+  }
+  function nameIndex(lines, puIndex) {
+    for (let i = puIndex - 1; i >= Math.max(0, puIndex - 4); i--) {
+      if (clock(lines[i], 'DO') || clock(lines[i], 'PU')) break;
+      if (isName(lines[i])) return i;
+    }
+    return -1;
+  }
+  function addressText(lines) {
+    return lines.map(stripUi).filter(x => x && !/^(?:ASSIGNED TOMORROW|SEARCH|ROUTINGBOX MOBILE|NO VEHICLE ASSIGNED)$/i.test(x)).join(' ');
+  }
+  function parseCards(text, sourceName) {
+    const lines = String(text).replace(/\r/g, '').split('\n').map(cleanLine).filter(Boolean);
+    const pus = [];
+    lines.forEach((line, index) => { if (clock(line, 'PU')) pus.push(index); });
+    const names = pus.map(ix => nameIndex(lines, ix));
+    const rows = [], issues = [];
+    pus.forEach((puIx, i) => {
+      const nextPu = pus[i + 1] ?? lines.length;
+      let doIx = -1;
+      for (let n = puIx + 1; n < nextPu; n++) if (clock(lines[n], 'DO')) { doIx = n; break; }
+      const firstName = names[i];
+      const nextName = names[i + 1] >= 0 ? names[i + 1] : nextPu;
+      const end = Math.max(doIx + 1, Math.min(nextPu, nextName));
+      const name = firstName >= 0 ? stripUi(lines[firstName]) : '';
+      const pu = clock(lines[puIx], 'PU') || '';
+      const du = doIx >= 0 ? clock(lines[doIx], 'DO') || '' : '';
+      const puAddr = doIx >= 0 ? addressText(lines.slice(puIx + 1, doIx)) : addressText(lines.slice(puIx + 1, nextPu));
+      const doAddr = doIx >= 0 ? addressText(lines.slice(doIx + 1, end)) : '';
+      if (!name || !pu || !du || !puAddr || !doAddr) issues.push('Card ' + (i + 1) + ' from ' + sourceName + ': missing information; correct it in the review form.');
+      if ((puAddr && !/\bNY\b|\b\d{5}\b/i.test(puAddr)) || (doAddr && !/\bNY\b|\b\d{5}\b/i.test(doAddr))) issues.push('Card ' + (i + 1) + ' from ' + sourceName + ': check the complete address and ZIP code.');
+      rows.push({name, pu, puAddr, du, doAddr});
+    });
+    if (!pus.length) issues.push('No pickup-time labels recognized in ' + sourceName + '. Check the screenshot and raw OCR text.');
+    return {rows, issues, cardsDetected: pus.length};
+  }
+  // Exposed for local regression tests; does not transmit passenger data.
+  window.serenityOCRTest = parseCards;
+
+  function reviewState() {
+    const existing = new Set(db.runs.map(fingerprint));
+    const nearExisting = new Set(db.runs.map(nearFingerprint));
+    const batch = new Set();
+    let duplicates = 0, conflicts = 0, invalid = 0, ready = 0;
+    const statuses = pending.map(r => {
+      if (!validRun(r)) { invalid++; return 'incomplete'; }
+      const fp = fingerprint(r);
+      if (existing.has(fp) || batch.has(fp)) { duplicates++; return 'duplicate'; }
+      batch.add(fp);
+      if (nearExisting.has(nearFingerprint(r))) { conflicts++; return 'possible match'; }
+      ready++; return 'new';
+    });
+    return {statuses, duplicates, conflicts, invalid, ready};
+  }
+  function renderReview() {
+    const state = reviewState();
+    const fields = [['name','Passenger'], ['pu','Pickup time'], ['puAddr','Pickup address'], ['du','Drop-off time'], ['doAddr','Drop-off address']];
+    const cards = pending.map((r, i) => {
+      const stateName = state.statuses[i];
+      const css = stateName === 'new' ? '' : 'review-bad';
+      const inputs = fields.map(([field, label]) => '<label>' + label + '<input data-review-index="' + i + '" data-review-field="' + field + '" value="' + safe(r[field]) + '"' + ((field === 'pu' || field === 'du') ? ' placeholder="08:00 AM"' : '') + '></label>').join('');
+      return '<div class="panel review-item ' + css + '"><b>Trip ' + (i + 1) + '</b> · <span class="status">' + safe(stateName) + '</span><div class="review-grid">' + inputs + '</div></div>';
+    }).join('');
+    const errors = previewErrors.map(msg => '<p class="bad">' + safe(msg) + '</p>').join('');
+    const note = state.conflicts ? '<p class="bad">Potential duplicate(s) share the same passenger and times as existing trips. They will NOT import; review the existing record instead.</p>' : '';
+    const readyToCommit = state.ready > 0 && !previewErrors.length && !state.invalid;
+    one('preview-box').innerHTML = '<div class="panel"><h3>Review each trip before importing</h3><p>' + pending.length + ' extracted row(s) · ' + state.ready + ' new · ' + state.duplicates + ' duplicate(s) · ' + state.conflicts + ' possible match(es) · ' + state.invalid + ' incomplete</p>' + errors + note + cards + '<label><input type="checkbox" id="reviewed-all" style="width:auto;margin-right:6px">I checked all passenger names, dates, pickup/drop-off times, and full addresses against RoutingBox.</label><button id="commit-reviewed" class="primary" ' + (readyToCommit ? '' : 'disabled') + '>Import ' + state.ready + ' reviewed trip(s)</button><p class="muted">Exact duplicates are skipped. Possible matches and incomplete records are blocked; no existing records will be overwritten. Editing a field requires reviewing again.</p></div>';
+  }
+  function enterPending(rows, source, issues = []) {
+    const date = one('import-date').value;
+    pending = rows.map(r => ({id: id(), date, name: r.name || '', pu: r.pu || '', puAddr: r.puAddr || '', du: r.du || '', doAddr: r.doAddr || '', sourcePhone: r.sourcePhone || '', miles: null, tariff: null, status:'Scheduled', notes:'', ready:false, events:{}}));
+    previewErrors = issues;
+    lastSource = source;
+    renderReview();
+  }
+  function attemptCommit() {
+    if (!one('reviewed-all')?.checked) return alert('Review every imported trip, then check the confirmation box.');
+    const state = reviewState();
+    if (state.invalid || previewErrors.length) return alert('Correct invalid fields and review again before importing.');
+    if (!state.ready) return alert('No new trips to import.');
+    const use = pending.filter((r,i) => state.statuses[i] === 'new');
+    const existing = new Set(db.runs.map(fingerprint));
+    const unique = new Set();
+    const add = use.filter(r => {
+      const k = fingerprint(r);
+      if (existing.has(k) || unique.has(k)) return false;
+      unique.add(k); return true;
+    });
+    if (!add.length) return alert('Nothing new to import.');
+    if (!confirm('Import ' + add.length + ' reviewed trip(s) for ' + one('import-date').value + '? This will add records without replacing existing trips.')) return;
+    db.runs.push(...add); pending = []; previewErrors = []; save();
+    one('date').value = one('import-date').value;
+    one('preview-box').innerHTML = '';
+    alert('Imported ' + add.length + ' reviewed trip(s). Your previously saved trips were preserved.');
+    show('roster');
+  }
+  function loadOCR() {
+    if (window.Tesseract) return Promise.resolve(window.Tesseract);
+    if (loadOCR.promise) return loadOCR.promise;
+    loadOCR.promise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+      script.onload = () => window.Tesseract ? resolve(window.Tesseract) : reject(new Error('OCR library loaded without the expected API'));
+      script.onerror = () => reject(new Error('Could not load OCR engine. Check cellular connection, then retry.'));
+      document.head.appendChild(script);
+    }).catch(error => { loadOCR.promise = null; throw error; });
+    return loadOCR.promise;
+  }
+  async function scanImages() {
+    const files = Array.from(one('manifest-image').files || []);
+    if (!files.length) return alert('Choose your RoutingBox screenshot(s) first.');
+    if (files.length > 4) return alert('Select no more than four images in one batch.');
+    const date = one('import-date').value;
+    if (!date) return alert('Select the service date first.');
+    const button = one('read-ocr'); button.disabled = true;
+    let worker;
+    progress('Loading local OCR engine. First use may require a download...');
+    try {
+      const engine = await loadOCR();
+      worker = await engine.createWorker('eng', 1, {logger: msg => {
+        if (msg.status === 'recognizing text') progress('Reading image text: ' + Math.round((msg.progress || 0) * 100) + '%');
+      }});
+      const cards = [], issues = [], debug = [];
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i];
+        progress('Reading screenshot ' + (i + 1) + ' of ' + files.length + ': ' + f.name);
+        const out = await worker.recognize(f);
+        const text = out.data?.text || '';
+        debug.push('===== ' + f.name + ' =====\n' + text);
+        const result = parseCards(text, f.name);
+        cards.push(...result.rows); issues.push(...result.issues);
+        if (Number(out.data?.confidence) < 65) issues.push(f.name + ': OCR confidence is low; review every character carefully.');
+      }
+      one('ocr-raw').value = debug.join('\n\n');
+      one('raw').value = cards.map(r => [r.name,r.pu,r.puAddr,r.du,r.doAddr].join(' | ')).join('\n');
+      enterPending(cards, 'ocr', issues.filter(msg => msg.includes('No pickup-time labels')));
+      progress(cards.length + ' provisional trip card(s) extracted from ' + files.length + ' screenshot(s). ' + issues.length + ' warning(s): ' + (issues.join(' ') || 'Verify every field before importing.'));
+    } catch(error) {
+      progress('OCR could not complete: ' + error.message + '. Nothing was imported. You can still type or paste structured rows manually.');
+    } finally { if (worker) await worker.terminate().catch(() => {}); button.disabled = false; }
+  }
+  // Capture handler overrides only import preview and commit; all Beta 1 trip controls remain unchanged.
+  document.addEventListener('click', e => {
+    const button = e.target.closest('button');
+    if (!button) return;
+    if (button.id === 'preview') {
+      e.preventDefault(); e.stopImmediatePropagation();
+      const date = one('import-date').value;
+      if (!date) return alert('Select a service date');
+      const data = parse(one('raw').value, date);
+      enterPending(data.runs, 'manual', data.errors);
+    } else if (button.id === 'commit' || button.id === 'commit-reviewed') {
+      e.preventDefault(); e.stopImmediatePropagation(); attemptCommit();
+    } else if (button.id === 'read-ocr') {
+      e.preventDefault(); e.stopImmediatePropagation(); void scanImages();
+    } else if (button.id === 'remove-test') {
+      e.preventDefault(); e.stopImmediatePropagation();
+      const date = one('import-date').value;
+      const removable = db.runs.filter(r => r.date === date && /^TEST PASSENGER [A-E]$/i.test(r.name) && /Testville, NY 11111/i.test(r.puAddr));
+      if (!removable.length) return alert('No synthetic test trips found for ' + date + '.');
+      if (!confirm('Remove only the ' + removable.length + ' synthetic Testville passenger trips for ' + date + '? Real passengers and other dates are unaffected.')) return;
+      const removeIDs = new Set(removable.map(r => r.id));
+      db.runs = db.runs.filter(r => !removeIDs.has(r.id));
+      if (removeIDs.has(db.active)) db.active = null;
+      save(); render(); alert('Removed ' + removable.length + ' synthetic test trips.');
+    }
+  }, true);
+  document.addEventListener('change', event => {
+    const input = event.target.closest('[data-review-field]');
+    if (!input) return;
+    const idx = Number(input.dataset.reviewIndex), field = input.dataset.reviewField;
+    if (!pending[idx] || !['name','pu','puAddr','du','doAddr'].includes(field)) return;
+    pending[idx][field] = input.value.trim();
+    renderReview();
+  });
+})();
+
+</script>
+</body></html>
