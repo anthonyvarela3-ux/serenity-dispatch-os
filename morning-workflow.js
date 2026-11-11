@@ -59,7 +59,11 @@ const prefs=(date)=>{
    assumptions:!hasVerifiedLeg||!Number.isSafeInteger(c.returnBase)
  };
 };
-const firstRun=date=>db.runs.filter(r=>r.date===date).sort((a,b)=>timeM(a.pu)-timeM(b.pu))[0]||null;
+const firstRun=date=>{
+ const runs=db.runs.filter(r=>r.date===date);
+ return (window.SerenityDispatchUpdates?.sortRuns?.(runs)||
+  runs.sort((a,b)=>timeM(a.pu)-timeM(b.pu)))[0]||null;
+};
 function weatherPrepFor(date,garageMinute,p){
  const source=window.SerenityWeather;
  if(!source||!Number.isFinite(source.asOf)||Date.now()-source.asOf>2*3600000||!Number.isFinite(garageMinute))
@@ -79,7 +83,9 @@ function backward(date){
  const first=firstRun(date),p=prefs(date);
  if(!first||!Number.isFinite(timeM(first.pu)))return {first,p,steps:[]};
  const approved=window.SerenityOffice?.effective?.(first);
- const goal=(Number.isFinite(approved?.pickup)?approved.pickup:timeM(first.pu))-10;
+ const revised=window.SerenityDispatchUpdates?.pickup?.(first);
+ const goal=(Number.isFinite(revised)?revised:
+   Number.isFinite(approved?.pickup)?approved.pickup:timeM(first.pu))-10;
  const departGarage=p.firstDrive===null?null:goal-p.firstDrive;
  const weather=weatherPrepFor(date,departGarage===null?NaN:departGarage-p.prepare,p);
  const garagePrep=p.prepare===null?null:p.prepare+weather.extra;
