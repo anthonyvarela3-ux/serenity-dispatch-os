@@ -98,8 +98,10 @@ function compute(runs,date,now,c,maps){
   const arrived=atEvent(r.events&&r.events.arrived,date);
   const boarded=atEvent(r.events&&r.events.boarded,date);
   const enroute=atEvent(r.events&&r.events.enroute,date);
-  const actualEnd=atEvent(r.events&&(r.events.dropoff||r.events.closed),date);
-  const endWasVerified=!!r.events?.dropoff;
+  // A "Close" click without an actual drop-off timestamp is NOT a verified
+  // passenger completion location/time. Do not use it as a route anchor.
+  const actualEnd=atEvent(r.events?.dropoff,date);
+  const endWasVerified=actualEnd!==null;
   if(!Number.isFinite(pickup)){
    readyAt=null;blocked=true;
    return {r,state:'missing',reason:'Invalid pickup time'};
@@ -109,7 +111,9 @@ function compute(runs,date,now,c,maps){
    else {readyAt=null;blocked=true;}
    return {r,state:'done',pickup,target,originalPickup,
     approvalState:approval?.status||'unknown',agreedPickup:approval?.agreed||null,
-    drop:actualEnd,reason:actualEnd===null?'No actual end time':endWasVerified?'Drop-off recorded':'Trip closed; drop-off time not verified',verifiedEnd:endWasVerified};
+    drop:actualEnd,reason:actualEnd===null?
+      'Closed without verified drop-off: cannot predict downstream from office Close click':
+      'Actual drop-off recorded',verifiedEnd:endWasVerified};
   }
   const duration=intOrNull(overrides[r.id],1,240)??c.trip;
   const manual=firstOpen && current!==null && maps && maps.date===date && maps.runId===r.id &&
