@@ -1,0 +1,58 @@
+/* Serenity MAS exception outcomes — explicit but secondary to 5 normal stages. */
+#customer-content #mas-outcomes{
+ margin:14px 0 0!important;padding:18px 20px!important;border:1px solid var(--v8-line);
+ border-radius:14px;background:var(--v8-card);box-shadow:none
+}
+.mas-title{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.mas-eyebrow{display:block;margin-bottom:5px;font-size:10px;letter-spacing:.13em;
+ font-weight:850;color:var(--v8-amber)}
+.mas-title h3{font-size:19px;line-height:1.25;font-weight:880;color:var(--v8-ink);margin:0}
+.mas-mute{font-size:10px;color:var(--v8-soft)}
+.mas-intro,.mas-policy{font-size:11.5px;line-height:1.5;color:var(--v8-soft);margin:11px 0}
+.mas-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0}
+#customer-content #mas-outcomes .mas-actions button{min-height:52px;border-radius:9px;
+ font-weight:850;font-size:13px;border:1px solid rgba(228,164,101,.33);
+ background:rgba(201,135,62,.1);color:var(--v8-ink);padding:10px 12px}
+#customer-content #mas-outcomes .mas-actions button:hover{border-color:var(--v8-amber)}
+#customer-content #mas-outcomes .mas-actions button:disabled{opacity:.46}
+.mas-closed-detail{font-size:12px;line-height:1.55;color:var(--v8-soft);
+ border-left:3px solid var(--v8-amber);padding:9px 12px;background:var(--v8-card2)}
+.mas-closed-detail strong{color:var(--v8-ink)}
+.mas-form{border:1px solid var(--v8-line);background:var(--v8-card2);
+ padding:17px;border-radius:12px;margin-top:12px}
+.mas-form-head{display:flex;justify-content:space-between;gap:12px;align-items:start}
+.mas-form-head strong{display:block;font-size:16px;color:var(--v8-ink)}
+.mas-form-head p{color:var(--v8-soft);font-size:11px;line-height:1.5;margin:5px 0 0}
+.mas-form-head button{flex:0 0 auto;min-height:39px;font-size:11px}
+.mas-event-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+ gap:9px;margin:15px 0}
+.mas-event-facts span{display:flex;flex-direction:column;gap:4px;padding:10px 12px;
+ font-size:10px;color:var(--v8-soft);border:1px solid var(--v8-line);
+ background:var(--v8-card);border-radius:8px}
+.mas-event-facts b{color:var(--v8-ink);font-size:12px;font-variant-numeric:tabular-nums}
+.mas-blocker{background:rgba(235,135,73,.11);border-left:3px solid var(--v8-amber);
+ border-radius:7px;padding:11px 12px;color:var(--v8-ink);font-size:12px;line-height:1.45}
+.mas-form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+ gap:12px;margin:13px 0}
+.mas-form label{font-size:11px;font-weight:790;color:var(--v8-soft);line-height:1.45;
+ margin:4px 0}
+.mas-form select,.mas-form textarea{display:block;width:100%;margin:6px 0 0;
+ font-size:12px;background:var(--v8-card);border-color:var(--v8-line);color:var(--v8-ink)}
+.mas-form select{min-height:44px}
+.mas-form textarea{min-height:67px;resize:vertical;padding:10px}
+.mas-form .mas-ack{display:flex;gap:10px;align-items:center;font-weight:830;
+ color:var(--v8-ink);margin:14px 0}
+.mas-ack input{flex:0 0 20px;width:20px;height:20px;accent-color:var(--v8-mint)}
+.mas-form-actions{display:flex;gap:9px;flex-wrap:wrap}
+.mas-form-actions button{min-height:46px;font-size:12px;font-weight:850}
+#mas-save{background:var(--v8-mint2);color:white;border-color:var(--v8-mint2)}
+.mas-form .mas-notice{font-size:11px;color:var(--v8-soft);line-height:1.52;
+ margin:15px 0 4px}
+.mas-feedback{font-size:12px;color:var(--v8-amber);font-weight:780}
+@media(max-width:850px){.mas-form-grid{grid-template-columns:1fr 1fr}.mas-event-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:550px){
+ #customer-content #mas-outcomes{padding:13px!important}
+ .mas-actions{grid-template-columns:1fr}
+ .mas-form-grid,.mas-event-facts{grid-template-columns:1fr}
+ .mas-form{padding:12px}
+}
