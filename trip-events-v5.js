@@ -22,15 +22,18 @@ renderCustomer=function(){
  }
  const person=db.people[norm(r.name)]||{};
  const restricted=person.preference==='No contact'||person.preference==='Do not contact';
- if(person.preference==='No call'||restricted){
+ const phoneVariants=new Set(db.runs.filter(x=>norm(x.name)===norm(r.name)&&x.sourcePhone)
+  .map(x=>String(x.sourcePhone).replace(/\D/g,'')));
+ const needsRunVerification=phoneVariants.size>1&&!r.verifiedPhone;
+ if(person.preference==='No call'||restricted||needsRunVerification){
   root.querySelectorAll('a[href^="tel:"]').forEach(a=>{
    a.removeAttribute('href');a.setAttribute('aria-disabled','true');
    a.style.pointerEvents='none';a.title='Passenger requested no phone calls';
   });
  }
- if(restricted){
+ if(restricted||needsRunVerification){
   root.querySelectorAll('button[data-macro],#copy-message').forEach(b=>{
-   b.disabled=true;b.title='Passenger has a do-not-contact preference';
+   b.disabled=true;b.title=restricted?'Passenger has a do-not-contact preference':'Verify this run’s phone before any passenger contact';
   });
   const message=root.querySelector('#message');if(message)message.disabled=true;
   root.querySelectorAll('a[href*="voice.google.com"],a[href^="sms:"]').forEach(a=>{
@@ -38,7 +41,10 @@ renderCustomer=function(){
    a.style.pointerEvents='none';a.title='Passenger requested no contact';
   });
   const warning=document.createElement('p');
-  warning.className='alert';warning.textContent='DO NOT CONTACT: passenger preference blocks call and message controls. Check dispatch if an operational emergency requires clarification.';
+  warning.className='alert';
+  warning.textContent=restricted?
+   'DO NOT CONTACT: passenger preference blocks call and message controls. Check dispatch for operational guidance.':
+   'CONTACT IDENTITY CHECK: this name appears with different source phone numbers. Save and verify the correct number for THIS run before contacting.';
   const box=root.querySelector('.b3-message')||root;
   box.prepend(warning);
  }
@@ -48,9 +54,13 @@ document.addEventListener('click',event=>{
  if(!button||(!button.dataset.macro&&button.id!=='copy-message'))return;
  const r=db.runs.find(item=>item.id===db.active);if(!r)return;
  const preference=db.people[norm(r.name)]?.preference;
- if(preference!=='No contact'&&preference!=='Do not contact')return;
+ const numbers=new Set(db.runs.filter(x=>norm(x.name)===norm(r.name)&&x.sourcePhone)
+  .map(x=>String(x.sourcePhone).replace(/\D/g,'')));
+ const ambiguous=numbers.size>1&&!r.verifiedPhone;
+ if(preference!=='No contact'&&preference!=='Do not contact'&&!ambiguous)return;
  event.preventDefault();event.stopImmediatePropagation();
- alert('Do not contact this passenger. If there is an emergency, contact the dispatch office for instructions.');
+ alert(ambiguous?'Verify the phone for this specific run before contacting. Names alone are not a safe identity match.':
+ 'Do not contact this passenger. If there is an emergency, contact the dispatch office for instructions.');
 },true);
 document.addEventListener('click',event=>{
  const btn=event.target.closest?.('#v5-dropoff');if(!btn)return;
