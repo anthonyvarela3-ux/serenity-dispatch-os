@@ -136,3 +136,18 @@ body.light .v5-pill.bad{color:#b72040}body.light .v5-pill.warn{color:#88530a}bod
 @media(max-width:850px){.v5-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.v5-sectionrow{grid-template-columns:1fr}.v5-support{grid-template-columns:1fr 1fr}#ms-panel .ms-plan{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:540px){header,main{padding:9px}.v5-hero{padding:13px}.v5-title{font-size:27px}.v5-kpis{gap:7px}.v5-kpi{padding:11px}.v5-kpi strong{font-size:19px}.v5-alertrow{align-items:stretch;flex-direction:column}.v5-alertrow button{width:100%}.v5-support{grid-template-columns:1fr}#ms-panel .ms-plan{grid-template-columns:repeat(2,minmax(0,1fr))}#sf-card{padding:12px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}button,input,textarea,select{transition:none}}
+
+/* First-leg travel validation: visible above all delay estimates. */
+.v5-first-review{padding:15px 17px;margin:0!important;border:1px solid rgba(242,180,70,.56);border-left:4px solid #f2b446;border-radius:16px;box-shadow:var(--v5-shadow);background:var(--panel)}
+.v5-first-review .v5-sectionhead{margin-bottom:5px}
+.v5-first-destination{margin:5px 0 9px;font-weight:750;font-size:14px;line-height:1.4}
+.v5-first-review .v5-mini{margin:6px 0 9px;line-height:1.5}
+.v5-first-controls{display:grid;grid-template-columns:minmax(200px,1.5fr) auto auto minmax(105px,.7fr) auto;gap:8px;align-items:end;margin-top:9px}
+.v5-first-controls label{font-size:11px;font-weight:750;margin:0;display:flex;flex-direction:column;gap:5px}
+.v5-first-controls input{height:43px;font-size:13px;padding:8px 9px;width:100%;min-width:0}
+.v5-first-controls button,.v5-first-controls a{min-height:43px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;padding:8px 11px;white-space:nowrap;text-align:center}
+.v5-first-controls a{background:var(--v5-glass);border:1px solid var(--accent);text-decoration:none;color:var(--accent)}
+.v5-first-controls button.primary{background:var(--accent);color:#06232a}
+@media(max-width:1100px){.v5-first-controls{grid-template-columns:minmax(190px,1.4fr) auto auto minmax(105px,.7fr);}.v5-first-controls #v5-apply-first{grid-column:4}}
+@media(max-width:850px){.v5-first-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.v5-first-controls>label:first-child{grid-column:1 / -1}.v5-first-controls a{white-space:normal}}
+@media(max-width:500px){.v5-first-controls{grid-template-columns:1fr}.v5-first-controls>label:first-child,.v5-first-controls #v5-apply-first{grid-column:auto}}
