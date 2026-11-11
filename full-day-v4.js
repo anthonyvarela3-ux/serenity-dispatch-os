@@ -12,7 +12,7 @@ card.className='panel sf-card';
 card.id='sf-card';
 card.innerHTML=
  '<div class="sf-heading"><div><h2>Full-Day Arrival Outlook</h2><small>Scheduled pickup · projected arrival · Serenity-calculated drop-off</small></div><span class="sf-summary" id="sf-summary">Waiting for your estimates</span></div>'+
- '<p class="sf-note"><strong>Target: 10 minutes early.</strong> Drop-offs are based on driver-entered trip minutes, <strong>not</strong> manifest drop-off times. Road ETAs require a routing service; GPS coordinates alone cannot calculate traffic.</p>'+
+ '<p class="sf-note"><strong>Target: 10 minutes early.</strong> Your first-use estimates are 15 minutes between stops, 20 minutes per trip and 5-minute boarding buffers until you change them. <strong>Planning assumptions only, not Google Maps traffic ETAs.</strong> RoutingBox drop-off times are not used.</p>'+
  '<div class="sf-controls">'+
  '<label>Travel between stops (min)<input id="sf-reposition" type="number" min="1" max="180" step="1" inputmode="numeric" placeholder="Set estimate"></label>'+
  '<label>Default trip driving (min)<input id="sf-trip" type="number" min="1" max="240" step="1" inputmode="numeric" placeholder="Set estimate"></label>'+
@@ -78,7 +78,11 @@ function intOrNull(x,min,max){
 }
 function config(){
  const c=db.forecastV4||{};
- return {reposition:intOrNull(c.reposition,1,180),trip:intOrNull(c.trip,1,240),buffer:intOrNull(c.buffer,0,60)};
+ // Defaults are provisional for first-use auto-planning, NOT road/traffic estimates.
+ return {reposition:c.reposition===undefined?15:intOrNull(c.reposition,1,180),
+   trip:c.trip===undefined?20:intOrNull(c.trip,1,240),
+   buffer:c.buffer===undefined?5:intOrNull(c.buffer,0,60),
+   provisional:c.reposition===undefined||c.trip===undefined||c.buffer===undefined};
 }
 function compute(runs,date,now,c,maps){
  const current=dateLocal(now)===date?minutes(now):null;
@@ -91,6 +95,7 @@ function compute(runs,date,now,c,maps){
   const arrived=atEvent(r.events&&r.events.arrived,date);
   const boarded=atEvent(r.events&&r.events.boarded,date);
   const actualEnd=atEvent(r.events&&(r.events.dropoff||r.events.closed),date);
+  const endWasVerified=!!r.events?.dropoff;
   if(!Number.isFinite(pickup)){
    readyAt=null;blocked=true;
    return {r,state:'missing',reason:'Invalid pickup time'};
@@ -98,7 +103,7 @@ function compute(runs,date,now,c,maps){
   if(closed){
    if(actualEnd!==null){readyAt=actualEnd;blocked=false;}
    else {readyAt=null;blocked=true;}
-   return {r,state:'done',pickup,target,drop:actualEnd,reason:actualEnd===null?'No actual end time':''};
+   return {r,state:'done',pickup,target,drop:actualEnd,reason:actualEnd===null?'No actual end time':endWasVerified?'Drop-off recorded':'Trip closed; drop-off time not verified',verifiedEnd:endWasVerified};
   }
   const duration=intOrNull(overrides[r.id],1,240)??c.trip;
   const manual=firstOpen && current!==null && maps && maps.date===date && maps.runId===r.id &&
@@ -183,9 +188,9 @@ function draw(){
      '<td>'+input+'</td><td>'+escText(isClosed?'Actual event':p.source||'Unknown')+'</td></tr>';
  }
  out.innerHTML=html+'</tbody></table>';
- summary.textContent=late+' projected late · '+risk+' early-goal misses · '+unknown+' unestimated';
+ summary.textContent=late+' projected late · '+risk+' early-goal misses · '+unknown+' unestimated'+(c.provisional?' · PROVISIONAL travel times':'');
  E('sf-source').textContent='Updated '+now.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})+
-  ' · First active leg: '+(mapsOK?'manually entered Maps drive time':'driver travel estimate')+
+  ' · First active leg: '+(mapsOK?'manually entered Maps drive time':c.provisional?'provisional travel assumption':'driver travel estimate')+
   ' · Future legs: your travel assumptions · Drop-offs: your trip minutes and buffers. No scheduled drop-off values used.';
  // Replace manifest's misleading drop-off time display without affecting stored original data.
  const rows=E('rows'),head=rows&&rows.closest('table')?.querySelectorAll('thead th');
