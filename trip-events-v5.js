@@ -32,6 +32,11 @@ document.addEventListener('click',event=>{
  const btn=event.target.closest?.('#v5-dropoff');if(!btn)return;
  event.preventDefault();event.stopImmediatePropagation();
  const r=db.runs.find(item=>item.id===db.active);if(!r)return;
+ if(window.SerenityLifecycle?.markEvent){
+  const result=window.SerenityLifecycle.markEvent(r,'dropoff');
+  if(result?.ok===true)show('roster');
+  return;
+ }
  if(!confirm('Confirm this passenger was dropped off NOW? Serenity will record the actual time and complete this run.'))return;
  const now=new Date().toISOString();
  r.events=r.events||{};
