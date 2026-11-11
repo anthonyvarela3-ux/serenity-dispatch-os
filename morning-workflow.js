@@ -184,7 +184,7 @@ function updateEvent(key,iso,date){
  if(!rec.events)rec.events={};
  const first=firstRun(date);
  if(key==='firstArrival'&&first){
-  if((first.status==='Completed'||first.status==='Exception')&&!confirm('This trip is already closed. Update its recorded arrival time anyway?'))return;
+  if((['Completed','Exception','Canceled','Canceled at Door','No-show'].includes(first.status))&&!confirm('This trip is already closed. Update its recorded arrival time anyway?'))return;
   first.events=first.events||{};
   first.events.arrived=iso;
   if(!['Completed','Exception','Onboard'].includes(first.status))first.status='Arrived';
@@ -256,7 +256,7 @@ window.addEventListener('serenity-location-refresh',e=>{
 window.SerenityMorning={
  anchor(date,allRuns,now){
   const first=firstRun(date),c=prefs(date),rec=dayRecord(date);
-  if(!first||first.status==='Completed'||first.status==='Exception'||allRuns[0]?.id!==first.id)return null;
+  if(!first||['Completed','Exception','Canceled','Canceled at Door','No-show'].includes(first.status)||allRuns[0]?.id!==first.id)return null;
   const actualArrival=old(rec.firstArrival,date);
   if(actualArrival!==null)return {runId:first.id,arrival:actualArrival,source:'First pickup actual'};
   if(c.firstDrive===null)return null;
