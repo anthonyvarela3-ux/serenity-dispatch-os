@@ -171,3 +171,70 @@ test('Import modal inherits service date selected on Overview',async({page})=>{
  await expect(page.locator('#import-date')).toHaveValue(localDay(1));
  await expect(page.locator('#manifest-date-count')).toContainText('0 saved runs');
 });
+
+test('realistic failed review: 14 OCR cards (10 ready, 3 duplicates, 1 incomplete) warns and cannot silently Replace',async({page})=>{
+ const all=Array.from({length:10},(_,i)=>{
+  const hh=8+Math.floor(i/4),mm=(i%4)*15,stamp=hh+':'+String(mm).padStart(2,'0')+' AM';
+  return {name:'FAKE RIDER '+String.fromCharCode(65+i),pu:stamp,
+    puAddr:(100+i)+' Test Street, Exampleville, NY 11111',
+    du:'12:00 PM',doAddr:(300+i)+' Demo Road, Exampleville, NY 11111'};
+ });
+ const ocrCard=r=>r.name+'\nPU '+r.pu+'\n'+r.puAddr+'\nDO '+r.du+'\n'+r.doAddr;
+ const incomplete={name:'FAKE RIDER Z',pu:'11:00 AM',
+  puAddr:'999 Test Street, Exampleville, NY 11111',du:'12:00 PM',doAddr:''};
+ const listA=all.slice(0,7).map(ocrCard).join('\n');
+ const listB=all.slice(7).concat(all.slice(0,3),[incomplete]).map(ocrCard).join('\n');
+ await page.addInitScript(({listA,listB})=>{
+  window.Tesseract={createWorker:async()=>({
+   recognize:async file=>({data:{confidence:99,text:'ASSIGNED TOMORROW\n'+
+    (file.name.includes('first')?listA:listB)}}),
+   terminate:async()=>{}
+  })};
+ },{listA,listB});
+ await seeded(page,{today:7});
+ await manager(page);
+ page.on('dialog',d=>{if(d.type()==='alert')d.accept();else d.accept()});
+ await page.locator('#manifest-image').setInputFiles([
+  {name:'first.png',mimeType:'image/png',buffer:Buffer.from([137,80,78,71])},
+  {name:'second.png',mimeType:'image/png',buffer:Buffer.from([137,80,78,71])}
+ ]);
+ await page.locator('#read-ocr').click();
+ await expect(page.locator('#preview-box')).toContainText('10 unique ready',{timeout:15000});
+ await expect(page.locator('#preview-box')).toContainText('3 overlapping duplicate(s) skipped');
+ await expect(page.locator('#preview-box')).toContainText('1 incomplete');
+ await page.locator('#manifest-expected-count').fill('8');
+ await expect(page.locator('#manifest-review-status')).toContainText('Expected 8 run(s), but 10 are ready');
+ const replace=page.locator('#commit-reviewed');
+ await expect(replace).toBeEnabled();
+ await expect(replace).toContainText('Review issues');
+ await replace.click();
+ // A rejected review never silently alters today's existing runs.
+ expect((await db(page)).runs.filter(r=>r.date===localDay(1))).toHaveLength(0);
+ expect((await db(page)).runs.filter(r=>r.date===localDay())).toHaveLength(7);
+ // Remove incomplete card and two OCR-extra entries, leaving exactly eight.
+ await page.locator('#preview-box [data-import-review-status="incomplete"] button[data-remove-import-index]').click();
+ await page.locator('button[data-remove-import-index="9"]').click();
+ await page.locator('button[data-remove-import-index="8"]').click();
+ await expect(page.locator('#preview-box')).toContainText('8 unique ready');
+ await expect(page.locator('#manifest-review-status')).toContainText('Ready to save');
+ await page.locator('#reviewed-all').check();
+ await expect(page.locator('#commit-reviewed')).toContainText('Replace');
+ await page.locator('#commit-reviewed').click();
+ await expect(page.locator('#v7-manifest')).toBeVisible();
+ const updated=await db(page);
+ expect(updated.runs.filter(r=>r.date===localDay(1))).toHaveLength(8);
+ expect(updated.runs.filter(r=>r.date===localDay())).toHaveLength(7);
+});
+test('Replace never proceeds if the driver has not entered expected count',async({page})=>{
+ await seeded(page,{today:7,tomorrow:4});
+ await manager(page);
+ await page.locator('#manifest-tomorrow').click();
+ await page.locator('#raw').fill(manual);
+ await page.locator('#preview').click();
+ await expect(page.locator('#manifest-review-status')).toContainText('Enter the expected unique run count');
+ await expect(page.locator('#commit-reviewed')).toBeEnabled();
+ page.on('dialog',d=>d.accept());
+ await page.locator('#reviewed-all').check();
+ await page.locator('#commit-reviewed').click();
+ expect((await db(page)).runs.filter(r=>r.date===localDay(1))).toHaveLength(4);
+});
