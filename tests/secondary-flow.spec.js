@@ -37,8 +37,9 @@ test('manual import requires explicit review, persists once, ignores exact dupli
  expect((await getDb(page)).runs.length).toBe(1);
  await page.locator('#v7-navigation [data-v7-page="overview"]').click();
  await page.locator('#v7-overview .v7-page-heading [data-v7-action="import"]').click();
+ await page.locator('input[name="manifest-write-mode"][value="append"]').check();
  await page.locator('#preview').click();
- await expect(page.locator('#preview-box')).toContainText('1 duplicate(s)');
+ await expect(page.locator('#preview-box')).toContainText('1 overlapping duplicate(s) skipped');
  await expect(page.locator('#commit-reviewed')).toBeDisabled();
  expect((await getDb(page)).runs.length).toBe(1);
 });
