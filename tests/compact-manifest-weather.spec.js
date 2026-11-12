@@ -46,36 +46,39 @@ test('compact manifest combines office pickup + ETA, prioritizes DO ETA over MAS
 });
 
 test('NWS morning, afternoon, evening cards use forecast for the selected service date',async({page})=>{
+ // Build service-hour timestamps in the browser's New York timezone, not
+ // the UTC timezone of the GitHub Actions runner.
+ await page.goto('about:blank');
+ const forecast=await page.evaluate(()=>{
+  const d=new Date(),pad=n=>String(n).padStart(2,'0');
+  const date=[d.getFullYear(),pad(d.getMonth()+1),pad(d.getDate())].join('-');
+  d.setDate(d.getDate()+1);
+  const next=[d.getFullYear(),pad(d.getMonth()+1),pad(d.getDate())].join('-');
+  const mk=(hour,temperature,shortForecast,rain)=>({
+   startTime:new Date(next+'T'+pad(hour)+':00:00').toISOString(),
+   endTime:new Date(next+'T'+pad(hour+1)+':00:00').toISOString(),
+   temperature,temperatureUnit:'F',shortForecast,windSpeed:'6 mph',
+   probabilityOfPrecipitation:{value:rain}
+  });
+  return {date,next,periods:[
+   mk(8,45,'Sunny',5),mk(9,47,'Sunny',7),
+   mk(13,65,'Cloudy',25),mk(14,63,'Cloudy',35),
+   mk(19,51,'Showers',70),mk(20,49,'Showers',80)
+  ]};
+ });
  await page.route('https://api.weather.gov/points/**',route=>route.fulfill({
   status:200,contentType:'application/geo+json',
   body:JSON.stringify({properties:{forecastHourly:'https://api.weather.gov/gridpoints/QA/2,2/forecast/hourly'}})
  }));
- await page.route('https://api.weather.gov/gridpoints/**',route=>{
-  const d=new Date();
-  const local=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1);
-  const mk=(hour,temperature,shortForecast,rain)=>({
-   startTime:new Date(local.getFullYear(),local.getMonth(),local.getDate(),hour).toISOString(),
-   endTime:new Date(local.getFullYear(),local.getMonth(),local.getDate(),hour+1).toISOString(),
-   temperature,temperatureUnit:'F',shortForecast,windSpeed:'6 mph',
-   probabilityOfPrecipitation:{value:rain}
-  });
-  route.fulfill({status:200,contentType:'application/geo+json',
-   body:JSON.stringify({properties:{periods:[
-    mk(8,45,'Sunny',5),mk(9,47,'Sunny',7),
-    mk(13,65,'Cloudy',25),mk(14,63,'Cloudy',35),
-    mk(19,51,'Showers',70),mk(20,49,'Showers',80)
-   ]}})});
- });
+ await page.route('https://api.weather.gov/gridpoints/**',route=>route.fulfill({
+  status:200,contentType:'application/geo+json',
+  body:JSON.stringify({properties:{periods:forecast.periods}})
+ }));
  await page.route('https://api.weather.gov/alerts/**',route=>route.fulfill({
   status:200,contentType:'application/geo+json',body:JSON.stringify({features:[]})
  }));
  await page.goto('/',{waitUntil:'domcontentloaded'});
- const date=await todayAtBrowser(page);
- const next=await page.evaluate(()=>{
-  const d=new Date();d.setDate(d.getDate()+1);
-  return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
- });
- await page.locator('#date').fill(next);
+ await page.locator('#date').fill(forecast.next);
  const tiles=page.locator('#v10-dayparts .v10-daypart');
  await expect(tiles).toHaveCount(3);
  await expect(tiles.nth(0)).toContainText('Morning');
@@ -85,7 +88,7 @@ test('NWS morning, afternoon, evening cards use forecast for the selected servic
  await expect(tiles.nth(2)).toContainText('Evening');
  await expect(tiles.nth(2)).toContainText('49–51°F');
  await expect(tiles.nth(2)).toContainText('Rain up to 80%');
- await page.locator('#date').fill(date);
+ await page.locator('#date').fill(forecast.date);
  await expect(tiles.nth(0)).toContainText('No NWS hourly forecast for this period');
 });
 
