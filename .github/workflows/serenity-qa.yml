@@ -5,6 +5,7 @@ on:
       - serenity-beta7-stabilization-qa
       - serenity-beta7-manifest-replace-date
       - serenity-manifest-review-button-fix
+      - serenity-manifest-compact-weather3
   workflow_dispatch:
 permissions:
   contents: read
