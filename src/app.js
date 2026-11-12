@@ -324,42 +324,77 @@ async function weather(){
  }catch(e){$('weather').innerHTML='<div class="empty">Forecast unavailable: '+esc(e.message)+'</div>'}
 }
 
-function initQuickDock(){
- const dock=$('quickDock'),handle=$('quickDockHandle'),toggle=$('dockCollapse');
- if(!dock||!handle)return;
- let position=state.settings.dock||{};
- function positionDock(){
-  dock.classList.toggle('collapsed',!!position.collapsed);
-  toggle.textContent=position.collapsed?'+':'−';
-  if(Number.isFinite(position.x)&&Number.isFinite(position.y)){
-    dock.style.left=Math.max(0,Math.min(innerWidth-dock.offsetWidth,position.x))+'px';
-    dock.style.top=Math.max(0,Math.min(innerHeight-dock.offsetHeight,position.y))+'px';
-    dock.style.right='auto';dock.style.bottom='auto';
-  }
+function initDashboardCards(){
+ const container=$('dashboardMetrics'),customize=$('customizeCards'),reset=$('resetCards'),help=$('dashboardHelp');
+ if(!container||!customize)return;
+ const cards=[...container.querySelectorAll('[data-card-id]')];
+ const cardIds=cards.map(card=>card.dataset.cardId);
+ const validOrder=Array.isArray(state.settings.metricOrder)?state.settings.metricOrder.filter(id=>cardIds.includes(id)):[];
+ const ordered=[...new Set([...validOrder,...cardIds])];
+ ordered.forEach(id=>{const card=cards.find(x=>x.dataset.cardId===id);if(card)container.append(card)});
+ for(const card of cards){
+  const id=card.dataset.cardId;
+  const handle=document.createElement('button');
+  handle.type='button';handle.className='card-drag-handle';handle.textContent='⠿';
+  handle.setAttribute('aria-label','Move '+(card.querySelector('small')?.textContent||'dashboard card'));
+  handle.title='Drag to reorder bubble, or use arrow keys';
+  card.append(handle);
  }
- requestAnimationFrame(positionDock);
- let drag=null;
- handle.addEventListener('pointerdown',e=>{
+ const save=()=>{state.settings.metricOrder=[...container.querySelectorAll('[data-card-id]')].map(c=>c.dataset.cardId);persist()};
+ const setEditing=enabled=>{
+  container.classList.toggle('editing',enabled);
+  customize.textContent=enabled?'Done customizing':'Customize bubbles';
+  customize.setAttribute('aria-pressed',String(enabled));
+  reset.hidden=!enabled;help.hidden=!enabled;
+ };
+ let editing=false,drag=null;
+ customize.addEventListener('click',()=>{editing=!editing;setEditing(editing)});
+ reset.addEventListener('click',()=>{
+  const current=[...container.querySelectorAll('[data-card-id]')];
+  cardIds.forEach(id=>{const card=current.find(x=>x.dataset.cardId===id);if(card)container.append(card)});
+  save();
+ });
+ container.addEventListener('pointerdown',e=>{
+  const handle=e.target.closest('.card-drag-handle');
+  if(!editing||!handle)return;
   if(e.pointerType==='mouse'&&e.button!==0)return;
-  e.preventDefault();
-  const r=dock.getBoundingClientRect();
-  drag={x:e.clientX-r.left,y:e.clientY-r.top};
+  const card=handle.closest('[data-card-id]');if(!card)return;
+  e.preventDefault();drag={card,handle,moved:false};
+  card.classList.add('card-is-dragging');
   handle.setPointerCapture(e.pointerId);
  });
- handle.addEventListener('pointermove',e=>{
+ container.addEventListener('pointermove',e=>{
   if(!drag)return;
-  position.x=Math.max(0,Math.min(innerWidth-dock.offsetWidth,e.clientX-drag.x));
-  position.y=Math.max(0,Math.min(innerHeight-dock.offsetHeight,e.clientY-drag.y));
-  dock.style.left=position.x+'px';dock.style.top=position.y+'px';dock.style.right='auto';dock.style.bottom='auto';
+  const under=document.elementFromPoint(e.clientX,e.clientY);
+  const target=under?.closest('[data-card-id]');
+  if(!target||target===drag.card||target.parentElement!==container)return;
+  const items=[...container.children];
+  if(items.indexOf(target)>items.indexOf(drag.card))target.after(drag.card);
+  else target.before(drag.card);
+  drag.moved=true;
  });
- const saveDock=()=>{if(drag){drag=null;state.settings.dock=position;persist()}};
- handle.addEventListener('pointerup',saveDock);handle.addEventListener('pointercancel',saveDock);
- toggle.addEventListener('click',()=>{position.collapsed=!position.collapsed;state.settings.dock=position;persist();positionDock()});
- dock.querySelectorAll('[data-quick-tab]').forEach(btn=>btn.addEventListener('click',()=>{
-  const link=document.querySelector('.nav [data-tab="'+btn.dataset.quickTab+'"]');if(link)link.click();
- }));
- window.addEventListener('resize',positionDock);
+ const endDrag=()=>{
+  if(!drag)return;
+  drag.card.classList.remove('card-is-dragging');
+  if(drag.moved)save();
+  drag=null;
+ };
+ container.addEventListener('pointerup',endDrag);
+ container.addEventListener('pointercancel',endDrag);
+ container.addEventListener('keydown',e=>{
+  if(!editing||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;
+  const handle=e.target.closest('.card-drag-handle');if(!handle)return;
+  const card=handle.closest('[data-card-id]');const items=[...container.children],i=items.indexOf(card);
+  const perRow=innerWidth<=700?2:4;
+  const offset=e.key==='ArrowLeft'?-1:e.key==='ArrowRight'?1:e.key==='ArrowUp'?-perRow:perRow;
+  const j=Math.max(0,Math.min(items.length-1,i+offset));
+  if(i===j)return;
+  e.preventDefault();
+  const other=items[j];if(j>i)other.after(card);else other.before(card);
+  handle.focus();save();
+ });
+ setEditing(false);
 }
 setInterval(()=>{$('clock').textContent=new Date().toLocaleTimeString('en-US');if(!state.expanded && Date.now()%15000<1000)renderManifest();if(state.shift.start&&!state.shift.end){renderShift();renderFinanceStrip()}},1000);
-initEvents();renderAll();initQuickDock();$('clock').textContent=new Date().toLocaleTimeString('en-US');
+initEvents();renderAll();initDashboardCards();$('clock').textContent=new Date().toLocaleTimeString('en-US');
 })();
