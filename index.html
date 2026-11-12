@@ -356,7 +356,12 @@ el('date').value=liveDate;el('import-date').value=liveDate;el('date').addEventLi
         '<b>Card '+(i+1)+' · <span class="status">'+safe(name)+'</span></b>'+
         '<button type="button" data-remove-import-index="'+i+'">Remove this card</button></div>'+
         '<div class="review-grid">'+inputs+'</div></div>';
-    }).join('');
+    });
+    const visibleCards=cards.filter((_,i)=>state.statuses[i]!=='duplicate').join('');
+    const repeatedCards=cards.filter((_,i)=>state.statuses[i]==='duplicate').join('');
+    const duplicatesSection=repeatedCards?'<details class="manifest-overlap-details"><summary>'+
+      state.duplicates+' repeated screenshot card(s) skipped — tap to inspect</summary>'+
+      repeatedCards+'</details>':'';
     const errors=previewErrors.map(msg=>'<p class="bad">'+safe(msg)+'</p>').join('');
     const conflicts=state.conflicts?'<p class="bad">Some cards share a passenger and pickup time but disagree on other details. Correct or remove those cards before saving.</p>':'';
     const before=existing;
@@ -369,7 +374,7 @@ el('date').value=liveDate;el('import-date').value=liveDate;el('date').addEventLi
       state.duplicates+' overlapping duplicate(s) skipped · '+state.conflicts+
       ' possible match(es) · '+state.invalid+' incomplete</p>'+
       '<p><b>'+before+' saved now → '+after+' after '+(replacing?'REPLACE':'ADD')+'</b></p>'+
-      warn+errors+conflicts+cards+
+      warn+errors+conflicts+visibleCards+duplicatesSection+
       '<label><input type="checkbox" id="reviewed-all" style="width:auto;margin-right:6px">'+
       'I checked each distinct assignment, both times, all addresses and the final count against RoutingBox.</label>'+
       '<button id="commit-reviewed" class="primary" '+(readyToCommit?'':'disabled')+'>'+
