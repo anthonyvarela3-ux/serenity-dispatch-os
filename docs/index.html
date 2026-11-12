@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Serenity Dispatch OS — Driver Preview</title><style>
+:root{font-family:system-ui,-apple-system,Arial,sans-serif;color-scheme:dark;--bg:#08101d;--panel:#111d2e;--border:#293b51;--text:#e9f4ff;--muted:#9aaec5;--accent:#49dbe8;--green:#4ade80;--yellow:#fde047;--red:#fb7185;--purple:#d8b4fe}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text)}body.light{color-scheme:light;--bg:#f1f5fb;--panel:#fff;--border:#c4d0df;--text:#172234;--muted:#52637a;--accent:#066d83}button,input,textarea,select{font:inherit}button,a.button{border:1px solid var(--border);border-radius:7px;background:#26384e;color:#f9fbff;padding:9px 12px;cursor:pointer;text-decoration:none}button:hover{filter:brightness(1.16)}button:disabled{opacity:.4;cursor:not-allowed}.primary{background:#075e76!important;border-color:#25c9e7}.danger{background:#8d293a!important}.shell{max-width:1240px;padding:12px;margin:auto}.header{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 4px}.header h1{font-size:20px;margin:0;color:var(--accent)}.header h1 span{color:var(--text)}small,.muted{color:var(--muted)}.right{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.pill{display:inline-block;padding:5px 8px;border:1px solid var(--border);border-radius:7px;font-size:11px;font-weight:800}.pill.warn{background:#55340b;color:#ffe196}.nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:8px 0 12px}.nav button{padding:12px 3px;font-size:12px}.nav .active{background:#075e76;border-color:#20b6d2}.notice{border:1px solid #c38a22;background:#3c2a0f;color:#ffdf9d;border-radius:7px;padding:9px;font-size:12px;margin-bottom:12px}.tab{display:none}.tab.active{display:block}.toolbar{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.metric,.panel,.weather-section{background:var(--panel);border:1px solid var(--border);padding:12px;border-radius:9px}.metric small{display:block;font-size:11px}.metric b{display:block;font-size:18px;margin-top:4px}.bar{display:flex;justify-content:space-between;gap:8px;align-items:center;margin:14px 0 9px}.bar h2,h2{font-size:18px;margin:0}.bar small{display:block}.actions{display:flex;gap:6px;flex-wrap:wrap}.manifest-list{background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden}.manifest-row{border-bottom:1px solid var(--border)}.manifest-row:last-child{border:0}.manifest-main{width:100%;display:grid;grid-template-columns:minmax(110px,1.4fr) minmax(130px,1.2fr) minmax(72px,.75fr) minmax(75px,.7fr);align-items:center;gap:6px;padding:9px 10px;background:transparent;color:var(--text);border:0;border-radius:0;text-align:left}.manifest-main:hover{background:rgba(49,161,204,.09)}.manifest-row.active{box-shadow:inset 4px 0 var(--accent)}.manifest-row.completed .manifest-main{opacity:.52}.name{font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.direction{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase}.times{display:flex;gap:8px;flex-wrap:wrap;font-size:12px}.times em{font-style:normal;color:var(--muted);font-size:10px}.timeval{font-weight:750}.timeBlock{display:grid;gap:1px}.delta{display:inline-flex;justify-content:center;align-items:center;border-radius:6px;font-size:12px;font-weight:850;min-height:32px;padding:5px 8px;white-space:nowrap}.delta.green{color:#4ade80;background:#073b29}.delta.yellow{color:#fde047;background:#493a08}.delta.red{color:#fb7185;background:#450a15}.delta.purple{color:#d8b4fe;background:#351657}.delta.stale,.delta.unknown{color:#d1d5db;background:#334155}.manifest-detail{padding:12px;background:rgba(24,44,66,.5);border-top:1px dashed var(--border)}.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}.detailbox{border:1px solid var(--border);border-radius:8px;padding:10px;min-width:0}.detailbox strong{display:block;margin-bottom:4px}.detailbox p{overflow-wrap:anywhere;font-size:12px}.muted{font-size:12px}.detailbox a{display:inline-block;color:var(--accent);margin-right:10px;font-size:12px}.detailbox input,.detailbox textarea{width:100%;margin-top:5px}.detail-actions{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}h3{font-size:15px}input,textarea,select{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:9px;color:var(--text);max-width:100%}input[type=file]{width:100%}label{display:block;font-size:12px;margin:8px 0}label input,label select{display:block;width:100%;margin-top:5px}textarea{display:block;width:100%;resize:vertical}#importPreview{margin-top:12px}.preview-item{padding:9px;border-bottom:1px solid var(--border)}.weather-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.weather-tile{padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px}.weather-tile b{display:block;font-size:17px;margin:6px 0}.weather-section{margin-top:14px}.empty{padding:20px;color:var(--muted);text-align:center}.formgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.panel{margin:12px 0}.intel-card{padding:10px;border-bottom:1px solid var(--border)}.intel-card input,.intel-card textarea{width:100%}.inline-edit{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}footer{font-size:11px;color:var(--muted);text-align:center;padding:20px}.compact-text .manifest-main{font-size:12px}.medium-text .manifest-main{font-size:14px}.large-text .manifest-main{font-size:16px}.comfortable-rows .manifest-main{padding-top:16px;padding-bottom:16px}@media(max-width:650px){.shell{padding:6px}.header h1{font-size:16px}.right{justify-content:flex-end}.nav button{font-size:10px;padding:10px 2px}.toolbar{grid-template-columns:repeat(2,1fr)}.bar{align-items:flex-start}.manifest-main{grid-template-columns:minmax(80px,1.2fr) minmax(108px,1fr) minmax(56px,.65fr) minmax(62px,.65fr);padding:9px 5px;gap:4px}.timeval,.manifest-main{font-size:11px}.times{gap:3px}.delta{font-size:10px;padding:3px}.direction{font-size:9px}.two{grid-template-columns:1fr}.formgrid{grid-template-columns:repeat(2,1fr)}.weather-tile{padding:7px}.weather-tile b{font-size:14px}}@media print{.nav,.notice,button,.actions,.detail-actions,footer{display:none!important}.tab{display:none!important}#tab-reports{display:block!important}.shell{color:#000;background:#fff}.panel{background:#fff;color:#000}}
+</style></head>
+<body><div class="shell">
+<header class="header"><div><h1>SERENITY <span>DISPATCH OS</span></h1><small>Driver cockpit · protected development preview</small></div><div class="right"><span id="clock"></span><span class="pill warn">PREVIEW · NO PATIENT DATA</span></div></header>
+<nav class="nav" aria-label="Sections"><button data-tab="manifest" class="active">Manifest</button><button data-tab="import">Import</button><button data-tab="intelligence">Intelligence</button><button data-tab="reports">Shift & Reports</button><button data-tab="settings">Settings</button></nav>
+<div id="notice" class="notice">This public preview uses fictional sample riders. Do not enter real patient information until secure storage and compliance review are completed.</div>
+<section id="tab-manifest" class="tab active">
+<div class="toolbar"><div class="metric"><small>Completed</small><b id="metric-progress">0 / 0</b></div><div class="metric"><small>Next pickup variance</small><b id="metric-delay">—</b></div><div class="metric"><small>Last routing update</small><b id="metric-fresh">Not connected</b></div><div class="metric"><small>GPS position</small><b id="metric-gps">Off</b></div></div>
+<div class="bar"><div><h2>Full-Day Manifest</h2><small>Original office order · tap any row to expand</small></div><div class="actions"><button id="loadDemo">Load fictional demo</button><button id="refreshNow">Refresh GPS</button></div></div>
+<div id="manifest-list" class="manifest-list" aria-live="polite"></div>
+<div class="weather-section"><div class="bar"><h2>Morning / Afternoon / Evening Weather</h2><button id="weatherRefresh">Update forecast</button></div><div id="weather" class="weather-grid"><div class="empty">Enable GPS and weather permission in Settings to load a forecast.</div></div></div>
+</section>
+<section id="tab-import" class="tab"><h2>Import & Intelligent Merge</h2><p class="muted">Review extracted data before adding or replacing runs. Screenshot reading needs a network-loaded OCR engine and may require corrections. Do not use real patient manifests in this public preview.</p>
+<div class="panel"><label for="imageInput">Manifest screenshot(s) — up to two</label><input id="imageInput" type="file" accept="image/*" multiple><div class="actions"><button id="runOcr">Read screenshots (OCR)</button><button id="useText">Parse pasted text</button></div><p id="ocrStatus" class="muted">No screenshots processed.</p><label for="rawInput">Extracted / pasted text (edit before preview)</label><textarea id="rawInput" rows="9" placeholder="One trip per line: Name | Phone | Direction | Scheduled pickup | Pickup address | Drop-off address | Miles&#10;Example: Sample Rider | 6315550101 | Outbound | 9:00 AM | 1 Main St, Bay Shore NY | 2 Sample Ave, Islip NY | 8"></textarea><p class="muted">The parser supports pipe-delimited rows only. OCR text that does not match this format requires manual correction; no fake trips are substituted.</p><div class="actions"><button id="previewImport" class="primary">Validate and preview</button><button id="applyImport" disabled>Apply reviewed merge</button></div></div>
+<div id="importPreview" class="panel empty">No import preview yet.</div></section>
+<section id="tab-intelligence" class="tab"><h2>Customer Intelligence</h2><p class="muted">Saved locally in this browser for fictional demonstration only. Production secure cloud sync is not yet connected.</p><div class="panel"><label>Search customer or facility</label><input id="intelSearch" placeholder="Search names, facilities, notes"><div id="intelList"></div></div></section>
+<section id="tab-reports" class="tab"><h2>Shift & Daily Reports</h2><div class="panel"><div class="actions"><button id="startShift" class="primary">Leave Work · Start</button><button id="endShift">Arrive Home · End</button><button id="breakShift">Toggle unpaid break</button><button id="saveDay">Save daily snapshot</button></div><div id="shiftSummary"></div><div class="actions"><button id="exportCsv">Export CSV (fictional only)</button><button id="printDay">Print / Save PDF</button></div></div><h3>Saved Shift History</h3><div id="historyList" class="panel"></div></section>
+<section id="tab-settings" class="tab"><h2>Driver Preferences</h2><div class="panel formgrid"><label>Hourly pay ($)<input id="rateInput" type="number" min="0" step=".01" value="22.50"></label><label>Overtime multiplier<input id="overtimeFactor" type="number" min="1" step=".1" value="1.5"></label><label>Overtime weekly threshold (hours)<input id="overtimeHours" type="number" min="1" step="1" value="40"></label><label>Text size<select id="fontInput"><option value="compact">Compact</option><option value="medium">Medium</option><option value="large">Large</option></select></label><label>Row density<select id="densityInput"><option value="compact">Compact</option><option value="comfortable">Comfortable</option></select></label><label>Theme<select id="themeInput"><option value="dark">Dark</option><option value="light">Light</option></select></label></div><div class="panel"><h3>Location & routing</h3><p class="muted">15-second location polling operates only while the page is active and permitted. A live traffic-aware routing provider is NOT connected. Pickup/drop-off ETA fields are explicitly manual estimates in this preview.</p><div class="actions"><button id="startGPS" class="primary">Enable GPS position updates</button><button id="stopGPS">Stop GPS</button><a href="https://www.google.com/maps" target="_blank" rel="noopener">Google Maps & location sharing</a></div><p id="gpsStatus" class="muted">GPS inactive.</p><p id="storageStatus" class="muted">Storage: browser-local preview only. No secure cloud sync; do not use with patient data.</p></div><div class="panel"><button id="resetDemo" class="danger">Reset fictional preview data</button></div></section>
+<footer>Serenity Dispatch OS · Preview branch · Not approved for live medical transportation use</footer>
+</div><script>
+/* Serenity Dispatch OS: pure manifest timing logic.
+   No GPS data is fabricated here. All ETA values must come from a routing provider
+   or separately identified manual entries. Times are ISO timestamps with offsets.
+   Safe for direct browser import (<script src="src/manifest-timing.js">). */
+(function (root) {
+  'use strict';
+  const MINUTE = 60000;
+  const minutesDiff = (eta, scheduled) => {
+    const a = Date.parse(eta), b = Date.parse(scheduled);
+    return Number.isFinite(a) && Number.isFinite(b)
+      ? Math.ceil((a - b) / MINUTE) : null;
+  };
+  function classifyPickup({ direction, scheduledPickup, gpsPickupEta, etaUpdatedAt, now, staleAfterSeconds = 45 }) {
+    if (!scheduledPickup || !gpsPickupEta) return { tone: 'unknown', label: 'ETA unavailable', minutesLate: null, stale: false };
+    const age = etaUpdatedAt && now ? (Date.parse(now) - Date.parse(etaUpdatedAt)) / 1000 : null;
+    if (age !== null && (!Number.isFinite(age) || age > staleAfterSeconds || age < -10)) {
+      return { tone: 'stale', label: 'ETA stale', minutesLate: null, stale: true };
+    }
+    const minutesLate = minutesDiff(gpsPickupEta, scheduledPickup);
+    if (minutesLate === null) return { tone: 'unknown', label: 'ETA unavailable', minutesLate: null, stale: false };
+    const isReturn = String(direction || '').toLowerCase() === 'return' || String(direction || '').toLowerCase() === 'incoming';
+    const tone = minutesLate <= 0 ? 'green' : isReturn ? 'purple' : minutesLate <= 15 ? 'yellow' : 'red';
+    const label = minutesLate < 0 ? Math.abs(minutesLate) + ' min early' : minutesLate === 0 ? 'On time' : '+' + minutesLate + ' min late';
+    return { tone, label, minutesLate, stale: false };
+  }
+  function computeUsableGap({ previousGpsDropoffEta, nextScheduledPickup, repositionMinutes }) {
+    const a = Date.parse(previousGpsDropoffEta), b = Date.parse(nextScheduledPickup);
+    const reposition = Number(repositionMinutes);
+    if (!Number.isFinite(a) || !Number.isFinite(b) || !Number.isFinite(reposition) || reposition < 0)
+      return { availableMinutes: null, classification: 'unknown' };
+    const availableMinutes = Math.floor((b - a) / MINUTE - reposition);
+    return { availableMinutes, classification: availableMinutes < 0 ? 'conflict' : availableMinutes <= 10 ? 'tight' : 'available' };
+  }
+  root.SerenityManifestTiming = Object.freeze({ minutesDiff, classifyPickup, computeUsableGap });
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script><script>
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id);
+const KEY='serenity_preview_demo_v2';
+const dateKey=()=>new Date().toISOString().slice(0,10);
+const hhmm=d=>d?new Date(d).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'—';
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const DEMO=[
+['Fictional Rider A','6315550101','Outbound','08:00 AM','100 Example St, Bay Shore, NY','200 Sample Ave, Islip, NY',8],
+['Fictional Rider B','6315550102','Return','09:00 AM','200 Sample Ave, Islip, NY','100 Example St, Bay Shore, NY',8],
+['Fictional Rider C','6315550103','Outbound','09:45 AM','101 Example St, Bay Shore, NY','201 Sample Ave, Islip, NY',8],
+['Fictional Rider D','6315550104','Outbound','10:30 AM','102 Example St, Bay Shore, NY','202 Sample Ave, Islip, NY',8],
+['Fictional Rider E','6315550105','Return','11:45 AM','202 Sample Ave, Islip, NY','102 Example St, Bay Shore, NY',8],
+['Fictional Rider F','6315550106','Outbound','01:00 PM','103 Example St, Bay Shore, NY','203 Sample Ave, Islip, NY',8]
+];
+const toIso=(t,day=dateKey())=>{
+ if(!t)return null; const m=String(t).trim().match(/^(\d{1,2}):(\d\d)\s*(AM|PM)$/i);
+ if(!m)return null;let h=Number(m[1])%12+(m[3].toUpperCase()==='PM'?12:0);
+ const d=new Date(day+'T00:00:00');d.setHours(h,Number(m[2]),0,0);return d.toISOString();
+};
+const validPhone=p=>/^\d{10,15}$/.test(String(p||'').replace(/\D/g,''));
+const cleanPhone=p=>String(p||'').replace(/\D/g,'');
+const safeLoad=()=>{try{const o=JSON.parse(localStorage.getItem(KEY)||'null');return o&&o.demoOnly===true?o:null}catch{return null}};
+const fresh=()=>({demoOnly:true,runs:[],expanded:null,activeId:null,notes:{},facilities:{},history:[],shift:{start:null,end:null,breakStart:null,breakMs:0},settings:{rate:22.5,mult:1.5,weekly:40,font:'compact',density:'compact',theme:'dark'},position:null,lastGps:null});
+let state=safeLoad()||fresh();let importPending=null,gpsTimer=null,ocrBusy=false;
+const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){status('Local preview storage is full; changes may not persist.','error')}};
+const status=(message,type='info')=>{const n=$('notice');n.textContent=message;n.style.borderColor=type==='error'?'#f87171':'#c38a22'};
+const idFor=(x)=>[x.name.toLowerCase().trim(),x.scheduledPickup,x.pickup.toLowerCase().trim(),x.dropoff.toLowerCase().trim()].join('|');
+function asRun(fields,i){
+ const [name,phone,direction,time,pickup,dropoff,miles]=fields;
+ if(!name||!time||!pickup||!dropoff)throw Error('Missing required name, time, pickup or drop-off on line '+(i+1));
+ const scheduledPickup=toIso(time);
+ if(!scheduledPickup)throw Error('Use pickup times like 09:30 AM on line '+(i+1));
+ const dir=/^(return|incoming)$/i.test(direction)?'Return':/^(outbound|outgoing)$/i.test(direction)?'Outbound':null;
+ if(!dir)throw Error('Direction must be Outbound or Return on line '+(i+1));
+ const r={name,phone:cleanPhone(phone),direction:dir,scheduledPickup,pickup,dropoff,miles:Number(miles)||0,status:'Scheduled',gpsPickupEta:null,gpsDropoffEta:null,etaUpdatedAt:null,events:{},tripNotes:'',importedPhone:cleanPhone(phone),updatedAt:new Date().toISOString()};
+ r.id=idFor(r);return r;
+}
+function parseLines(raw){
+ const lines=raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+ if(!lines.length)throw Error('No trips found. Please paste or extract manifest text.');
+ let runs=[],bad=[];
+ lines.forEach((line,i)=>{
+  try{const p=line.split('|').map(x=>x.trim());if(p.length<6)throw Error('Expected at least 6 pipe-separated fields');
+   const r=asRun(p,i);if(r.phone&&!validPhone(r.phone))throw Error('Invalid phone number');
+   if(runs.some(x=>x.id===r.id))throw Error('Duplicate row in upload');
+   runs.push(r);
+  }catch(e){bad.push('Line '+(i+1)+': '+e.message)}
+ });
+ if(bad.length)throw Error(bad.join('; '));
+ return runs;
+}
+function demo(){
+ state=fresh();
+ state.runs=DEMO.map((r,i)=>asRun(r,i));
+ const delays=[-4,0,8,22,18,-3];
+ state.runs.forEach((r,i)=>{const t=new Date(Date.parse(r.scheduledPickup)+delays[i]*60000);r.gpsPickupEta=t.toISOString();r.gpsDropoffEta=new Date(t.getTime()+26*60000).toISOString();r.etaUpdatedAt=new Date().toISOString();r.etaSource='DEMO ONLY';});
+ state.activeId=state.runs[0].id;persist();renderAll();status('Fictional demonstration loaded. All arrival estimates are invented examples, NOT live routing.');}
+function classify(r){
+ if(!r.etaSource)return{tone:'unknown',label:'No GPS ETA'};
+ return SerenityManifestTiming.classifyPickup({direction:r.direction,scheduledPickup:r.scheduledPickup,gpsPickupEta:r.gpsPickupEta,etaUpdatedAt:r.etaUpdatedAt,now:new Date().toISOString(),staleAfterSeconds:r.etaSource==='DEMO ONLY'?Number.MAX_SAFE_INTEGER:45});
+}
+const personKey=r=>r.name.toLowerCase().trim();
+const contact=r=>{const rec=state.notes[personKey(r)];return rec?.verifiedPhone||r.phone||''};
+const docAddress=a=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(a);
+const wazeAddress=a=>'https://www.waze.com/ul?q='+encodeURIComponent(a)+'&navigate=yes';
+function rowDetails(r){
+ const p=state.notes[personKey(r)]||{}, mismatch=Boolean(p.verifiedPhone&&r.importedPhone&&p.verifiedPhone!==r.importedPhone);
+ const temps=['On my way','Running late','I have arrived','Custom message'];
+ const buttons=temps.map((label,i)=>'<button data-action="sms" data-id="'+esc(r.id)+'" data-template="'+i+'">'+label+'</button>').join('');
+ const pickupTime=r.gpsPickupEta?hhmm(r.gpsPickupEta):'Unavailable';
+ const dropTime=r.gpsDropoffEta?hhmm(r.gpsDropoffEta):'Unavailable';
+ return '<div class="manifest-detail"><div class="two"><div class="detailbox"><strong>Pickup</strong><p>'+esc(r.pickup)+'</p><small>Office '+hhmm(r.scheduledPickup)+' · ETA '+pickupTime+'</small><p><a target="_blank" rel="noopener" href="'+docAddress(r.pickup)+'">Google Maps</a><a target="_blank" rel="noopener" href="'+wazeAddress(r.pickup)+'">Waze</a></p></div><div class="detailbox"><strong>Drop-off</strong><p>'+esc(r.dropoff)+'</p><small>GPS/route ETA '+dropTime+'</small><p><a target="_blank" rel="noopener" href="'+docAddress(r.dropoff)+'">Google Maps</a><a target="_blank" rel="noopener" href="'+wazeAddress(r.dropoff)+'">Waze</a></p></div></div>'+
+ '<div class="detailbox"><strong>Customer Intelligence</strong><small>Preferred phone '+esc(contact(r)||'Not available')+(mismatch?' · ⚠ Imported number differs':'')+'</small><p>'+esc(p.notes||'No saved customer notes')+'</p><p>'+esc(state.facilities[r.dropoff.toLowerCase()]||'')+'</p><div class="actions"><button data-action="editCustomer" data-id="'+esc(r.id)+'">Edit notes and verified phone</button><button data-action="editFacility" data-id="'+esc(r.id)+'">Edit facility instructions</button><a href="tel:'+esc(contact(r))+'">Call</a></div></div>'+
+ '<div class="detailbox"><strong>Manual ETA preview (not live GPS routing)</strong><div class="inline-edit"><label>Pickup ETA<input type="datetime-local" id="pu-'+esc(state.runs.indexOf(r))+'" value="'+(r.gpsPickupEta?localDateInput(r.gpsPickupEta):'')+'"></label><label>Drop-off ETA<input type="datetime-local" id="do-'+esc(state.runs.indexOf(r))+'" value="'+(r.gpsDropoffEta?localDateInput(r.gpsDropoffEta):'')+'"></label></div><button data-action="saveEta" data-id="'+esc(r.id)+'">Save manually entered ETAs</button><small>ETA source: '+esc(r.etaSource||'Unavailable')+'; manual entries must not be presented as traffic-aware GPS.</small></div>'+
+ '<div class="detail-actions">'+buttons+'</div><div class="detail-actions">'+['En Route','Arrived','Onboard','Completed','Canceled in Advance','Canceled at Door','No-Show','Unable to Complete'].map(x=>'<button data-action="status" data-id="'+esc(r.id)+'" data-value="'+esc(x)+'" '+(x==='Canceled at Door'&&!r.events.arrival?'disabled title="Confirm arrival first"':'')+'>'+x+'</button>').join('')+'</div>'+
+ '<div class="detailbox"><label>Trip-specific notes<textarea id="tripnotes-'+esc(state.runs.indexOf(r))+'" rows="2">'+esc(r.tripNotes||'')+'</textarea></label><button data-action="saveTripNotes" data-id="'+esc(r.id)+'">Save trip note</button><button data-action="correct" data-id="'+esc(r.id)+'">Correct original imported field</button></div></div>';
+}
+function localDateInput(s){const d=new Date(s);const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes())}
+function renderManifest(){
+ const runs=state.runs;
+ $('metric-progress').textContent=runs.filter(x=>x.status==='Completed').length+' / '+runs.length;
+ const next=runs.find(x=>!['Completed','Canceled at Door','Canceled in Advance','No-Show','Unable to Complete'].includes(x.status));
+ const delta=next?classify(next):null;
+ $('metric-delay').textContent=delta?delta.label:'—';
+ $('metric-delay').style.color=delta&&delta.tone==='yellow'?'#fde047':delta&&delta.tone==='red'?'#fb7185':delta&&delta.tone==='purple'?'#d8b4fe':'';
+ $('metric-gps').textContent=state.position?'Location received':'Off';
+ $('metric-fresh').textContent=state.lastGps?new Date(state.lastGps).toLocaleTimeString():'No live route';
+ $('manifest-list').innerHTML=runs.length?runs.map((r,i)=>{
+  const c=classify(r),active=r.id===state.activeId,expanded=r.id===state.expanded,completed=r.status==='Completed';
+  return '<div class="manifest-row '+(active?'active ':'')+(completed?'completed':'')+'"><button class="manifest-main" data-action="expand" data-id="'+esc(r.id)+'" aria-expanded="'+expanded+'"><div><div class="name">'+(completed?'✓ ':'')+(i+1)+'. '+esc(r.name)+'</div><div class="direction">'+esc(r.direction)+' · '+esc(r.status)+'</div></div><div class="times"><div class="timeBlock"><em>SCHEDULED PU</em><span class="timeval">'+hhmm(r.scheduledPickup)+'</span></div><div class="timeBlock"><em>ETA PU</em><span class="timeval">'+(r.gpsPickupEta?hhmm(r.gpsPickupEta):'—')+'</span></div></div><div class="timeBlock"><em>ETA DROP</em><span class="timeval">'+(r.gpsDropoffEta?hhmm(r.gpsDropoffEta):'—')+'</span></div><span class="delta '+c.tone+'">'+esc(c.label)+'</span></button>'+(expanded?rowDetails(r):'')+'</div>';
+ }).join(''):'<div class="empty">No manifest loaded. Select “Load fictional demo” or import reviewed fictional trip data.</div>';
+}
+function editCustomer(r){
+ const k=personKey(r),p=state.notes[k]||{};
+ const number=prompt('Verified phone (digits only; blank keeps current). For fictional demos only:',p.verifiedPhone||'');
+ if(number===null)return;
+ const notes=prompt('Persistent customer notes (fictional only):',p.notes||'');
+ if(notes===null)return;
+ const phone=cleanPhone(number);
+ if(phone&&!validPhone(phone)){alert('Invalid phone number');return}
+ state.notes[k]={verifiedPhone:phone,notes,updatedAt:new Date().toISOString()};
+ persist();renderAll();
+}
+function correct(r){
+ const field=prompt('Which field? Type pickup, dropoff, time, direction, phone, or name:','pickup');
+ if(!field)return;
+ const fields={pickup:'pickup',dropoff:'dropoff',time:'scheduledPickup',direction:'direction',phone:'phone',name:'name'};
+ const key=fields[field.trim().toLowerCase()];if(!key){alert('Unrecognized field');return}
+ const before=r[key]||'',after=prompt('Replacement (office-confirmed time correction or OCR fix only):',key==='scheduledPickup'?hhmm(before):before);
+ if(after===null||!after.trim()||after.trim()===before)return;
+ const value=key==='scheduledPickup'?toIso(after):after.trim();
+ if(!value){alert('Invalid time format, use HH:MM AM/PM');return}
+ if(!confirm('Preserve original '+before+' and record correction to '+after+'?'))return;
+ r.edits??=[];r.edits.push({field:key,from:before,to:value,at:new Date().toISOString()});
+ r[key]=value;r.updatedAt=new Date().toISOString();persist();renderAll();
+}
+function changeStatus(r,v){
+ if(v==='Canceled at Door'&&!r.events.arrival){alert('Confirm Arrived before Canceled at Door.');return}
+ if(['Canceled in Advance','Canceled at Door','No-Show','Unable to Complete'].includes(v)&&!confirm('Record '+v+' for this trip? Original assignment remains preserved.'))return;
+ if(v==='Arrived')r.events.arrival=new Date().toISOString();
+ if(v==='Onboard')r.events.boarded=new Date().toISOString();
+ if(v==='Completed')r.events.completed=new Date().toISOString();
+ if(v==='Canceled at Door')r.events.canceledAtDoor=new Date().toISOString();
+ r.status=v;r.updatedAt=new Date().toISOString();
+ if(v==='En Route'||v==='Arrived')state.activeId=r.id;
+ else if(['Completed','Canceled in Advance','Canceled at Door','No-Show','Unable to Complete'].includes(v))state.activeId=state.runs.find(x=>x.id!==r.id&&!['Completed','Canceled in Advance','Canceled at Door','No-Show','Unable to Complete'].includes(x.status))?.id||null;
+ persist();renderAll();
+}
+function sms(r,i){
+ const phone=contact(r);if(!validPhone(phone)){alert('No valid verified/imported contact number.');return}
+ const eta=r.gpsPickupEta?hhmm(r.gpsPickupEta):'an updated time';
+ const messages=[
+ 'Hello, your driver is on the way. Estimated pickup arrival: '+eta+'.',
+ 'Hello, your ride is running late. Current estimated pickup arrival: '+eta+'.',
+ 'Hello, your driver has arrived at the pickup location.',
+ 'Hello, this is your transportation driver.'
+ ];
+ const msg=prompt('Review or edit the message before opening your SMS app:',messages[i]||messages[3]);if(!msg)return;
+ window.location.href='sms:'+phone+'?body='+encodeURIComponent(msg);
+}
+function renderIntel(){
+ const q=$('intelSearch').value.trim().toLowerCase();
+ const keys=[...new Set([...state.runs.map(personKey),...Object.keys(state.notes)])].filter(x=>x.includes(q)||(state.notes[x]?.notes||'').toLowerCase().includes(q));
+ $('intelList').innerHTML=keys.length?keys.map(k=>'<div class="intel-card"><b>'+esc(k)+'</b><p>'+esc(state.notes[k]?.notes||'No saved notes')+'</p><small>Verified: '+esc(state.notes[k]?.verifiedPhone||'None')+'</small></div>').join(''):'<div class="empty">No matching fictional customer records.</div>';
+}
+function renderShift(){
+ const s=state.shift,now=Date.now(),end=s.end?Date.parse(s.end):now,start=s.start?Date.parse(s.start):null;
+ const breakMs=s.breakMs+(s.breakStart?Math.max(0,now-Date.parse(s.breakStart)):0);
+ const hours=start?Math.max(0,(end-start-breakMs)/3600000):0;
+ const rate=Number(state.settings.rate)||0,mult=Number(state.settings.mult)||1;
+ const regular=hours*rate,completed=state.runs.filter(x=>x.status==='Completed').length;
+ $('shiftSummary').innerHTML='<div class="toolbar"><div class="metric"><small>Shift hours (excluding breaks)</small><b>'+hours.toFixed(2)+' h</b></div><div class="metric"><small>Estimated gross*</small><b></body></html>+regular.toFixed(2)+'</b></div><div class="metric"><small>Completed trips</small><b>'+completed+'</b></div><div class="metric"><small>Manifest miles*</small><b>'+state.runs.reduce((a,x)=>a+(x.status==='Completed'?Number(x.miles)||0:0),0).toFixed(1)+'</b></div></div><p class="muted">*Straight-time demo estimate only. Weekly overtime cannot be correctly computed without weekly payroll records; multiplier '+mult+' and threshold '+state.settings.weekly+'h are saved but not automatically applied. Manifest miles are not GPS-tracked distance.</p><p class="muted">Started: '+(s.start?new Date(s.start).toLocaleString():'Not started')+' · Ended: '+(s.end?new Date(s.end).toLocaleString():'In progress / not started')+' · Break: '+(breakMs/60000).toFixed(0)+' min</p>';
+ $('historyList').innerHTML=state.history.length?state.history.map(x=>'<div class="preview-item"><b>'+esc(x.date)+'</b> · '+x.completed+' completed · '+x.hours.toFixed(2)+' h · </body></html>+x.earnings.toFixed(2)+' estimated</div>').join(''):'<div class="empty">No fictional daily snapshots saved.</div>';
+}
+function renderAll(){renderManifest();renderIntel();renderShift();applyPrefs();}
+function applyPrefs(){
+ const o=state.settings;
+ document.body.classList.toggle('light',o.theme==='light');
+ document.body.classList.remove('compact-text','medium-text','large-text','comfortable-rows');
+ document.body.classList.add(o.font+'-text');if(o.density==='comfortable')document.body.classList.add('comfortable-rows');
+ for(const [id,key] of [['rateInput','rate'],['overtimeFactor','mult'],['overtimeHours','weekly'],['fontInput','font'],['densityInput','density'],['themeInput','theme']])$(id).value=o[key];
+}
+function shiftAction(action){
+ const s=state.shift,n=new Date().toISOString();
+ if(action==='start'){if(s.start&&!s.end){alert('Shift already active');return}state.shift={start:n,end:null,breakStart:null,breakMs:0}}
+ if(action==='end'){if(!s.start||s.end)return alert('Start a shift first');if(s.breakStart){s.breakMs+=Date.now()-Date.parse(s.breakStart);s.breakStart=null}s.end=n}
+ if(action==='break'){if(!s.start||s.end)return alert('Start a shift first');if(s.breakStart){s.breakMs+=Date.now()-Date.parse(s.breakStart);s.breakStart=null}else s.breakStart=n}
+ persist();renderShift();
+}
+function saveDay(){
+ const s=state.shift;if(!s.start||!s.end)return alert('End a fictional shift first.');
+ const hours=Math.max(0,(Date.parse(s.end)-Date.parse(s.start)-s.breakMs)/3600000);
+ const snap={date:new Date(s.start).toISOString().slice(0,10),hours,earnings:hours*Number(state.settings.rate),completed:state.runs.filter(x=>x.status==='Completed').length,outcomes:state.runs.map(r=>({name:r.name,status:r.status}))};
+ state.history.push(snap);persist();renderShift();status('Saved fictional daily history. Not cloud synced.');
+}
+function csv(){
+ if(!state.runs.length)return alert('No data');
+ const rows=[['Name','Direction','Scheduled Pickup','ETA Pickup','ETA Dropoff','Status','Variance'],...state.runs.map(r=>[r.name,r.direction,r.scheduledPickup,r.gpsPickupEta||'',r.gpsDropoffEta||'',r.status,classify(r).label])];
+ const content=rows.map(row=>row.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type:'text/csv'}));a.download='serenity-FICTIONAL-preview.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+async function ocr(){
+ if(ocrBusy)return;
+ const files=[...$('imageInput').files];if(!files.length||files.length>2)return alert('Select one or two screenshots.');
+ if(!confirm('OCR uses a third-party library. Use fictional screenshots ONLY. Continue?'))return;
+ ocrBusy=true;$('ocrStatus').textContent='Loading OCR engine...';
+ try{
+ if(!window.Tesseract){await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';s.onload=resolve;s.onerror=()=>reject(new Error('OCR library unavailable'));document.head.appendChild(s)})}
+ const worker=await Tesseract.createWorker('eng');const texts=[];
+ for(let i=0;i<files.length;i++){ $('ocrStatus').textContent='Reading image '+(i+1)+' of '+files.length+'...';const r=await worker.recognize(files[i]);texts.push(r.data.text)}
+ await worker.terminate();$('rawInput').value=texts.join('\n');$('ocrStatus').textContent='OCR text loaded for manual review. It has NOT been imported. Convert lines into the required pipe-delimited layout before preview.';
+ }catch(e){$('ocrStatus').textContent='OCR failed: '+e.message+'. No manifest was changed.'}finally{ocrBusy=false}
+}
+function preview(){
+ try{
+ const extracted=parseLines($('rawInput').value);const existing=new Map(state.runs.map(r=>[r.id,r]));
+ const logicalKey=r=>[r.name.toLowerCase().trim(),r.pickup.toLowerCase().trim(),r.dropoff.toLowerCase().trim()].join('|');
+ const byLogical=new Map(state.runs.map(r=>[logicalKey(r),r]));
+ let added=0,unchanged=0,changed=0;
+ const previewRows=extracted.map(r=>{const e=existing.get(r.id)||byLogical.get(logicalKey(r));if(!e){added++;return{run:r,type:'NEW',existingId:null}};const diff=e.phone!==r.phone||e.direction!==r.direction||e.miles!==r.miles||e.scheduledPickup!==r.scheduledPickup;if(diff)changed++;else unchanged++;return{run:r,type:diff?'CHANGED':'MATCH',existingId:e.id}});
+ importPending=previewRows;
+ $('importPreview').innerHTML='<h3>Verification preview · '+added+' new, '+changed+' modified, '+unchanged+' matched</h3>'+previewRows.map(x=>'<div class="preview-item"><b>'+esc(x.type)+'</b> · '+esc(x.run.name)+' · '+hhmm(x.run.scheduledPickup)+' · '+esc(x.run.direction)+'<br><small>'+esc(x.run.pickup)+' → '+esc(x.run.dropoff)+'</small></div>').join('')+'<p class="muted">Existing assignments not present in the new screenshot are preserved and flagged for later review. Completed trip outcomes are never replaced.</p>';
+ $('applyImport').disabled=false;status('Review import preview carefully before applying changes.');
+ }catch(e){importPending=null;$('applyImport').disabled=true;$('importPreview').textContent=e.message;status('Import validation failed. No manifest was changed.','error')}
+}
+function applyImport(){
+ if(!importPending)return;
+ if(!confirm('Apply these reviewed changes to FICTIONAL preview data? Existing completed trip history will be preserved.'))return;
+ const old=new Map(state.runs.map(r=>[r.id,r]));
+ importPending.forEach(({run,existingId})=>{
+  const e=old.get(existingId||run.id);
+  if(e){
+   if(e.status==='Completed')return;
+   e.edits??=[];
+   for(const key of ['phone','direction','miles','scheduledPickup'])if(e[key]!==run[key]){
+    e.edits.push({field:key,from:e[key],to:run[key],at:new Date().toISOString(),reason:key==='scheduledPickup'?'reviewed office schedule change or OCR correction':'reviewed screenshot merge'});
+    e[key]=run[key];
+   }
+   e.importedPhone=run.phone;
+   // Preserve stable internal ID, trip status, actual events and original sequence.
+  }else state.runs.push(run);
+ });
+ importPending=null;$('applyImport').disabled=true;persist();renderAll();status('Reviewed fictional manifest merged without removing completed records.');
+}
+function initEvents(){
+ document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.id==='tab-'+b.dataset.tab))}));
+ $('manifest-list').addEventListener('click',e=>{
+ const btn=e.target.closest('button[data-action]');if(!btn)return;
+ const r=state.runs.find(x=>x.id===btn.dataset.id);if(!r)return;
+ const v=btn.dataset.action;
+ if(v==='expand'){state.expanded=state.expanded===r.id?null:r.id;state.activeId=r.id}
+ else if(v==='status')changeStatus(r,btn.dataset.value);
+ else if(v==='editCustomer')editCustomer(r);
+ else if(v==='editFacility'){const k=r.dropoff.toLowerCase();const p=prompt('Facility notes (fictional demo only)',state.facilities[k]||'');if(p!==null){state.facilities[k]=p;persist()}}
+ else if(v==='sms')sms(r,Number(btn.dataset.template));
+ else if(v==='saveTripNotes'){r.tripNotes=$('tripnotes-'+state.runs.indexOf(r)).value;persist()}
+ else if(v==='correct')correct(r);
+ else if(v==='saveEta'){let idx=state.runs.indexOf(r),a=$('pu-'+idx).value,b=$('do-'+idx).value;if(a&&!b||b&&!a)return alert('Enter both ETA fields or clear both');r.gpsPickupEta=a?new Date(a).toISOString():null;r.gpsDropoffEta=b?new Date(b).toISOString():null;r.etaSource=a?'MANUAL ESTIMATE':null;r.etaUpdatedAt=new Date().toISOString();persist();}
+ renderAll();
+ });
+ $('loadDemo').onclick=()=>{if(confirm('Replace the current fictional preview with the sample manifest?'))demo()};
+ $('previewImport').onclick=preview;$('applyImport').onclick=applyImport;$('runOcr').onclick=ocr;$('useText').onclick=()=>{$('rawInput').focus();status('Paste pipe-delimited fictional trips and select Validate and preview.')};
+ $('intelSearch').oninput=renderIntel;
+ $('startShift').onclick=()=>shiftAction('start');$('endShift').onclick=()=>shiftAction('end');$('breakShift').onclick=()=>shiftAction('break');$('saveDay').onclick=saveDay;
+ $('exportCsv').onclick=csv;$('printDay').onclick=()=>window.print();
+ for(const [id,key] of [['rateInput','rate'],['overtimeFactor','mult'],['overtimeHours','weekly'],['fontInput','font'],['densityInput','density'],['themeInput','theme']])$(id).onchange=e=>{state.settings[key]=['rate','mult','weekly'].includes(key)?Number(e.target.value):e.target.value;persist();renderAll()};
+ $('startGPS').onclick=()=>startGPS();$('stopGPS').onclick=stopGPS;$('refreshNow').onclick=positionOnce;
+ $('weatherRefresh').onclick=weather;
+ $('resetDemo').onclick=()=>{if(confirm('Erase the fictional preview data on THIS device?')){localStorage.removeItem(KEY);state=fresh();renderAll();status('Fictional preview reset.')}}; 
+}
+function positionOnce(){
+ if(!navigator.geolocation){$('gpsStatus').textContent='Geolocation unavailable in this browser';return}
+ navigator.geolocation.getCurrentPosition(p=>{
+  state.position={lat:p.coords.latitude,lon:p.coords.longitude,accuracy:p.coords.accuracy};state.lastGps=new Date().toISOString();
+  $('gpsStatus').textContent='Location received at '+new Date().toLocaleTimeString()+'; accuracy approximately '+Math.round(p.coords.accuracy)+'m. Traffic route ETAs are not connected.';
+  persist();renderManifest();
+ },e=>{$('gpsStatus').textContent='GPS unavailable: '+e.message},{enableHighAccuracy:true,timeout:12000,maximumAge:5000});
+}
+function startGPS(){if(gpsTimer)clearInterval(gpsTimer);positionOnce();gpsTimer=setInterval(()=>{if(!document.hidden)positionOnce()},15000);status('Requested GPS position polling every 15 seconds while foregrounded. No traffic-aware routing service connected.')}
+function stopGPS(){if(gpsTimer)clearInterval(gpsTimer);gpsTimer=null;$('gpsStatus').textContent='GPS polling stopped.'}
+async function weather(){
+ let p=state.position;
+ if(!p){$('weather').innerHTML='<div class="empty">Enable GPS position in Settings first; a forecast location is needed.</div>';return}
+ $('weather').innerHTML='<div class="empty">Loading 3-period forecast...</div>';
+ try{
+ const url='https://api.open-meteo.com/v1/forecast?latitude='+encodeURIComponent(p.lat)+'&longitude='+encodeURIComponent(p.lon)+'&hourly=temperature_2m,precipitation_probability,weather_code,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto&forecast_days=2';
+ const response=await fetch(url);if(!response.ok)throw Error('Forecast provider unavailable');
+ const d=await response.json();const now=new Date(),dates=d.hourly.time;
+ const periods=[['Morning',9],['Afternoon',15],['Evening',20]];
+ const date=dates.find(x=>new Date(x).getTime()>=now.getTime())?.slice(0,10)||dates[0].slice(0,10);
+ $('weather').innerHTML=periods.map(([name,hour])=>{
+  const index=dates.findIndex(t=>t.startsWith(date+'T'+String(hour).padStart(2,'0')));
+  if(index<0)return'<div class="weather-tile">'+name+'<p>Unavailable</p></div>';
+  const temp=Math.round(d.hourly.temperature_2m[index]),prob=d.hourly.precipitation_probability[index],code=d.hourly.weather_code[index],wind=Math.round(d.hourly.wind_speed_10m[index]);
+  const warning=code>=95?'⛈ Thunderstorms':code>=71&&code<=86?'❄ Snow / ice':code>=51&&code<=67?'🌧 Wet roads':code>=45&&code<=48?'🌫 Fog':wind>=30?'💨 Strong wind':'';
+  return'<div class="weather-tile"><strong>'+name+'</strong><b>'+temp+'°F</b><small>Rain chance '+prob+'% · Wind '+wind+' mph</small><p>'+esc(warning||'No major alert indicated')+'</p></div>';
+ }).join('');
+ }catch(e){$('weather').innerHTML='<div class="empty">Forecast unavailable: '+esc(e.message)+'</div>'}
+}
+setInterval(()=>{$('clock').textContent=new Date().toLocaleTimeString('en-US');if(!state.expanded && Date.now()%15000<1000)renderManifest();if(state.shift.start&&!state.shift.end)renderShift()},1000);
+initEvents();renderAll();$('clock').textContent=new Date().toLocaleTimeString('en-US');
+})();
+</script></body></html>
