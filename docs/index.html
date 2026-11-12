@@ -49,6 +49,12 @@
 .dashboard-help{margin:7px 0 10px;color:var(--muted);font-size:12px}
 @media(max-width:700px){.dashboard-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-bar h2{font-size:14px}.dashboard-metrics.editing .dashboard-card{padding-right:35px}}
 
+.location-queue-section{margin:16px 0;border-top:1px solid var(--border);padding-top:12px}
+.location-issue-tools{border:2px solid #cf9c37!important}.location-status{font-size:13px;font-weight:800;padding:7px 9px;border-radius:6px;background:rgba(202,138,4,.16);margin:8px 0}
+.location-error-button{background:#6a3b13!important;border:2px solid #ffbb65!important;font-weight:900!important;min-height:44px}
+.actual-pickup-button{background:#075e76!important;border:2px solid #67e8f9!important;font-weight:900!important;min-height:44px}
+.location-queue{display:grid;gap:8px}.issue-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:10px;border:1px solid var(--border);border-radius:9px}.issue-row p{margin:4px 0;overflow-wrap:anywhere}
+
 </style></head>
 <body><div class="shell">
 <header class="header"><div><h1>SERENITY <span>DISPATCH OS</span></h1><small>Driver cockpit · protected development preview</small></div><div class="right"><span id="clock"></span><span class="pill warn">PREVIEW · NO PATIENT DATA</span></div></header>
@@ -60,7 +66,7 @@
 <div class="dashboard-help" id="dashboardHelp" hidden>Drag the ⠿ handle on a bubble to move it into a different position. Tap Done when finished.</div>
 <div class="bar"><div><h2>Full-Day Manifest</h2><small>Original office order · tap any row to expand</small></div><div class="actions"><button id="loadDemo">Load fictional demo</button><button id="refreshNow">Refresh GPS</button></div></div>
 <div class="finance-foot"><small>* Truck gross = entered fares on finished runs before deductions, with missing fares flagged. Driver pay is separately $22.50/hour; overtime is not included. Mileage is not GPS-tracked.</small><div class="actions"><button id="manifestStartShift">Leave Work · Start</button><button id="manifestEndShift">Arrive Home · End</button></div></div>
-<div id="manifest-list" class="manifest-list" aria-live="polite"></div>
+<div id="manifest-list" class="manifest-list" aria-live="polite"></div><section class="location-queue-section"><div class="bar"><div><h2>Pickup Location Correction Queue</h2><small>Review driver-reported issues before sharing with dispatch · fictional test data only</small></div><button id="exportLocationQueue" type="button">Export correction batch (CSV)</button></div><div id="locationQueue" class="location-queue"></div></section>
 <div class="weather-section"><div class="bar"><h2>Morning / Afternoon / Evening Weather</h2><button id="weatherRefresh">Update forecast</button></div><div id="weather" class="weather-grid"><div class="empty">Enable GPS and weather permission in Settings to load a forecast.</div></div></div>
 </section>
 <section id="tab-import" class="tab"><h2>Import & Intelligent Merge</h2><p class="muted">Review extracted data before adding or replacing runs. Screenshot reading needs a network-loaded OCR engine and may require corrections. Do not use real patient manifests in this public preview.</p>
@@ -131,7 +137,7 @@ const toIso=(t,day=dateKey())=>{
 const validPhone=p=>/^\d{10,15}$/.test(String(p||'').replace(/\D/g,''));
 const cleanPhone=p=>String(p||'').replace(/\D/g,'');
 const safeLoad=()=>{try{const o=JSON.parse(localStorage.getItem(KEY)||'null');return o&&o.demoOnly===true?o:null}catch{return null}};
-const fresh=()=>({demoOnly:true,runs:[],expanded:null,activeId:null,notes:{},facilities:{},history:[],shift:{start:null,end:null,breakStart:null,breakMs:0},settings:{rate:22.5,mult:1.5,weekly:40,font:'compact',density:'compact',theme:'dark'},position:null,lastGps:null});
+const fresh=()=>({demoOnly:true,runs:[],expanded:null,activeId:null,notes:{},facilities:{},history:[],locationIssues:[],shift:{start:null,end:null,breakStart:null,breakMs:0},settings:{rate:22.5,mult:1.5,weekly:40,font:'compact',density:'compact',theme:'dark'},position:null,lastGps:null});
 let state=safeLoad()||fresh();let importPending=null,gpsTimer=null,ocrBusy=false;
 const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){status('Local preview storage is full; changes may not persist.','error')}};
 const status=(message,type='info')=>{const n=$('notice');n.textContent=message;n.style.borderColor=type==='error'?'#f87171':'#c38a22'};
@@ -174,6 +180,69 @@ const personKey=r=>r.name.toLowerCase().trim();
 const contact=r=>{const rec=state.notes[personKey(r)];return rec?.verifiedPhone||r.phone||''};
 const docAddress=a=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(a);
 const wazeAddress=a=>'https://www.waze.com/ul?q='+encodeURIComponent(a)+'&navigate=yes';
+function pickupIssue(r){
+ return (Array.isArray(state.locationIssues)?state.locationIssues:[]).find(x=>x.runId===r.id&&x.status!=='Resolved')||null;
+}
+function renderLocationQueue(){
+ const out=$('locationQueue');if(!out)return;
+ const issues=Array.isArray(state.locationIssues)?state.locationIssues:[];
+ out.innerHTML=issues.length?issues.map((x,i)=>'<div class="issue-row"><div><b>'+esc(x.type||'Location Error')+'</b> · '+esc(x.status||'Pending dispatch review')+'<p><small>Original: '+esc(x.originalPickup||'Not recorded')+'</small></p><p><small>Actual: '+esc(x.actualAddress||'Not yet confirmed')+'</small></p><p><small>Driver note: '+esc(x.notes||'Not entered')+'</small></p></div><div><button data-issue-action="resolve" data-issue-index="'+i+'">'+(x.status==='Resolved'?'Resolved ✓':'Mark resolved')+'</button></div></div>').join(''):'<div class="empty">No pickup location errors reported in this fictional preview.</div>';
+}
+function locationRecord(r){
+ state.locationIssues=Array.isArray(state.locationIssues)?state.locationIssues:[];
+ let record=state.locationIssues.find(x=>x.runId===r.id&&x.status!=='Resolved');
+ if(!record){
+  record={id:'loc-'+Date.now()+'-'+Math.random().toString(36).slice(2,8),runId:r.id,tripDirection:r.direction,originalPickup:r.pickup,type:'Location error',notes:'',actualAddress:'',actualGps:null,verified:false,status:'Pending dispatch review',createdAt:new Date().toISOString(),history:[]};
+  state.locationIssues.push(record);
+ }
+ return record;
+}
+function logLocationError(r){
+ const issue=locationRecord(r);
+ const choices='1 = Wrong street address; 2 = Wrong map pin; 3 = Wrong entrance / door; 4 = Different pickup building; 5 = Other';
+ const answer=prompt('LOCATION ERROR for '+r.name+' (fictional only). Choose number:\n'+choices,issue.type==='Location error'?'1':String(['Wrong street address','Wrong map pin','Wrong entrance / door','Different pickup building','Other'].indexOf(issue.type)+1));
+ if(answer===null)return;
+ const types=['Wrong street address','Wrong map pin','Wrong entrance / door','Different pickup building','Other'];
+ const idx=Number(answer.trim())-1;if(!Number.isInteger(idx)||idx<0||idx>4){alert('Choose a number from 1 to 5.');return}
+ const notes=prompt('What should dispatch correct? Avoid patient data in this public demo.',issue.notes||'');
+ if(notes===null)return;
+ issue.type=types[idx];issue.notes=notes.trim();issue.status='Pending dispatch review';issue.history.push({at:new Date().toISOString(),action:'Location error recorded',type:issue.type});issue.updatedAt=new Date().toISOString();
+ persist();renderAll();status('Pickup location error saved to the local correction queue. Not sent to dispatch or MAS.');
+}
+function confirmActualPickup(r){
+ const issue=locationRecord(r);
+ const actual=prompt('ACTUAL PICKUP LOCATION for '+r.name+' (fictional demo only). Enter the street address, entrance, door, or precise landmark. Original office address will NOT change:',issue.actualAddress||'');
+ if(actual===null)return;
+ if(!actual.trim()){alert('Enter a location description before confirming.');return}
+ issue.actualAddress=actual.trim();issue.updatedAt=new Date().toISOString();issue.status='Pending dispatch review';issue.verified=false;issue.actualGps=null;
+ issue.history.push({at:issue.updatedAt,action:'Actual pickup location entered',value:issue.actualAddress});
+ if(!confirm('Confirm you personally checked this actual pickup location? This only verifies the driver note, not an MAS address change.')){persist();renderAll();return}
+ issue.verified=true;issue.verifiedAt=new Date().toISOString();
+ issue.history.push({at:issue.verifiedAt,action:'Driver verified actual pickup description'});
+ persist();renderAll();status('Actual pickup confirmed for local use. Original scheduled pickup remains unchanged; dispatch still needs to review the correction.');
+}
+function captureActualPickupGPS(r){
+ if(!navigator.geolocation)return alert('Location unavailable in this browser.');
+ const issue=locationRecord(r);
+ if(!confirm('Capture your CURRENT GPS location for this fictional pickup correction? Only do this while physically at the pickup point.'))return;
+ navigator.geolocation.getCurrentPosition(p=>{
+   const i=locationRecord(r);
+   i.actualGps={lat:p.coords.latitude,lon:p.coords.longitude,accuracyMeters:Math.round(p.coords.accuracy),recordedAt:new Date().toISOString()};
+   i.verified=false;i.status='Pending dispatch review';i.updatedAt=i.actualGps.recordedAt;
+   i.history.push({at:i.updatedAt,action:'GPS location captured by driver',accuracyMeters:i.actualGps.accuracyMeters});
+   persist();renderAll();status('Pickup GPS evidence saved locally; verify the actual address separately. Not submitted anywhere.');
+ },e=>alert('Could not capture location: '+e.message),{enableHighAccuracy:true,timeout:12000,maximumAge:0});
+}
+function exportLocationQueue(){
+ const issues=Array.isArray(state.locationIssues)?state.locationIssues.filter(x=>x.status!=='Resolved'):[];
+ if(!issues.length)return alert('No unresolved location corrections to export.');
+ if(!confirm('Export '+issues.length+' fictional correction report(s) as CSV? This does not send them to dispatch, RoutingBox, MAS, Google or Waze.'))return;
+ const rows=[['Issue ID','Issue type','Trip direction','Original pickup address','Actual pickup description','Driver verified','GPS latitude','GPS longitude','GPS accuracy meters','Notes','Logged at','Review status'],...issues.map(x=>[x.id,x.type,x.tripDirection,x.originalPickup,x.actualAddress,x.verified?'Yes':'No',x.actualGps?.lat??'',x.actualGps?.lon??'',x.actualGps?.accuracyMeters??'',x.notes,x.createdAt,x.status])];
+ const csv=rows.map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
+ const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='serenity-FICTIONAL-pickup-corrections.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ status('Correction batch exported. The issues remain pending review until you mark them resolved. Nothing was automatically submitted.');
+}
+
 function rowDetails(r){
  const p=state.notes[personKey(r)]||{}, mismatch=Boolean(p.verifiedPhone&&r.importedPhone&&p.verifiedPhone!==r.importedPhone);
  const temps=['On my way','Running late','I have arrived','Custom message'];
@@ -182,6 +251,7 @@ function rowDetails(r){
  const dropTime=r.gpsDropoffEta?hhmm(r.gpsDropoffEta):'Unavailable';
  return '<div class="manifest-detail"><div class="two"><div class="detailbox"><strong>Pickup</strong><p>'+esc(r.pickup)+'</p><small>Office '+hhmm(r.scheduledPickup)+' · ETA '+pickupTime+'</small><p><a target="_blank" rel="noopener" href="'+docAddress(r.pickup)+'">Google Maps</a><a target="_blank" rel="noopener" href="'+wazeAddress(r.pickup)+'">Waze</a></p></div><div class="detailbox"><strong>Drop-off</strong><p>'+esc(r.dropoff)+'</p><small>GPS/route ETA '+dropTime+'</small><p><a target="_blank" rel="noopener" href="'+docAddress(r.dropoff)+'">Google Maps</a><a target="_blank" rel="noopener" href="'+wazeAddress(r.dropoff)+'">Waze</a></p></div></div>'+
  '<div class="detailbox"><strong>Customer Intelligence</strong><div class="phone-verification '+(p.verifiedPhone?'is-verified':'is-unverified')+'"><span class="phone-verification-label">'+(p.verifiedPhone?'✓ VERIFIED PHONE':'⚠ PHONE NOT VERIFIED')+'</span><strong>'+esc(contact(r)||'No phone available')+'</strong></div>'+(mismatch?'<p class="phone-mismatch">⚠ The imported number differs from the verified number. Verified number remains preferred. Imported alternative: '+esc(r.importedPhone)+'</p>':'')+'<p>'+esc(p.notes||'No saved customer notes')+'</p><p>'+esc(state.facilities[r.dropoff.toLowerCase()]||'')+'</p><div class="actions"><button class="verify-phone-button" data-action="verifyPhone" data-id="'+esc(r.id)+'">'+(p.verifiedPhone?'Update Verified Number':'✓ Verify / Update Phone')+'</button><button data-action="editCustomer" data-id="'+esc(r.id)+'">Edit customer notes</button><button data-action="editFacility" data-id="'+esc(r.id)+'">Edit facility instructions</button><a href="tel:'+esc(contact(r))+'">Call</a></div></div>'+
+ '<div class="detailbox location-issue-tools"><strong>Pickup address verification</strong><small>Original office pickup is preserved: '+esc(r.pickup)+'</small><div class="location-status">'+(pickupIssue(r)?'⚠ '+esc(pickupIssue(r).type)+' · '+esc(pickupIssue(r).status):'No location error logged')+'</div>'+(pickupIssue(r)?.actualAddress?'<p><b>Actual pickup:</b> '+esc(pickupIssue(r).actualAddress)+(pickupIssue(r).verified?' · ✓ Driver verified':' · Not verified')+'</p>':'')+(pickupIssue(r)?.actualGps?'<p><small>GPS evidence ±'+esc(pickupIssue(r).actualGps.accuracyMeters)+'m · Not authoritative address verification</small></p>':'')+'<div class="actions"><button class="location-error-button" data-action="locationError" data-id="'+esc(r.id)+'">⚠ Location Error</button><button class="actual-pickup-button" data-action="actualPickup" data-id="'+esc(r.id)+'">📍 Actual Pickup Location</button><button data-action="capturePickupGPS" data-id="'+esc(r.id)+'">Capture GPS at Pickup</button></div><small>Use only at a safe stop. Nothing here changes the dispatched trip or automatically sends reports to a broker.</small></div>'+ 
  '<div class="detailbox"><strong>Manual ETA preview (not live GPS routing)</strong><div class="inline-edit"><label>Pickup ETA<input type="datetime-local" id="pu-'+esc(state.runs.indexOf(r))+'" value="'+(r.gpsPickupEta?localDateInput(r.gpsPickupEta):'')+'"></label><label>Drop-off ETA<input type="datetime-local" id="do-'+esc(state.runs.indexOf(r))+'" value="'+(r.gpsDropoffEta?localDateInput(r.gpsDropoffEta):'')+'"></label></div><button data-action="saveEta" data-id="'+esc(r.id)+'">Save manually entered ETAs</button><small>ETA source: '+esc(r.etaSource||'Unavailable')+'; manual entries must not be presented as traffic-aware GPS.</small></div>'+
  '<div class="detail-actions">'+buttons+'</div><div class="status-current" role="status" aria-live="polite"><span>CURRENT TRIP STATUS</span><strong>● '+esc(r.status)+'</strong><small>'+(r.updatedAt?'Updated '+new Date(r.updatedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'Not yet changed')+'</small></div><div class="detail-actions status-actions" role="group" aria-label="Choose trip status">'+['En Route','Arrived','Onboard','Canceled in Advance','Canceled at Door','No-Show','Unable to Complete'].map(x=>'<button class="status-choice '+(r.status===x?'selected':'')+'" aria-pressed="'+(r.status===x?'true':'false')+'" data-action="status" data-id="'+esc(r.id)+'" data-value="'+esc(x)+'" '+(x==='Canceled at Door'&&!r.events.arrival?'disabled title="Confirm arrival first"':'')+'>'+(r.status===x?'✓ ':'')+x+'</button>').join('')+'</div>'+
  '<div class="detailbox gross-editor"><strong>Truck gross fare · before deductions</strong><label>Gross fare for this run ($) — separate from driver pay<input type="number" min="0" step="0.01" inputmode="decimal" id="fare-'+esc(state.runs.indexOf(r))+'" value="'+(Number.isFinite(r.grossRevenue)?r.grossRevenue:'')+'" placeholder="Enter gross revenue"></label><button data-action="saveFare" data-id="'+esc(r.id)+'">Save truck gross fare</button><small>Unknown fares are flagged, not estimated from hourly pay.</small></div>'+
@@ -304,7 +374,7 @@ function renderShift(){
  $('shiftSummary').innerHTML='<div class="toolbar"><div class="metric"><small>Shift hours (excluding breaks)</small><b>'+hours.toFixed(2)+' h</b></div><div class="metric"><small>Estimated gross*</small><b>$'+regular.toFixed(2)+'</b></div><div class="metric"><small>Completed trips</small><b>'+completed+'</b></div><div class="metric"><small>Manifest miles*</small><b>'+state.runs.reduce((a,x)=>a+(x.status==='Completed'?Number(x.miles)||0:0),0).toFixed(1)+'</b></div></div><p class="muted">*Straight-time demo estimate only. Weekly overtime cannot be correctly computed without weekly payroll records; multiplier '+mult+' and threshold '+state.settings.weekly+'h are saved but not automatically applied. Manifest miles are not GPS-tracked distance.</p><p class="muted">Started: '+(s.start?new Date(s.start).toLocaleString():'Not started')+' · Ended: '+(s.end?new Date(s.end).toLocaleString():'In progress / not started')+' · Break: '+(breakMs/60000).toFixed(0)+' min</p>';
  $('historyList').innerHTML=state.history.length?state.history.map(x=>'<div class="preview-item"><b>'+esc(x.date)+'</b> · '+x.completed+' completed · '+x.hours.toFixed(2)+' h · $'+x.earnings.toFixed(2)+' estimated</div>').join(''):'<div class="empty">No fictional daily snapshots saved.</div>';
 }
-function renderAll(){renderManifest();renderIntel();renderShift();applyPrefs();}
+function renderAll(){renderManifest();renderIntel();renderShift();renderLocationQueue();applyPrefs();}
 function applyPrefs(){
  const o=state.settings;
  document.body.classList.toggle('light',o.theme==='light');
@@ -386,6 +456,9 @@ function initEvents(){
  else if(v==='saveFare'){const raw=$('fare-'+state.runs.indexOf(r)).value.trim();if(raw===''){r.grossRevenue=null;}else{const amount=Number(raw);if(!Number.isFinite(amount)||amount<0)return alert('Enter a valid non-negative gross fare.');r.grossRevenue=Math.round(amount*100)/100;}r.updatedAt=new Date().toISOString();persist();}
  else if(v==='editCustomer')editCustomer(r);
  else if(v==='verifyPhone')verifyPhone(r);
+ else if(v==='locationError')logLocationError(r);
+ else if(v==='actualPickup')confirmActualPickup(r);
+ else if(v==='capturePickupGPS')captureActualPickupGPS(r);
  else if(v==='editFacility'){const k=r.dropoff.toLowerCase();const p=prompt('Facility notes (fictional demo only)',state.facilities[k]||'');if(p!==null){state.facilities[k]=p;persist()}}
  else if(v==='sms')sms(r,Number(btn.dataset.template));
  else if(v==='saveTripNotes'){r.tripNotes=$('tripnotes-'+state.runs.indexOf(r)).value;persist()}
@@ -398,6 +471,8 @@ function initEvents(){
  $('intelSearch').oninput=renderIntel;
  $('startShift').onclick=()=>shiftAction('start');$('endShift').onclick=()=>shiftAction('end');
  $('manifestStartShift').onclick=()=>shiftAction('start');$('manifestEndShift').onclick=()=>shiftAction('end');$('breakShift').onclick=()=>shiftAction('break');$('saveDay').onclick=saveDay;
+ $('exportLocationQueue').onclick=exportLocationQueue;
+ $('locationQueue').addEventListener('click',e=>{const button=e.target.closest('[data-issue-action]');if(!button)return;const index=Number(button.dataset.issueIndex);const issue=state.locationIssues?.[index];if(!issue||issue.status==='Resolved')return;if(!confirm('Mark this fictional pickup correction as resolved? Confirm the correction was reviewed through the appropriate process first.'))return;issue.status='Resolved';issue.resolvedAt=new Date().toISOString();issue.history.push({at:issue.resolvedAt,action:'Marked resolved by driver'});persist();renderAll()});
  $('exportCsv').onclick=csv;$('printDay').onclick=()=>window.print();
  for(const [id,key] of [['rateInput','rate'],['overtimeFactor','mult'],['overtimeHours','weekly'],['fontInput','font'],['densityInput','density'],['themeInput','theme']])$(id).onchange=e=>{state.settings[key]=['rate','mult','weekly'].includes(key)?Number(e.target.value):e.target.value;persist();renderAll()};
  $('startGPS').onclick=()=>startGPS();$('stopGPS').onclick=stopGPS;$('refreshNow').onclick=positionOnce;
