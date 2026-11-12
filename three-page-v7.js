@@ -99,6 +99,15 @@ let current='overview';
 function closeUtility(){utility.classList.add('hidden');E('import')?.classList.add('hidden');E('directory')?.classList.add('hidden');}
 function showUtility(type){
  if(type!=='import'&&type!=='directory')return;
+ if(type==='import'){
+  // Always mirror the visible driver's selected service date in the import
+  // editor. Otherwise a second date picker can quietly target yesterday.
+  const day=E('date')?.value,input=E('import-date');
+  if(day&&input&&input.value!==day){
+   input.value=day;
+   input.dispatchEvent(new Event('change',{bubbles:true}));
+  }
+ }
  E('v7-utility-title').textContent=type==='import'?'Import and confirm manifest':'Passenger knowledge base';
  E('import')?.classList.toggle('hidden',type!=='import');E('directory')?.classList.toggle('hidden',type!=='directory');
  utility.classList.remove('hidden');
