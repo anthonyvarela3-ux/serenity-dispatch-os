@@ -34,3 +34,14 @@
 .phone-verification.is-unverified{border-color:#fbbf24;background:#45300d;color:#ffdfa0}
 .verify-phone-button{background:#075e76!important;border:2px solid #49dbe8!important;font-weight:900!important;min-height:44px}
 .phone-mismatch{padding:8px;color:#ffe196;background:#44300c;border-radius:6px;border:1px solid #af7d21}
+
+/* Driver-requested movable individual information bubbles, not a floating navigation bar. */
+.dashboard-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:8px 0}
+.dashboard-bar h2{font-size:16px}.dashboard-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-bottom:10px}
+.dashboard-card{position:relative;min-width:0;overflow:hidden}.dashboard-card b{overflow-wrap:anywhere}
+.card-drag-handle{display:none;position:absolute;right:5px;top:5px;min-height:28px;min-width:30px;padding:3px 5px;background:#075e76;border:1px solid #60d8ea;color:#fff;border-radius:6px;font-size:18px;cursor:grab;touch-action:none;user-select:none}
+.dashboard-metrics.editing .card-drag-handle{display:inline-flex;align-items:center;justify-content:center}
+.dashboard-metrics.editing .dashboard-card{border:2px dashed #49dbe8;padding-right:38px}
+.dashboard-metrics.editing .dashboard-card.card-is-dragging{background:#16445d;border-style:solid}
+.dashboard-help{margin:7px 0 10px;color:var(--muted);font-size:12px}
+@media(max-width:700px){.dashboard-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-bar h2{font-size:14px}.dashboard-metrics.editing .dashboard-card{padding-right:35px}}
