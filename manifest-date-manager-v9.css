@@ -29,3 +29,10 @@ html.v7-app #preview-box label{font-size:12px}
 html.v7-app #preview-box input[type=checkbox]{width:19px;height:19px;vertical-align:middle}
 @media(max-width:690px){html.v7-app .manifest-mode{grid-template-columns:1fr}
  html.v7-app .manifest-date-manager{padding:12px}}
+
+html.v7-app .manifest-overlap-details{border:1px dashed var(--border);background:var(--bg);
+ border-radius:10px;margin:10px 0 14px;overflow:hidden}
+html.v7-app .manifest-overlap-details>summary{font-size:12px;font-weight:790;cursor:pointer;
+ padding:13px 14px;min-height:44px;color:var(--muted)}
+html.v7-app .manifest-overlap-details[open]{padding-bottom:10px}
+html.v7-app .manifest-overlap-details .review-item{margin:8px 12px}
