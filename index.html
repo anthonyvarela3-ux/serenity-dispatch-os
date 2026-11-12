@@ -160,7 +160,7 @@ el('date').value=liveDate;el('import-date').value=liveDate;el('date').addEventLi
     '<span><b>Add new runs only</b><small>Use when dispatch adds an assignment later; skip already saved runs</small></span></label>'+
     '</fieldset>'+
     '<button type="button" class="danger" id="manifest-clear-date">Clear ALL runs for selected service date</button>'+
-    '<p class="muted">Clear and Replace affect only the selected service date. They can remove trip events for that date. Export a backup first. Two overlapping screenshots should be reviewed as one manifest, not imported separately.</p>';
+    '<p class="muted">Existing runs are saved locally from earlier sessions, not newly fetched from RoutingBox. Switch to Tomorrow to view the next service date. Clear and Replace affect only that date; they can remove its local event history, so export a backup first. Review two overlapping screenshots as one manifest.</p>';
   one('import-date').after(serviceDateControl);
   const mode=()=>document.querySelector('input[name="manifest-write-mode"]:checked')?.value||'replace';
   const realLocalDate=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
