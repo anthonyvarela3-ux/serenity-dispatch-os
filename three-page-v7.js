@@ -75,11 +75,12 @@ manifest.innerHTML=
  '<div class="v7-page-actions"><button type="button" data-v7-action="import">Import / update</button>'+
  '<button type="button" data-v7-action="review">Check first route</button></div></div>'+
  '<div class="v7-m-summary" id="v7-m-summary">Checking run feasibility…</div>'+
- '<div class="v7-table-scroll"><table class="v7-table"><thead><tr>'+
- '<th># / Passenger</th><th>Office pickup</th><th>Serenity pickup</th><th>Office drop-off</th>'+
- '<th>Serenity destination / clear</th><th>Actual events</th><th>Impact on next</th><th>Open</th>'+
+ '<div class="v10-drift-strip" id="v10-drift-strip" role="status" aria-live="polite">Checking daily on-time performance…</div>'+
+ '<div class="v7-table-scroll"><table class="v7-table v10-compact-manifest"><thead><tr>'+
+ '<th># / Passenger & events</th><th>Pickup · scheduled / ETA</th>'+
+ '<th>Drop-off · ETA / MAS</th><th>Running ahead / behind</th><th>Trip</th>'+
  '</tr></thead><tbody id="v7-manifest-rows"></tbody></table></div>'+
- '<div class="v7-table-foot">Scheduled = original manifest · ETA = modeled prediction · Actual = driver-recorded time. Later-road durations are often provisional. A confirmed late pickup changes the operational target, not the original office record.</div>'+
+ '<div class="v7-table-foot">Scheduled pickup = office instruction. Operating ETA = actual arrival, manually entered Maps time when available, otherwise Serenity’s provisional model. <b>Live GPS traffic ETAs are not connected.</b> MAS drop-off is shown for reference only and never used as the road-time forecast. Vehicle-clear estimate includes the service buffer. Open a run to record actual events.</div>'+
  '<div id="v7-advanced-target"></div>';
 roster.prepend(manifest);
 const advanced=E('v6-advanced');if(advanced)E('v7-advanced-target').append(advanced);
@@ -230,38 +231,96 @@ function impact(p,next,idx){
 }
 function manifestRefresh(date,runs,results){
  const byId=new Map(results.map(x=>[x.r.id,x]));
- const late=results.filter(x=>x.state==='late').length,unknown=results.filter(x=>x.state==='missing').length;
- metric('v7-m-summary',runs.length+' runs · '+late+' projected late · '+unknown+' ETA checks needed · '+runs.filter(r=>r.status==='Completed').length+' completed'+
+ const available=results.filter(x=>Number.isFinite(x.arrival)&&x.state!=='missing');
+ const pending=runs.filter(r=>r.status!=='Completed'&&r.status!=='Exception');
+ const upcoming=new Set(pending.map(r=>r.id));
+ const late=available.filter(x=>upcoming.has(x.r.id)&&x.arrival>x.pickup);
+ const unknown=pending.filter(r=>!Number.isFinite(byId.get(r.id)?.arrival)).length;
+ metric('v7-m-summary',runs.length+' runs · '+late.length+
+  ' projected late pickup(s) · '+unknown+' ETA checks needed · '+
+  runs.filter(r=>r.status==='Completed').length+' completed'+
   (window.SerenityHolidays?.get?.(date)?' · HOLIDAY — verify traffic & facility hours':''));
+ // Display day-wide delay exposure without conflating "minutes late per
+ // appointment" with the chronological minutes behind on the NEXT run.
+ const totalLate=late.reduce((n,x)=>n+Math.max(0,Math.ceil(x.arrival-x.pickup)),0);
+ const maxLate=late.length?Math.max(...late.map(x=>Math.max(0,Math.ceil(x.arrival-x.pickup)))):0;
+ const next=pending[0],nextResult=next&&byId.get(next.id);
+ const nextDelta=nextResult&&Number.isFinite(nextResult.arrival)&&Number.isFinite(nextResult.pickup)?
+  Math.round(nextResult.arrival-nextResult.pickup):null;
+ const nextTone=nextDelta===null?'unknown':nextDelta>0?'late':'good';
+ const nextLabel=nextDelta===null?'Next pickup ETA unverified':
+  nextDelta>0?'Running '+nextDelta+'m BEHIND on next pickup':
+  nextDelta<0?'Running '+Math.abs(nextDelta)+'m AHEAD of next pickup':
+  'Next pickup projected on time';
+ const strip=E('v10-drift-strip');
+ strip.className='v10-drift-strip v10-drift-'+nextTone;
+ strip.innerHTML='<strong>'+esc(nextLabel)+'</strong>'+
+  '<span>'+late.length+' at-risk future pickups · '+totalLate+
+  'm combined projected lateness · worst '+maxLate+
+  'm · '+unknown+' unknown</span>'+
+  '<small>Combined lateness adds late minutes across pickups; it is NOT the number of minutes your shift ends late. Recomputed from driver events and provisional road assumptions.</small>';
+ const localMinute=timestamp=>{
+  if(!timestamp)return null;
+  const d=new Date(timestamp);
+  if(!Number.isFinite(d.getTime()))return null;
+  const onDate=[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+  return onDate===date?d.getHours()*60+d.getMinutes():null;
+ };
+ const signedDelta=(r,p)=>{
+  const actual=localMinute(r.events?.arrived);
+  const arrival=actual!==null?actual:p?.arrival;
+  const scheduled=p?.pickup??timeM(r.pu);
+  return Number.isFinite(arrival)&&Number.isFinite(scheduled)?
+    Math.round(arrival-scheduled):null;
+ };
+ const provenance=(r,p,kind)=>{
+  if(kind==='pickup'&&r.events?.arrived)return 'Driver actual';
+  if(kind==='drop'&&r.events?.dropoff)return 'Driver actual';
+  if(p?.source?.includes('Google Maps'))return kind==='pickup'?'Maps · entered manually':'Modeled trip duration';
+  return 'Serenity model · not live GPS';
+ };
  E('v7-manifest-rows').innerHTML=runs.length?runs.map((r,i)=>{
   const p=byId.get(r.id),n=results[i+1],approved=window.SerenityOffice?.effective?.(r);
   const done=r.status==='Completed',exception=r.status==='Exception';
   const arr=eventClock(r.events?.arrived),enr=eventClock(r.events?.enroute),
         board=eventClock(r.events?.boarded),drop=eventClock(r.events?.dropoff);
   const state=done?'Complete':exception?'Exception':board?'Onboard':arr?'At pickup':enr?'En route':r.status||'Scheduled';
-  const tone=done&&!eventClock(r.events?.dropoff)?'late':done?'done':exception||p?.state==='late'?'late':p?.state==='risk'?'risk':p?.state==='missing'?'missing':'on';
-  const eta=arr||clock(p?.arrival);
-  const predictedDrop=drop||clock(p?.dropArrival);
-  const miles=Number.isFinite(r.miles)?r.miles.toFixed(1)+' mi':'Miles not supplied';
-  const drive=Number.isFinite(p?.drive)?p.drive+'m estimated trip':'Trip time not verified';
+  const tone=done&&!drop?'late':done?'done':exception||p?.state==='late'?'late':p?.state==='risk'?'risk':p?.state==='missing'?'missing':'on';
+  const pickupETA=arr||clock(p?.arrival);
+  const dropETA=drop||clock(p?.dropArrival);
   const clear=clock(p?.drop);
-  const rowEsc=esc(r.id),officeTime=esc(r.pu);
+  const delta=signedDelta(r,p);
+  const signedLabel=delta===null?'Arrival ETA unverified':delta>0?'+'+delta+'m BEHIND':
+    delta<0?Math.abs(delta)+'m ahead':'On schedule';
+  const scoreTone=delta===null?'unknown':delta>0?'late':delta<0?'good':'on';
+  const miles=Number.isFinite(r.miles)?r.miles.toFixed(1)+' mi':'Miles not supplied';
+  const trip=Number.isFinite(p?.drive)?p.drive+'m estimated':'Duration unverified';
+  const rowEsc=esc(r.id);
+  const eventSummary=[enr?'En route '+enr:null,board?'Boarded '+board:null].filter(Boolean).join(' · ');
+  const actualPickup=arr?'Actual '+arr:null;
+  const pickupReference=approved?.status==='approved'?
+    'Approved '+esc(approved.agreed||'late pickup')+' · Original '+esc(r.pu):
+    approved?.status==='awaiting'?'Office reply pending · '+esc(r.pu):
+    'Scheduled '+esc(r.pu);
   return '<tr class="v7-row v7-'+tone+'" data-v7-row="'+rowEsc+'" tabindex="0">'+
-  '<td><div class="v7-row-index">#'+(i+1)+'</div><strong>'+esc(r.name)+'</strong><small>'+esc(state)+'</small>'+
-   (done&&!drop?'<small class="v7-bad">Actual drop-off missing · repair</small>':'')+
-   '<small>'+esc(miles)+' · '+esc(drive)+'</small></td>'+
-  '<td><b>'+officeTime+'</b>'+ (approved?.status==='approved'?'<small class="v7-agreed">Office agreed '+esc(approved.agreed)+'</small>':
-   approved?.status==='awaiting'?'<small>Office reply pending</small>':'')+'</td>'+
-  '<td><b class="'+(p?.state==='late'?'v7-bad':'')+'">'+eta+'</b>'+
-  '<small>'+(arr?'Actual arrival':p?.state==='missing'?'Not estimated':p?.late>0?'+'+p.late+'m late vs scheduled/agreed':p?.targetMiss>0?'Early goal missed':'Forecast · 10m early goal')+'</small></td>'+
-  '<td><b>'+esc(r.du||'—')+'</b><small>Original office field</small></td>'+
-  '<td><b>'+predictedDrop+'</b><small>'+(drop?'Actual drop-off':'Forecast destination')+'</small><small>Vehicle clear ~'+clear+'</small></td>'+
-  '<td class="v7-events">'+(enr?'<span>En route '+enr+'</span>':'')+(arr?'<span>Arrived '+arr+'</span>':'')+
-   (board?'<span>Boarded '+board+'</span>':'')+(drop?'<span>Drop '+drop+'</span>':'')+
-   (!enr&&!arr&&!board&&!drop?'<small>No actuals yet</small>':'')+'</td>'+
-  '<td>'+impact(p,n,i)+'</td>'+
-  '<td><button type="button" data-v7-open="'+rowEsc+'">Open run</button></td></tr>';
- }).join(''):'<tr><td colspan="8" class="v7-empty">Import today’s manifest to begin.</td></tr>';
+    '<td><div class="v7-row-index">#'+(i+1)+'</div><strong>'+esc(r.name)+'</strong>'+
+      '<small>'+esc(state)+'</small>'+
+      (done&&!drop?'<small class="v7-bad">Drop-off actual missing — repair</small>':'')+
+      (eventSummary?'<small>'+esc(eventSummary)+'</small>':'')+
+      '<small>'+esc(miles)+' · '+esc(trip)+'</small></td>'+
+    '<td class="v10-time-cell"><small>'+pickupReference+'</small>'+
+      '<div class="v10-eta-line"><span>ETA</span><b class="'+(delta!==null&&delta>0?'v7-bad':'')+'">'+pickupETA+'</b></div>'+
+      '<small>'+esc(provenance(r,p,'pickup'))+'</small></td>'+
+    '<td class="v10-time-cell"><div class="v10-eta-line"><span>'+(drop?'Actual DO':'ETA DO')+'</span>'+
+      '<b>'+dropETA+'</b></div>'+
+      '<small>'+esc(provenance(r,p,'drop'))+'</small>'+
+      '<small>Vehicle clear ~'+clear+'</small>'+
+      '<small class="v10-mas-ref">MAS DO '+esc(r.du||'—')+' · reference only</small></td>'+
+    '<td class="v10-impact-cell"><b class="v10-drift-'+scoreTone+'">'+signedLabel+'</b>'+
+      '<small>vs '+(approved?.status==='approved'?'office-approved':'scheduled')+' pickup</small>'+
+      '<div class="v10-next-impact">'+impact(p,n,i)+'</div></td>'+
+    '<td><button type="button" data-v7-open="'+rowEsc+'">Open run</button></td></tr>';
+ }).join(''):'<tr><td colspan="5" class="v7-empty">Import the selected date’s manifest to begin.</td></tr>';
 }
 function customerRefresh(date,runs,results){
  const run=db.runs.find(r=>r.id===db.active);
