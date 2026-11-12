@@ -11,3 +11,13 @@
 .status-actions .status-choice:disabled{opacity:.35}
 .row-status{color:var(--accent);font-weight:900}
 .manifest-row.completed .row-status{color:var(--green)}
+
+.finance-overview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:12px 0 6px}.finance-overview .metric{padding:9px 12px}.finance-overview .metric b{font-size:17px}
+.finance-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:0 4px}.finance-foot small{font-size:11px;max-width:680px}
+.manifest-progress-cell{display:flex;flex-direction:column;gap:4px;min-width:0}.manifest-progress-cell .delta{min-height:25px}
+.trip-phase{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-radius:5px;padding:5px 4px;text-align:center;font-weight:900;font-size:10px;letter-spacing:.025em;border:1px solid #40546b}
+.phase-pending{background:#253246;color:#cbd5e1}.phase-active{background:#075e76;color:#e6fbff;border-color:#49dbe8}.phase-done{background:#064e3b;color:#6bfbb5;border-color:#2fbb84}.phase-exception{background:#572633;color:#ffb4c5;border-color:#fb7185}
+.finish-control{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 0;padding:12px;background:rgba(12,95,59,.12);border:2px solid #16a34a;border-radius:9px}
+.finish-button{background:#086d43!important;border:2px solid #6ef0af!important;font-weight:900!important;font-size:15px;padding:13px 18px!important;min-height:48px}
+.finish-button:disabled{background:#22513a!important;color:#9beac2!important;opacity:1}.finish-control small{font-size:12px;color:var(--muted)}
+@media(max-width:700px){.finance-overview{grid-template-columns:repeat(2,minmax(0,1fr))}.finance-foot{align-items:flex-start}.trip-phase{font-size:9px;padding:4px 2px}.manifest-progress-cell .delta{font-size:9px}}
