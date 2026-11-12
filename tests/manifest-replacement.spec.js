@@ -158,3 +158,12 @@ test('Ambiguous conflicting cards block import until one is removed',async({page
  await page.locator('#commit-reviewed').click();
  expect((await db(page)).runs.filter(r=>r.date===localDay(1))).toHaveLength(2);
 });
+
+test('Import modal inherits service date selected on Overview',async({page})=>{
+ await seeded(page,{today:7});
+ await page.locator('#date').fill(localDay(1));
+ await expect(page.locator('#v7-assigned')).toHaveText('0');
+ await manager(page);
+ await expect(page.locator('#import-date')).toHaveValue(localDay(1));
+ await expect(page.locator('#manifest-date-count')).toContainText('0 saved runs');
+});
