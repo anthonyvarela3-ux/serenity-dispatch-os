@@ -26,3 +26,11 @@
 .dock-handle{display:flex;align-items:center;justify-content:center;min-width:60px;padding:7px;cursor:grab;touch-action:none;user-select:none;border:1px dashed #7db0c6;border-radius:6px;font-size:12px;font-weight:800}
 .dock-handle:active{cursor:grabbing}.dock-actions{display:flex;gap:4px;flex-wrap:wrap}.dock-actions button{font-size:11px;padding:6px 8px;min-height:42px}.quick-dock.collapsed .dock-actions{display:none}.gross-editor{margin:10px 0;border-color:#16a34a}
 @media(max-width:700px){.quick-dock{right:6px;bottom:6px}.dock-actions button{font-size:10px;padding:5px}.dock-handle{min-width:48px;padding:4px}}
+
+/* Driver-confirmed customer phone verification; visible next to the number. */
+.phone-verification{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:10px 12px;border-radius:8px;border:2px solid;margin:8px 0}
+.phone-verification-label{font-size:12px;letter-spacing:.04em;font-weight:900}
+.phone-verification.is-verified{border-color:#34d399;background:#073b29;color:#baf7da}
+.phone-verification.is-unverified{border-color:#fbbf24;background:#45300d;color:#ffdfa0}
+.verify-phone-button{background:#075e76!important;border:2px solid #49dbe8!important;font-weight:900!important;min-height:44px}
+.phone-mismatch{padding:8px;color:#ffe196;background:#44300c;border-radius:6px;border:1px solid #af7d21}
