@@ -83,6 +83,19 @@ function tripPhase(r) {
  const tone=['Completed'].includes(r.status)?'phase-done':['En Route','Arrived','Onboard'].includes(r.status)?'phase-active':['Scheduled'].includes(r.status)?'phase-pending':'phase-exception';
  return {label:labels[r.status]||r.status,tone};
 }
+function renderFinanceStrip(){
+ const sh=state.shift,started=sh.start?Date.parse(sh.start):0,end=sh.end?Date.parse(sh.end):Date.now();
+ const pause=Number(sh.breakMs||0)+(sh.breakStart?Math.max(0,Date.now()-Date.parse(sh.breakStart)):0);
+ const hours=started?Math.max(0,(end-started-pause)/3600000):0;
+ const done=state.runs.filter(r=>r.status==='Completed');
+ $('finance-hours').textContent=started?hours.toFixed(2)+' h':'Not started';
+ $('finance-earnings').textContent=started?'$'+(hours*Number(state.settings.rate||0)).toFixed(2):'—';
+ $('finance-mileage').textContent=done.length+' / '+done.reduce((sum,r)=>sum+(Number(r.miles)||0),0).toFixed(1)+' mi';
+ $('finance-rate').textContent='$'+Number(state.settings.rate||0).toFixed(2);
+ $('manifestStartShift').disabled=!!started&&!sh.end;
+ $('manifestEndShift').disabled=!started||!!sh.end;
+}
+
 function renderManifest(){
  const runs=state.runs;
  $('metric-progress').textContent=runs.filter(x=>x.status==='Completed').length+' / '+runs.length;
@@ -92,6 +105,7 @@ function renderManifest(){
  $('metric-delay').style.color=delta&&delta.tone==='yellow'?'#fde047':delta&&delta.tone==='red'?'#fb7185':delta&&delta.tone==='purple'?'#d8b4fe':'';
  $('metric-gps').textContent=state.position?'Location received':'Off';
  $('metric-fresh').textContent=state.lastGps?new Date(state.lastGps).toLocaleTimeString():'No live route';
+ renderFinanceStrip();
  $('manifest-list').innerHTML=runs.length?runs.map((r,i)=>{
   const c=classify(r),active=r.id===state.activeId,expanded=r.id===state.expanded,completed=r.status==='Completed';
   return '<div class="manifest-row '+(active?'active ':'')+(completed?'completed':'')+'"><button class="manifest-main" data-action="expand" data-id="'+esc(r.id)+'" aria-expanded="'+expanded+'"><div><div class="name">'+(completed?'✓ ':'')+(i+1)+'. '+esc(r.name)+'</div><div class="direction">'+esc(r.direction)+' · <span class="row-status">'+esc(r.status)+'</span></div></div><div class="times"><div class="timeBlock"><em>SCHEDULED PU</em><span class="timeval">'+hhmm(r.scheduledPickup)+'</span></div><div class="timeBlock"><em>ETA PU</em><span class="timeval">'+(r.gpsPickupEta?hhmm(r.gpsPickupEta):'—')+'</span></div></div><div class="timeBlock"><em>ETA DROP</em><span class="timeval">'+(r.gpsDropoffEta?hhmm(r.gpsDropoffEta):'—')+'</span></div><div class="manifest-progress-cell"><span class="delta '+c.tone+'">'+esc(c.label)+'</span><span class="trip-phase '+tripPhase(r).tone+'">'+esc(tripPhase(r).label)+'</span></div></button>'+(expanded?rowDetails(r):'')+'</div>';
@@ -180,7 +194,7 @@ function shiftAction(action){
  if(action==='start'){if(s.start&&!s.end){alert('Shift already active');return}state.shift={start:n,end:null,breakStart:null,breakMs:0}}
  if(action==='end'){if(!s.start||s.end)return alert('Start a shift first');if(s.breakStart){s.breakMs+=Date.now()-Date.parse(s.breakStart);s.breakStart=null}s.end=n}
  if(action==='break'){if(!s.start||s.end)return alert('Start a shift first');if(s.breakStart){s.breakMs+=Date.now()-Date.parse(s.breakStart);s.breakStart=null}else s.breakStart=n}
- persist();renderShift();
+ persist();renderShift();renderFinanceStrip();
 }
 function saveDay(){
  const s=state.shift;if(!s.start||!s.end)return alert('End a fictional shift first.');
@@ -257,7 +271,8 @@ function initEvents(){
  $('loadDemo').onclick=()=>{if(confirm('Replace the current fictional preview with the sample manifest?'))demo()};
  $('previewImport').onclick=preview;$('applyImport').onclick=applyImport;$('runOcr').onclick=ocr;$('useText').onclick=()=>{$('rawInput').focus();status('Paste pipe-delimited fictional trips and select Validate and preview.')};
  $('intelSearch').oninput=renderIntel;
- $('startShift').onclick=()=>shiftAction('start');$('endShift').onclick=()=>shiftAction('end');$('breakShift').onclick=()=>shiftAction('break');$('saveDay').onclick=saveDay;
+ $('startShift').onclick=()=>shiftAction('start');$('endShift').onclick=()=>shiftAction('end');
+ $('manifestStartShift').onclick=()=>shiftAction('start');$('manifestEndShift').onclick=()=>shiftAction('end');$('breakShift').onclick=()=>shiftAction('break');$('saveDay').onclick=saveDay;
  $('exportCsv').onclick=csv;$('printDay').onclick=()=>window.print();
  for(const [id,key] of [['rateInput','rate'],['overtimeFactor','mult'],['overtimeHours','weekly'],['fontInput','font'],['densityInput','density'],['themeInput','theme']])$(id).onchange=e=>{state.settings[key]=['rate','mult','weekly'].includes(key)?Number(e.target.value):e.target.value;persist();renderAll()};
  $('startGPS').onclick=()=>startGPS();$('stopGPS').onclick=stopGPS;$('refreshNow').onclick=positionOnce;
@@ -293,6 +308,6 @@ async function weather(){
  }).join('');
  }catch(e){$('weather').innerHTML='<div class="empty">Forecast unavailable: '+esc(e.message)+'</div>'}
 }
-setInterval(()=>{$('clock').textContent=new Date().toLocaleTimeString('en-US');if(!state.expanded && Date.now()%15000<1000)renderManifest();if(state.shift.start&&!state.shift.end)renderShift()},1000);
+setInterval(()=>{$('clock').textContent=new Date().toLocaleTimeString('en-US');if(!state.expanded && Date.now()%15000<1000)renderManifest();if(state.shift.start&&!state.shift.end){renderShift();renderFinanceStrip()}},1000);
 initEvents();renderAll();$('clock').textContent=new Date().toLocaleTimeString('en-US');
 })();
