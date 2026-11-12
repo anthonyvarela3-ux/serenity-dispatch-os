@@ -1,0 +1,16 @@
+name: Serenity preview timing tests
+on:
+  push:
+    branches: [dev/approved-manifest-v2]
+  pull_request:
+jobs:
+  timing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node tests/manifest-timing.test.cjs
+      - run: node --check src/app.js
+      - run: node --check src/manifest-timing.js
