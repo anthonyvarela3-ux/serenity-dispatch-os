@@ -30,6 +30,7 @@ test('manual import requires explicit review, persists once, ignores exact dupli
  await page.locator('#raw').fill('TEST RIDER C | 11:00 AM | 500 Test Ave, Testville, NY 11111 | 11:45 AM | 600 Demo Rd, Testville, NY 11111');
  await page.locator('#preview').click();
  await expect(page.locator('#preview-box')).toContainText('1 unique ready');
+ await page.locator('#manifest-expected-count').fill('1');
  await page.locator('#reviewed-all').check();
  page.on('dialog',d=>d.accept());
  await page.locator('#commit-reviewed').click();
@@ -40,7 +41,8 @@ test('manual import requires explicit review, persists once, ignores exact dupli
  await page.locator('input[name="manifest-write-mode"][value="append"]').check();
  await page.locator('#preview').click();
  await expect(page.locator('#preview-box')).toContainText('1 overlapping duplicate(s) skipped');
- await expect(page.locator('#commit-reviewed')).toBeDisabled();
+ await expect(page.locator('#commit-reviewed')).toBeEnabled();
+ await expect(page.locator('#manifest-review-status')).toContainText('No validated, distinct runs are ready');
  expect((await getDb(page)).runs.length).toBe(1);
 });
 
@@ -130,6 +132,7 @@ test('OCR can parse synthetic screenshot text, but only imports after rider-by-r
  await page.locator('#manifest-image').setInputFiles({name:'synthetic.png',mimeType:'image/png',buffer:Buffer.from([137,80,78,71,13,10,26,10])});
  await page.locator('#read-ocr').click();
  await expect(page.locator('#preview-box')).toContainText('1 unique ready',{timeout:12000});
+ await page.locator('#manifest-expected-count').fill('1');
  expect((await getDb(page)).runs.length).toBe(0);
  await page.locator('#reviewed-all').check();
  page.on('dialog',d=>d.accept());
