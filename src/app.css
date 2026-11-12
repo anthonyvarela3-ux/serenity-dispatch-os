@@ -45,3 +45,9 @@
 .dashboard-metrics.editing .dashboard-card.card-is-dragging{background:#16445d;border-style:solid}
 .dashboard-help{margin:7px 0 10px;color:var(--muted);font-size:12px}
 @media(max-width:700px){.dashboard-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-bar h2{font-size:14px}.dashboard-metrics.editing .dashboard-card{padding-right:35px}}
+
+.location-queue-section{margin:16px 0;border-top:1px solid var(--border);padding-top:12px}
+.location-issue-tools{border:2px solid #cf9c37!important}.location-status{font-size:13px;font-weight:800;padding:7px 9px;border-radius:6px;background:rgba(202,138,4,.16);margin:8px 0}
+.location-error-button{background:#6a3b13!important;border:2px solid #ffbb65!important;font-weight:900!important;min-height:44px}
+.actual-pickup-button{background:#075e76!important;border:2px solid #67e8f9!important;font-weight:900!important;min-height:44px}
+.location-queue{display:grid;gap:8px}.issue-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:10px;border:1px solid var(--border);border-radius:9px}.issue-row p{margin:4px 0;overflow-wrap:anywhere}
