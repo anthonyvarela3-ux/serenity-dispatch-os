@@ -57,6 +57,8 @@ async function retrieve(force=false){
   E('wx-alert').textContent='';
   const weatherPayload={asOf:Date.now(),label:state.label,hours:periods.slice(0,48).map(p=>({
    startTime:p.startTime,endTime:p.endTime,shortForecast:p.shortForecast||'',
+   temperature:Number.isFinite(p.temperature)?p.temperature:null,
+   temperatureUnit:p.temperatureUnit||'F',windSpeed:p.windSpeed||'',
    precipitation:p.probabilityOfPrecipitation?.value??null
   })),alerts:[]};
   window.SerenityWeather=weatherPayload;
