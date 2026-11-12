@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - serenity-beta7-stabilization-qa
+      - serenity-beta7-manifest-replace-date
   workflow_dispatch:
 permissions:
   contents: read
