@@ -74,6 +74,7 @@ function rowDetails(r){
  '<div class="detailbox"><strong>Customer Intelligence</strong><small>Preferred phone '+esc(contact(r)||'Not available')+(mismatch?' · ⚠ Imported number differs':'')+'</small><p>'+esc(p.notes||'No saved customer notes')+'</p><p>'+esc(state.facilities[r.dropoff.toLowerCase()]||'')+'</p><div class="actions"><button data-action="editCustomer" data-id="'+esc(r.id)+'">Edit notes and verified phone</button><button data-action="editFacility" data-id="'+esc(r.id)+'">Edit facility instructions</button><a href="tel:'+esc(contact(r))+'">Call</a></div></div>'+
  '<div class="detailbox"><strong>Manual ETA preview (not live GPS routing)</strong><div class="inline-edit"><label>Pickup ETA<input type="datetime-local" id="pu-'+esc(state.runs.indexOf(r))+'" value="'+(r.gpsPickupEta?localDateInput(r.gpsPickupEta):'')+'"></label><label>Drop-off ETA<input type="datetime-local" id="do-'+esc(state.runs.indexOf(r))+'" value="'+(r.gpsDropoffEta?localDateInput(r.gpsDropoffEta):'')+'"></label></div><button data-action="saveEta" data-id="'+esc(r.id)+'">Save manually entered ETAs</button><small>ETA source: '+esc(r.etaSource||'Unavailable')+'; manual entries must not be presented as traffic-aware GPS.</small></div>'+
  '<div class="detail-actions">'+buttons+'</div><div class="status-current" role="status" aria-live="polite"><span>CURRENT TRIP STATUS</span><strong>● '+esc(r.status)+'</strong><small>'+(r.updatedAt?'Updated '+new Date(r.updatedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'Not yet changed')+'</small></div><div class="detail-actions status-actions" role="group" aria-label="Choose trip status">'+['En Route','Arrived','Onboard','Canceled in Advance','Canceled at Door','No-Show','Unable to Complete'].map(x=>'<button class="status-choice '+(r.status===x?'selected':'')+'" aria-pressed="'+(r.status===x?'true':'false')+'" data-action="status" data-id="'+esc(r.id)+'" data-value="'+esc(x)+'" '+(x==='Canceled at Door'&&!r.events.arrival?'disabled title="Confirm arrival first"':'')+'>'+(r.status===x?'✓ ':'')+x+'</button>').join('')+'</div>'+
+ '<div class="detailbox gross-editor"><strong>Truck gross fare · before deductions</strong><label>Gross fare for this run ($) — separate from driver pay<input type="number" min="0" step="0.01" inputmode="decimal" id="fare-'+esc(state.runs.indexOf(r))+'" value="'+(Number.isFinite(r.grossRevenue)?r.grossRevenue:'')+'" placeholder="Enter gross revenue"></label><button data-action="saveFare" data-id="'+esc(r.id)+'">Save truck gross fare</button><small>Unknown fares are flagged, not estimated from hourly pay.</small></div>'+
  '<div class="finish-control"><button class="finish-button" data-action="finish" data-id="'+esc(r.id)+'" '+(r.status==='Completed'?'disabled':'')+'>'+(r.status==='Completed'?'✓ RUN FINISHED':'✓ FINISH RUN · CLOSE OUT')+'</button><small>'+(r.status==='Completed'?'Closed '+(r.events.completed?new Date(r.events.completed).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'—'):'Confirm completion and record a close-out time')+'</small></div>'+
  '<div class="detailbox"><label>Trip-specific notes<textarea id="tripnotes-'+esc(state.runs.indexOf(r))+'" rows="2">'+esc(r.tripNotes||'')+'</textarea></label><button data-action="saveTripNotes" data-id="'+esc(r.id)+'">Save trip note</button><button data-action="correct" data-id="'+esc(r.id)+'">Correct original imported field</button></div></div>';
 }
@@ -91,7 +92,9 @@ function renderFinanceStrip(){
  $('finance-hours').textContent=started?hours.toFixed(2)+' h':'Not started';
  $('finance-earnings').textContent=started?'$'+(hours*Number(state.settings.rate||0)).toFixed(2):'—';
  $('finance-mileage').textContent=done.length+' / '+done.reduce((sum,r)=>sum+(Number(r.miles)||0),0).toFixed(1)+' mi';
- $('finance-rate').textContent='$'+Number(state.settings.rate||0).toFixed(2);
+ const fares=state.runs.filter(x=>x.status==='Completed'&&Number.isFinite(x.grossRevenue)&&x.grossRevenue>=0);
+ const missing=state.runs.filter(x=>x.status==='Completed'&&!(Number.isFinite(x.grossRevenue)&&x.grossRevenue>=0)).length;
+ $('finance-truck').textContent='$'+fares.reduce((sum,x)=>sum+x.grossRevenue,0).toFixed(2)+(missing?' · '+missing+' missing fare'+(missing===1?'':'s'):'');
  $('manifestStartShift').disabled=!!started&&!sh.end;
  $('manifestEndShift').disabled=!started||!!sh.end;
 }
@@ -199,12 +202,12 @@ function shiftAction(action){
 function saveDay(){
  const s=state.shift;if(!s.start||!s.end)return alert('End a fictional shift first.');
  const hours=Math.max(0,(Date.parse(s.end)-Date.parse(s.start)-s.breakMs)/3600000);
- const snap={date:new Date(s.start).toISOString().slice(0,10),hours,earnings:hours*Number(state.settings.rate),completed:state.runs.filter(x=>x.status==='Completed').length,outcomes:state.runs.map(r=>({name:r.name,status:r.status}))};
+ const finished=state.runs.filter(x=>x.status==='Completed');const snap={date:new Date(s.start).toISOString().slice(0,10),hours,earnings:hours*Number(state.settings.rate),truckGross:finished.reduce((sum,r)=>sum+(Number.isFinite(r.grossRevenue)?r.grossRevenue:0),0),missingFares:finished.filter(r=>!Number.isFinite(r.grossRevenue)).length,completed:finished.length,outcomes:state.runs.map(r=>({name:r.name,status:r.status,grossFare:r.grossRevenue??null}))};
  state.history.push(snap);persist();renderShift();status('Saved fictional daily history. Not cloud synced.');
 }
 function csv(){
  if(!state.runs.length)return alert('No data');
- const rows=[['Name','Direction','Scheduled Pickup','ETA Pickup','ETA Dropoff','Status','Variance'],...state.runs.map(r=>[r.name,r.direction,r.scheduledPickup,r.gpsPickupEta||'',r.gpsDropoffEta||'',r.status,classify(r).label])];
+ const rows=[['Name','Direction','Scheduled Pickup','ETA Pickup','ETA Dropoff','Status','Variance','Gross truck fare'],...state.runs.map(r=>[r.name,r.direction,r.scheduledPickup,r.gpsPickupEta||'',r.gpsDropoffEta||'',r.status,classify(r).label,Number.isFinite(r.grossRevenue)?r.grossRevenue:''])];
  const content=rows.map(row=>row.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(',')).join('\r\n');
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type:'text/csv'}));a.download='serenity-FICTIONAL-preview.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
@@ -260,6 +263,7 @@ function initEvents(){
  if(v==='expand'){state.expanded=state.expanded===r.id?null:r.id;state.activeId=r.id}
  else if(v==='status')changeStatus(r,btn.dataset.value);
  else if(v==='finish')finishRun(r);
+ else if(v==='saveFare'){const raw=$('fare-'+state.runs.indexOf(r)).value.trim();if(raw===''){r.grossRevenue=null;}else{const amount=Number(raw);if(!Number.isFinite(amount)||amount<0)return alert('Enter a valid non-negative gross fare.');r.grossRevenue=Math.round(amount*100)/100;}r.updatedAt=new Date().toISOString();persist();}
  else if(v==='editCustomer')editCustomer(r);
  else if(v==='editFacility'){const k=r.dropoff.toLowerCase();const p=prompt('Facility notes (fictional demo only)',state.facilities[k]||'');if(p!==null){state.facilities[k]=p;persist()}}
  else if(v==='sms')sms(r,Number(btn.dataset.template));
@@ -308,6 +312,43 @@ async function weather(){
  }).join('');
  }catch(e){$('weather').innerHTML='<div class="empty">Forecast unavailable: '+esc(e.message)+'</div>'}
 }
+
+function initQuickDock(){
+ const dock=$('quickDock'),handle=$('quickDockHandle'),toggle=$('dockCollapse');
+ if(!dock||!handle)return;
+ let position=state.settings.dock||{};
+ function positionDock(){
+  dock.classList.toggle('collapsed',!!position.collapsed);
+  toggle.textContent=position.collapsed?'+':'−';
+  if(Number.isFinite(position.x)&&Number.isFinite(position.y)){
+    dock.style.left=Math.max(0,Math.min(innerWidth-dock.offsetWidth,position.x))+'px';
+    dock.style.top=Math.max(0,Math.min(innerHeight-dock.offsetHeight,position.y))+'px';
+    dock.style.right='auto';dock.style.bottom='auto';
+  }
+ }
+ requestAnimationFrame(positionDock);
+ let drag=null;
+ handle.addEventListener('pointerdown',e=>{
+  if(e.pointerType==='mouse'&&e.button!==0)return;
+  e.preventDefault();
+  const r=dock.getBoundingClientRect();
+  drag={x:e.clientX-r.left,y:e.clientY-r.top};
+  handle.setPointerCapture(e.pointerId);
+ });
+ handle.addEventListener('pointermove',e=>{
+  if(!drag)return;
+  position.x=Math.max(0,Math.min(innerWidth-dock.offsetWidth,e.clientX-drag.x));
+  position.y=Math.max(0,Math.min(innerHeight-dock.offsetHeight,e.clientY-drag.y));
+  dock.style.left=position.x+'px';dock.style.top=position.y+'px';dock.style.right='auto';dock.style.bottom='auto';
+ });
+ const saveDock=()=>{if(drag){drag=null;state.settings.dock=position;persist()}};
+ handle.addEventListener('pointerup',saveDock);handle.addEventListener('pointercancel',saveDock);
+ toggle.addEventListener('click',()=>{position.collapsed=!position.collapsed;state.settings.dock=position;persist();positionDock()});
+ dock.querySelectorAll('[data-quick-tab]').forEach(btn=>btn.addEventListener('click',()=>{
+  const link=document.querySelector('.nav [data-tab="'+btn.dataset.quickTab+'"]');if(link)link.click();
+ }));
+ window.addEventListener('resize',positionDock);
+}
 setInterval(()=>{$('clock').textContent=new Date().toLocaleTimeString('en-US');if(!state.expanded && Date.now()%15000<1000)renderManifest();if(state.shift.start&&!state.shift.end){renderShift();renderFinanceStrip()}},1000);
-initEvents();renderAll();$('clock').textContent=new Date().toLocaleTimeString('en-US');
+initEvents();renderAll();initQuickDock();$('clock').textContent=new Date().toLocaleTimeString('en-US');
 })();
