@@ -36,3 +36,5 @@ html.v7-app .manifest-overlap-details>summary{font-size:12px;font-weight:790;cur
  padding:13px 14px;min-height:44px;color:var(--muted)}
 html.v7-app .manifest-overlap-details[open]{padding-bottom:10px}
 html.v7-app .manifest-overlap-details .review-item{margin:8px 12px}
+
+html.v7-app #import #load-test,html.v7-app #import #remove-test{display:none!important}
