@@ -278,6 +278,6 @@ async function weather(){
  }).join('');
  }catch(e){$('weather').innerHTML='<div class="empty">Forecast unavailable: '+esc(e.message)+'</div>'}
 }
-setInterval(()=>{$('clock').textContent=new Date().toLocaleTimeString('en-US');renderManifest();if(state.shift.start&&!state.shift.end)renderShift()},1000);
+setInterval(()=>{$('clock').textContent=new Date().toLocaleTimeString('en-US');if(!state.expanded && Date.now()%15000<1000)renderManifest();if(state.shift.start&&!state.shift.end)renderShift()},1000);
 initEvents();renderAll();$('clock').textContent=new Date().toLocaleTimeString('en-US');
 })();
