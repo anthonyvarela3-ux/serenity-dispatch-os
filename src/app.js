@@ -73,10 +73,16 @@ function rowDetails(r){
  return '<div class="manifest-detail"><div class="two"><div class="detailbox"><strong>Pickup</strong><p>'+esc(r.pickup)+'</p><small>Office '+hhmm(r.scheduledPickup)+' · ETA '+pickupTime+'</small><p><a target="_blank" rel="noopener" href="'+docAddress(r.pickup)+'">Google Maps</a><a target="_blank" rel="noopener" href="'+wazeAddress(r.pickup)+'">Waze</a></p></div><div class="detailbox"><strong>Drop-off</strong><p>'+esc(r.dropoff)+'</p><small>GPS/route ETA '+dropTime+'</small><p><a target="_blank" rel="noopener" href="'+docAddress(r.dropoff)+'">Google Maps</a><a target="_blank" rel="noopener" href="'+wazeAddress(r.dropoff)+'">Waze</a></p></div></div>'+
  '<div class="detailbox"><strong>Customer Intelligence</strong><small>Preferred phone '+esc(contact(r)||'Not available')+(mismatch?' · ⚠ Imported number differs':'')+'</small><p>'+esc(p.notes||'No saved customer notes')+'</p><p>'+esc(state.facilities[r.dropoff.toLowerCase()]||'')+'</p><div class="actions"><button data-action="editCustomer" data-id="'+esc(r.id)+'">Edit notes and verified phone</button><button data-action="editFacility" data-id="'+esc(r.id)+'">Edit facility instructions</button><a href="tel:'+esc(contact(r))+'">Call</a></div></div>'+
  '<div class="detailbox"><strong>Manual ETA preview (not live GPS routing)</strong><div class="inline-edit"><label>Pickup ETA<input type="datetime-local" id="pu-'+esc(state.runs.indexOf(r))+'" value="'+(r.gpsPickupEta?localDateInput(r.gpsPickupEta):'')+'"></label><label>Drop-off ETA<input type="datetime-local" id="do-'+esc(state.runs.indexOf(r))+'" value="'+(r.gpsDropoffEta?localDateInput(r.gpsDropoffEta):'')+'"></label></div><button data-action="saveEta" data-id="'+esc(r.id)+'">Save manually entered ETAs</button><small>ETA source: '+esc(r.etaSource||'Unavailable')+'; manual entries must not be presented as traffic-aware GPS.</small></div>'+
- '<div class="detail-actions">'+buttons+'</div><div class="status-current" role="status" aria-live="polite"><span>CURRENT TRIP STATUS</span><strong>● '+esc(r.status)+'</strong><small>'+(r.updatedAt?'Updated '+new Date(r.updatedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'Not yet changed')+'</small></div><div class="detail-actions status-actions" role="group" aria-label="Choose trip status">'+['En Route','Arrived','Onboard','Completed','Canceled in Advance','Canceled at Door','No-Show','Unable to Complete'].map(x=>'<button class="status-choice '+(r.status===x?'selected':'')+'" aria-pressed="'+(r.status===x?'true':'false')+'" data-action="status" data-id="'+esc(r.id)+'" data-value="'+esc(x)+'" '+(x==='Canceled at Door'&&!r.events.arrival?'disabled title="Confirm arrival first"':'')+'>'+(r.status===x?'✓ ':'')+x+'</button>').join('')+'</div>'+
+ '<div class="detail-actions">'+buttons+'</div><div class="status-current" role="status" aria-live="polite"><span>CURRENT TRIP STATUS</span><strong>● '+esc(r.status)+'</strong><small>'+(r.updatedAt?'Updated '+new Date(r.updatedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'Not yet changed')+'</small></div><div class="detail-actions status-actions" role="group" aria-label="Choose trip status">'+['En Route','Arrived','Onboard','Canceled in Advance','Canceled at Door','No-Show','Unable to Complete'].map(x=>'<button class="status-choice '+(r.status===x?'selected':'')+'" aria-pressed="'+(r.status===x?'true':'false')+'" data-action="status" data-id="'+esc(r.id)+'" data-value="'+esc(x)+'" '+(x==='Canceled at Door'&&!r.events.arrival?'disabled title="Confirm arrival first"':'')+'>'+(r.status===x?'✓ ':'')+x+'</button>').join('')+'</div>'+
+ '<div class="finish-control"><button class="finish-button" data-action="finish" data-id="'+esc(r.id)+'" '+(r.status==='Completed'?'disabled':'')+'>'+(r.status==='Completed'?'✓ RUN FINISHED':'✓ FINISH RUN · CLOSE OUT')+'</button><small>'+(r.status==='Completed'?'Closed '+(r.events.completed?new Date(r.events.completed).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'—'):'Confirm completion and record a close-out time')+'</small></div>'+
  '<div class="detailbox"><label>Trip-specific notes<textarea id="tripnotes-'+esc(state.runs.indexOf(r))+'" rows="2">'+esc(r.tripNotes||'')+'</textarea></label><button data-action="saveTripNotes" data-id="'+esc(r.id)+'">Save trip note</button><button data-action="correct" data-id="'+esc(r.id)+'">Correct original imported field</button></div></div>';
 }
 function localDateInput(s){const d=new Date(s);const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes())}
+function tripPhase(r) {
+ const labels={'Scheduled':'NOT STARTED','En Route':'EN ROUTE TO PICKUP','Arrived':'AT PICKUP','Onboard':'ONBOARD · TO DROP-OFF','Completed':'✓ RUN FINISHED','Canceled in Advance':'CANCELED','Canceled at Door':'CANCELED AT DOOR','No-Show':'NO-SHOW','Unable to Complete':'UNABLE TO COMPLETE'};
+ const tone=['Completed'].includes(r.status)?'phase-done':['En Route','Arrived','Onboard'].includes(r.status)?'phase-active':['Scheduled'].includes(r.status)?'phase-pending':'phase-exception';
+ return {label:labels[r.status]||r.status,tone};
+}
 function renderManifest(){
  const runs=state.runs;
  $('metric-progress').textContent=runs.filter(x=>x.status==='Completed').length+' / '+runs.length;
@@ -88,7 +94,7 @@ function renderManifest(){
  $('metric-fresh').textContent=state.lastGps?new Date(state.lastGps).toLocaleTimeString():'No live route';
  $('manifest-list').innerHTML=runs.length?runs.map((r,i)=>{
   const c=classify(r),active=r.id===state.activeId,expanded=r.id===state.expanded,completed=r.status==='Completed';
-  return '<div class="manifest-row '+(active?'active ':'')+(completed?'completed':'')+'"><button class="manifest-main" data-action="expand" data-id="'+esc(r.id)+'" aria-expanded="'+expanded+'"><div><div class="name">'+(completed?'✓ ':'')+(i+1)+'. '+esc(r.name)+'</div><div class="direction">'+esc(r.direction)+' · <span class="row-status">'+esc(r.status)+'</span></div></div><div class="times"><div class="timeBlock"><em>SCHEDULED PU</em><span class="timeval">'+hhmm(r.scheduledPickup)+'</span></div><div class="timeBlock"><em>ETA PU</em><span class="timeval">'+(r.gpsPickupEta?hhmm(r.gpsPickupEta):'—')+'</span></div></div><div class="timeBlock"><em>ETA DROP</em><span class="timeval">'+(r.gpsDropoffEta?hhmm(r.gpsDropoffEta):'—')+'</span></div><span class="delta '+c.tone+'">'+esc(c.label)+'</span></button>'+(expanded?rowDetails(r):'')+'</div>';
+  return '<div class="manifest-row '+(active?'active ':'')+(completed?'completed':'')+'"><button class="manifest-main" data-action="expand" data-id="'+esc(r.id)+'" aria-expanded="'+expanded+'"><div><div class="name">'+(completed?'✓ ':'')+(i+1)+'. '+esc(r.name)+'</div><div class="direction">'+esc(r.direction)+' · <span class="row-status">'+esc(r.status)+'</span></div></div><div class="times"><div class="timeBlock"><em>SCHEDULED PU</em><span class="timeval">'+hhmm(r.scheduledPickup)+'</span></div><div class="timeBlock"><em>ETA PU</em><span class="timeval">'+(r.gpsPickupEta?hhmm(r.gpsPickupEta):'—')+'</span></div></div><div class="timeBlock"><em>ETA DROP</em><span class="timeval">'+(r.gpsDropoffEta?hhmm(r.gpsDropoffEta):'—')+'</span></div><div class="manifest-progress-cell"><span class="delta '+c.tone+'">'+esc(c.label)+'</span><span class="trip-phase '+tripPhase(r).tone+'">'+esc(tripPhase(r).label)+'</span></div></button>'+(expanded?rowDetails(r):'')+'</div>';
  }).join(''):'<div class="empty">No manifest loaded. Select “Load fictional demo” or import reviewed fictional trip data.</div>';
 }
 function editCustomer(r){
@@ -115,7 +121,15 @@ function correct(r){
  r.edits??=[];r.edits.push({field:key,from:before,to:value,at:new Date().toISOString()});
  r[key]=value;r.updatedAt=new Date().toISOString();persist();renderAll();
 }
+function finishRun(r) {
+ if(r.status==='Completed')return;
+ if(['Canceled in Advance','Canceled at Door','No-Show','Unable to Complete'].includes(r.status)){alert('Trip has an exception outcome and cannot also be completed.');return;}
+ if(!confirm('Finish run for '+r.name+'? This records completion and closes the run.'))return;
+ changeStatus(r,'Completed');
+}
 function changeStatus(r,v){
+ if(r.status==='Completed'&&v!=='Completed'&&!confirm('This run is already finished. Reopen it and change its status?'))return;
+ if(v==='Completed'&&r.status==='Completed')return;
  if(v==='Canceled at Door'&&!r.events.arrival){alert('Confirm Arrived before Canceled at Door.');return}
  if(['Canceled in Advance','Canceled at Door','No-Show','Unable to Complete'].includes(v)&&!confirm('Record '+v+' for this trip? Original assignment remains preserved.'))return;
  if(v==='Arrived')r.events.arrival=new Date().toISOString();
@@ -231,6 +245,7 @@ function initEvents(){
  const v=btn.dataset.action;
  if(v==='expand'){state.expanded=state.expanded===r.id?null:r.id;state.activeId=r.id}
  else if(v==='status')changeStatus(r,btn.dataset.value);
+ else if(v==='finish')finishRun(r);
  else if(v==='editCustomer')editCustomer(r);
  else if(v==='editFacility'){const k=r.dropoff.toLowerCase();const p=prompt('Facility notes (fictional demo only)',state.facilities[k]||'');if(p!==null){state.facilities[k]=p;persist()}}
  else if(v==='sms')sms(r,Number(btn.dataset.template));
