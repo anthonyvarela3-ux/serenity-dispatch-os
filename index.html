@@ -142,6 +142,111 @@ el('date').value=liveDate;el('import-date').value=liveDate;el('date').addEventLi
   const ocrControls = document.createElement('div');
   ocrControls.innerHTML = '<div class="bar"><button type="button" class="primary" id="read-ocr">Read screenshots (OCR)</button><button type="button" id="remove-test">Remove synthetic test runs</button></div><p class="muted" role="status" aria-live="polite" id="ocr-progress">No screenshots processed yet.</p><details><summary>View raw OCR text for troubleshooting</summary><textarea id="ocr-raw" rows="8" readonly aria-label="Raw OCR text"></textarea></details>';
   one('image-info').after(ocrControls);
+
+  // This date selector is deliberately explicit. RoutingBox's "ASSIGNED
+  // TOMORROW" screenshot must not be attached to today's stored manifest.
+  const serviceDateControl=document.createElement('section');
+  serviceDateControl.id='manifest-date-manager';
+  serviceDateControl.className='manifest-date-manager';
+  serviceDateControl.innerHTML=
+    '<h3>Service-date manifest manager</h3>'+
+    '<div class="manifest-date-actions"><button type="button" id="manifest-today">Today</button>'+
+    '<button type="button" id="manifest-tomorrow" class="primary">Tomorrow</button>'+
+    '<span id="manifest-date-count" role="status" aria-live="polite"></span></div>'+
+    '<fieldset class="manifest-mode"><legend>How should reviewed runs be saved?</legend>'+
+    '<label><input type="radio" name="manifest-write-mode" value="replace" checked>'+
+    '<span><b>Replace this date’s manifest</b><small>Recommended for a complete new RoutingBox manifest; preserve all other dates</small></span></label>'+
+    '<label><input type="radio" name="manifest-write-mode" value="append">'+
+    '<span><b>Add new runs only</b><small>Use when dispatch adds an assignment later; skip already saved runs</small></span></label>'+
+    '</fieldset>'+
+    '<button type="button" class="danger" id="manifest-clear-date">Clear ALL runs for selected service date</button>'+
+    '<p class="muted">Clear and Replace affect only the selected service date. They can remove trip events for that date. Export a backup first. Two overlapping screenshots should be reviewed as one manifest, not imported separately.</p>';
+  one('import-date').after(serviceDateControl);
+  const mode=()=>document.querySelector('input[name="manifest-write-mode"]:checked')?.value||'replace';
+  const realLocalDate=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+  const plusDays=days=>{const d=new Date();d.setDate(d.getDate()+days);return realLocalDate(d)};
+  function currentDateCount(){
+    const date=one('import-date').value;
+    const count=db.runs.filter(r=>r.date===date).length;
+    one('manifest-date-count').textContent=(date||'Select a date')+' · '+count+' saved run'+(count===1?'':'s')+' for this date';
+  }
+  function showDate(date){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return;
+    one('import-date').value=date;
+    one('date').value=date;
+    pending=[];previewErrors=[];
+    one('preview-box').innerHTML='';
+    render();
+    currentDateCount();
+  }
+  function sourceIds(date){return db.runs.filter(r=>r.date===date).map(r=>r.id)}
+  function pruneRunData(ids,date){
+    const all=new Set(ids);
+    for(const key of ['officeClearances','forecastDriveMinutes','codingVerification','guardPins',
+      'guardDeparted','guardSnooze','officeNotifications','runReviews']){
+      if(db[key]&&typeof db[key]==='object')
+        for(const id of all)delete db[key][id];
+    }
+    for(const key of ['morningFirstLegs','morningDays']){
+      if(db[key]&&typeof db[key]==='object')delete db[key][date];
+    }
+    if(all.has(db.active))db.active=null;
+  }
+  function writeForDate(date,add,replaceDate){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date))throw Error('Select a valid service date.');
+    if(!Array.isArray(add)||add.some(r=>r.date!==date))throw Error('Imported run date mismatch; import aborted.');
+    const before=JSON.stringify(db),oldRuns=db.runs.filter(r=>r.date===date);
+    if(replaceDate){
+      const ids=sourceIds(date);
+      db.runs=db.runs.filter(r=>r.date!==date);
+      pruneRunData(ids,date);
+    }
+    db.runs.push(...add);
+    if(!save()){
+      db=JSON.parse(before);
+      render();
+      return false;
+    }
+    currentDateCount();
+    return true;
+  }
+  function hasProgress(r){
+    return !['Scheduled','On schedule','On Schedule',''].includes(String(r.status||''))||
+      Object.values(r.events||{}).some(v=>v!==null&&v!==undefined&&v!==''&&
+        !(Array.isArray(v)&&v.length===0));
+  }
+  function clearSelectedDate(){
+    const date=one('import-date').value;
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return alert('Choose a service date first.');
+    const affected=db.runs.filter(r=>r.date===date);
+    if(!affected.length)return alert('There are no runs to clear for '+date+'. No other dates were changed.');
+    if(!confirm('CLEAR ALL '+affected.length+' runs for '+date+' ONLY?\n\nThis deletes that date’s local assignments, statuses and event history. Other service dates will be kept. Export a backup first.'))return;
+    if(affected.some(hasProgress)&&!confirm('WARNING: At least one run on '+date+' has driver progress or recorded events.\n\nCLEAR those records anyway? This cannot be undone without a backup.'))return;
+    if(!writeForDate(date,[],true))return;
+    pending=[];previewErrors=[];
+    one('preview-box').innerHTML='';
+    one('date').value=date;
+    render();
+    alert('Cleared '+affected.length+' runs for '+date+' only. No runs from other dates were removed.');
+  }
+  one('manifest-today').addEventListener('click',()=>showDate(plusDays(0)));
+  one('manifest-tomorrow').addEventListener('click',()=>showDate(plusDays(1)));
+  one('import-date').addEventListener('change',()=>{
+    pending=[];previewErrors=[];
+    one('preview-box').innerHTML='';
+    one('date').value=one('import-date').value;
+    render();
+    currentDateCount();
+  });
+  serviceDateControl.addEventListener('change',e=>{
+    if(e.target.matches('input[name="manifest-write-mode"]')){
+      if(pending.length)renderReview();
+      currentDateCount();
+    }
+  });
+  one('manifest-clear-date').addEventListener('click',clearSelectedDate);
+  currentDateCount();
+
   one('banner').textContent = 'Beta 2: OCR is a draft only. Check every name, time and address, then explicitly approve import. No automatic SMS or live GPS ETA.';
   document.querySelector('header small').textContent = 'Driver Beta 2 · screenshot review · local-only · no automatic SMS or GPS ETA';
   document.querySelector('footer').textContent = 'Safety Beta 2 · Screenshot OCR needs internet to load its browser engine. No live GPS, cloud synchronization, or Google Voice delivery confirmation. Use only while safely stopped.';
@@ -155,6 +260,7 @@ el('date').value=liveDate;el('import-date').value=liveDate;el('date').addEventLi
   // Service date, passenger, BOTH times and BOTH addresses distinguish two runs for one passenger.
   const fingerprint = run => [run.date, run.name, run.pu, run.puAddr, run.du, run.doAddr].map(normalize).join('|');
   const nearFingerprint = run => [run.date, run.name, run.pu, run.du].map(normalize).join('|');
+  const pickupFingerprint = run => [run.date, run.name, run.pu].map(normalize).join('|');
   const validRun = run => Boolean(run.date && String(run.name || '').trim() && String(run.puAddr || '').trim() && String(run.doAddr || '').trim() && Number.isFinite(timeM(run.pu)) && Number.isFinite(timeM(run.du)) && timeM(run.du) >= timeM(run.pu));
   const safe = s => esc(s ?? '');
   let previewErrors = [];
@@ -220,33 +326,55 @@ el('date').value=liveDate;el('import-date').value=liveDate;el('date').addEventLi
   window.serenityOCRTest = parseCards;
 
   function reviewState() {
-    const existing = new Set(db.runs.map(fingerprint));
-    const nearExisting = new Set(db.runs.map(nearFingerprint));
-    const batch = new Set();
-    let duplicates = 0, conflicts = 0, invalid = 0, ready = 0;
-    const statuses = pending.map(r => {
-      if (!validRun(r)) { invalid++; return 'incomplete'; }
-      const fp = fingerprint(r);
-      if (existing.has(fp) || batch.has(fp)) { duplicates++; return 'duplicate'; }
-      batch.add(fp);
-      if (nearExisting.has(nearFingerprint(r))) { conflicts++; return 'possible match'; }
-      ready++; return 'new';
+    const existingRows=mode()==='append'?db.runs.filter(r=>r.date===one('import-date').value):[];
+    const exact=new Set(existingRows.map(fingerprint));
+    const near=new Set(existingRows.map(nearFingerprint));
+    const pickups=new Set(existingRows.map(pickupFingerprint));
+    let duplicates=0,conflicts=0,invalid=0,ready=0;
+    const statuses=pending.map(r=>{
+      if(!validRun(r)){invalid++;return 'incomplete'}
+      const fp=fingerprint(r),np=nearFingerprint(r),pp=pickupFingerprint(r);
+      if(exact.has(fp)||near.has(np)){duplicates++;return 'duplicate'}
+      if(pickups.has(pp)){conflicts++;return 'possible match'}
+      exact.add(fp);near.add(np);pickups.add(pp);
+      ready++;return 'new';
     });
-    return {statuses, duplicates, conflicts, invalid, ready};
+    return {statuses,duplicates,conflicts,invalid,ready};
   }
   function renderReview() {
-    const state = reviewState();
-    const fields = [['name','Passenger'], ['pu','Pickup time'], ['puAddr','Pickup address'], ['du','Drop-off time'], ['doAddr','Drop-off address']];
-    const cards = pending.map((r, i) => {
-      const stateName = state.statuses[i];
-      const css = stateName === 'new' ? '' : 'review-bad';
-      const inputs = fields.map(([field, label]) => '<label>' + label + '<input data-review-index="' + i + '" data-review-field="' + field + '" value="' + safe(r[field]) + '"' + ((field === 'pu' || field === 'du') ? ' placeholder="08:00 AM"' : '') + '></label>').join('');
-      return '<div class="panel review-item ' + css + '"><b>Trip ' + (i + 1) + '</b> · <span class="status">' + safe(stateName) + '</span><div class="review-grid">' + inputs + '</div></div>';
+    const state=reviewState(),date=one('import-date').value,
+          existing=db.runs.filter(r=>r.date===date).length,
+          replacing=mode()==='replace';
+    const fields=[['name','Passenger'],['pu','Pickup time'],['puAddr','Pickup address'],
+      ['du','Drop-off time'],['doAddr','Drop-off address']];
+    const cards=pending.map((r,i)=>{
+      const name=state.statuses[i],css=name==='new'?'':'review-bad';
+      const inputs=fields.map(([field,label])=>'<label>'+label+
+        '<input data-review-index="'+i+'" data-review-field="'+field+'" value="'+safe(r[field])+'"'+
+        ((field==='pu'||field==='du')?' placeholder="08:00 AM"':'')+'></label>').join('');
+      return '<div class="panel review-item '+css+'"><div class="bar" style="justify-content:space-between">'+
+        '<b>Card '+(i+1)+' · <span class="status">'+safe(name)+'</span></b>'+
+        '<button type="button" data-remove-import-index="'+i+'">Remove this card</button></div>'+
+        '<div class="review-grid">'+inputs+'</div></div>';
     }).join('');
-    const errors = previewErrors.map(msg => '<p class="bad">' + safe(msg) + '</p>').join('');
-    const note = state.conflicts ? '<p class="bad">Potential duplicate(s) share the same passenger and times as existing trips. They will NOT import; review the existing record instead.</p>' : '';
-    const readyToCommit = state.ready > 0 && !previewErrors.length && !state.invalid;
-    one('preview-box').innerHTML = '<div class="panel"><h3>Review each trip before importing</h3><p>' + pending.length + ' extracted row(s) · ' + state.ready + ' new · ' + state.duplicates + ' duplicate(s) · ' + state.conflicts + ' possible match(es) · ' + state.invalid + ' incomplete</p>' + errors + note + cards + '<label><input type="checkbox" id="reviewed-all" style="width:auto;margin-right:6px">I checked all passenger names, dates, pickup/drop-off times, and full addresses against RoutingBox.</label><button id="commit-reviewed" class="primary" ' + (readyToCommit ? '' : 'disabled') + '>Import ' + state.ready + ' reviewed trip(s)</button><p class="muted">Exact duplicates are skipped. Possible matches and incomplete records are blocked; no existing records will be overwritten. Editing a field requires reviewing again.</p></div>';
+    const errors=previewErrors.map(msg=>'<p class="bad">'+safe(msg)+'</p>').join('');
+    const conflicts=state.conflicts?'<p class="bad">Some cards share a passenger and pickup time but disagree on other details. Correct or remove those cards before saving.</p>':'';
+    const before=existing;
+    const after=replacing?state.ready:existing+state.ready;
+    const readyToCommit=state.ready>0&&!previewErrors.length&&!state.invalid&&!state.conflicts;
+    const warn=before&&replacing?'<p class="bad">REPLACE will remove '+before+
+      ' saved run(s) for '+safe(date)+' before saving the '+state.ready+' reviewed run(s). Other dates remain unchanged.</p>':'';
+    one('preview-box').innerHTML='<div class="panel"><h3>Review the FINAL manifest for '+safe(date)+'</h3>'+
+      '<p>'+pending.length+' screenshot/manual cards · '+state.ready+' unique ready · '+
+      state.duplicates+' overlapping duplicate(s) skipped · '+state.conflicts+
+      ' possible match(es) · '+state.invalid+' incomplete</p>'+
+      '<p><b>'+before+' saved now → '+after+' after '+(replacing?'REPLACE':'ADD')+'</b></p>'+
+      warn+errors+conflicts+cards+
+      '<label><input type="checkbox" id="reviewed-all" style="width:auto;margin-right:6px">'+
+      'I checked each distinct assignment, both times, all addresses and the final count against RoutingBox.</label>'+
+      '<button id="commit-reviewed" class="primary" '+(readyToCommit?'':'disabled')+'>'+
+      (replacing?'Replace '+safe(date)+' with ':'Add ')+state.ready+' reviewed run(s)</button>'+
+      '<p class="muted">Overlapping screenshot cards are skipped using service date, passenger and both scheduled times. Different pickup times remain separate runs. Other service dates are never removed.</p></div>';
   }
   function enterPending(rows, source, issues = []) {
     const date = one('import-date').value;
@@ -256,30 +384,26 @@ el('date').value=liveDate;el('import-date').value=liveDate;el('date').addEventLi
     renderReview();
   }
   function attemptCommit() {
-    if (!one('reviewed-all')?.checked) return alert('Review every imported trip, then check the confirmation box.');
-    const state = reviewState();
-    if (state.invalid || previewErrors.length) return alert('Correct invalid fields and review again before importing.');
-    if (!state.ready) return alert('No new trips to import.');
-    const use = pending.filter((r,i) => state.statuses[i] === 'new');
-    const existing = new Set(db.runs.map(fingerprint));
-    const unique = new Set();
-    const add = use.filter(r => {
-      const k = fingerprint(r);
-      if (existing.has(k) || unique.has(k)) return false;
-      unique.add(k); return true;
-    });
-    if (!add.length) return alert('Nothing new to import.');
-    if (!confirm('Import ' + add.length + ' reviewed trip(s) for ' + one('import-date').value + '? This will add records without replacing existing trips.')) return;
-    const countBefore=db.runs.length;
-    db.runs.push(...add);
-    if(!save()){
-      db.runs.length=countBefore;
-      return alert('Import was NOT saved. The existing manifest has been kept; resolve storage before retrying.');
-    }
-    pending = []; previewErrors = [];
-    one('date').value = one('import-date').value;
-    one('preview-box').innerHTML = '';
-    alert('Imported and locally saved ' + add.length + ' reviewed trip(s). Previously saved trips were preserved.');
+    const date=one('import-date').value;
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return alert('Select the correct service date before importing.');
+    if(!one('reviewed-all')?.checked)return alert('Review each distinct trip and final count, then check the confirmation box.');
+    const state=reviewState();
+    if(state.invalid||previewErrors.length||state.conflicts)
+      return alert('Review incomplete or conflicting cards. Correct/remove them before importing.');
+    if(!state.ready)return alert('There are no unique reviewed assignments ready to import.');
+    const add=pending.filter((r,i)=>state.statuses[i]==='new');
+    const old=db.runs.filter(r=>r.date===date);
+    const replacing=mode()==='replace';
+    const action=replacing?'REPLACE '+old.length+' saved run(s) with '+add.length:
+      'ADD '+add.length+' new run(s) to '+old.length+' existing';
+    if(!confirm(action+' on '+date+'?\n\nOther service dates will remain intact. Confirm these are ALL the assignments on the official manifest.'))return;
+    if(replacing&&old.some(hasProgress)&&!confirm('WARNING: This date has locally recorded progress or events.\n\nReplace its '+old.length+' runs and erase those local events? Export a backup first.'))return;
+    if(!writeForDate(date,add,replacing))return;
+    pending=[];previewErrors=[];
+    one('date').value=date;
+    one('preview-box').innerHTML='';
+    alert('Saved '+add.length+' distinct assignment(s) for '+date+'. Final total: '+
+      db.runs.filter(r=>r.date===date).length+'. Other dates preserved.');
     show('roster');
   }
   function loadOCR() {
@@ -339,6 +463,10 @@ el('date').value=liveDate;el('import-date').value=liveDate;el('date').addEventLi
       enterPending(data.runs, 'manual', data.errors);
     } else if (button.id === 'commit' || button.id === 'commit-reviewed') {
       e.preventDefault(); e.stopImmediatePropagation(); attemptCommit();
+    } else if (button.dataset.removeImportIndex!==undefined) {
+      e.preventDefault();e.stopImmediatePropagation();
+      pending.splice(Number(button.dataset.removeImportIndex),1);
+      renderReview();
     } else if (button.id === 'read-ocr') {
       e.preventDefault(); e.stopImmediatePropagation(); void scanImages();
     } else if (button.id === 'remove-test') {
