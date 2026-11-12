@@ -445,6 +445,17 @@ el('date').value=liveDate;el('import-date').value=liveDate;el('date').addEventLi
       }
       one('ocr-raw').value = debug.join('\n\n');
       one('raw').value = cards.map(r => [r.name,r.pu,r.puAddr,r.du,r.doAddr].join(' | ')).join('\n');
+      if(debug.some(text=>/ASSIGNED\s+TOMORROW/i.test(text)) && one('import-date').value!==plusDays(1)){
+        const next=plusDays(1);
+        if(!confirm('RoutingBox screenshot says ASSIGNED TOMORROW.\n\nSwitch the manifest service date to '+next+' before reviewing these trips?')){
+          progress('Screenshot says ASSIGNED TOMORROW. Set the service date correctly, then tap Review import; nothing has been saved.');
+          return;
+        }
+        one('import-date').value=next;
+        one('date').value=next;
+        currentDateCount();
+        render();
+      }
       enterPending(cards, 'ocr', issues.filter(msg => msg.includes('No pickup-time labels')));
       progress(cards.length + ' provisional trip card(s) extracted from ' + files.length + ' screenshot(s). ' + issues.length + ' warning(s): ' + (issues.join(' ') || 'Verify every field before importing.'));
     } catch(error) {
