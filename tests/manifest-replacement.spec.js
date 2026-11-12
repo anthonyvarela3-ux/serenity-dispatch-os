@@ -78,6 +78,7 @@ test('two overlapping Tomorrow screenshots yield eight, not fourteen, preserve t
  await expect(page.locator('#preview-box')).toContainText('6 overlapping duplicate(s) skipped');
  await expect(page.locator('#import-date')).toHaveValue(localDay(1));
  await expect(page.locator('#preview-box')).toContainText('0 saved now → 8 after REPLACE');
+ await page.locator('#manifest-expected-count').fill('8');
  await page.locator('#reviewed-all').check();
  await page.locator('#commit-reviewed').click();
  await expect(page.locator('#v7-manifest')).toBeVisible();
@@ -94,6 +95,7 @@ test('Replace eliminates five old tomorrow runs rather than accumulating thirtee
  await page.locator('#raw').fill(manual);
  await page.locator('#preview').click();
  await expect(page.locator('#preview-box')).toContainText('5 saved now → 8 after REPLACE');
+ await page.locator('#manifest-expected-count').fill('8');
  await page.locator('#reviewed-all').check();
  page.on('dialog',d=>d.accept());
  await page.locator('#commit-reviewed').click();
@@ -150,9 +152,11 @@ test('Ambiguous conflicting cards block import until one is removed',async({page
  await page.locator('#raw').fill(line(fixture[0],0)+'\n'+duplicate+'\n'+line(fixture[1],1));
  await page.locator('#preview').click();
  await expect(page.locator('#preview-box')).toContainText('1 possible match(es)');
- await expect(page.locator('#commit-reviewed')).toBeDisabled();
+ await expect(page.locator('#commit-reviewed')).toBeEnabled();
+ await expect(page.locator('#manifest-review-status')).toContainText('possible overlap');
  await page.locator('button[data-remove-import-index="1"]').click();
  await expect(page.locator('#preview-box')).toContainText('2 unique ready');
+ await page.locator('#manifest-expected-count').fill('2');
  await page.locator('#reviewed-all').check();
  page.on('dialog',d=>d.accept());
  await page.locator('#commit-reviewed').click();
