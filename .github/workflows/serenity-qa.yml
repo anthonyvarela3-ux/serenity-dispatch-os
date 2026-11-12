@@ -4,6 +4,7 @@ on:
     branches:
       - serenity-beta7-stabilization-qa
       - serenity-beta7-manifest-replace-date
+      - serenity-manifest-review-button-fix
   workflow_dispatch:
 permissions:
   contents: read
