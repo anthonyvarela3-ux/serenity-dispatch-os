@@ -1,7 +1,10 @@
 import {test,expect} from '@playwright/test';
 const localDay=(offset=0)=>{
- const d=new Date();d.setDate(d.getDate()+offset);
- return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+ const date=new Date(Date.now()+offset*86400000);
+ const parts=Object.fromEntries(new Intl.DateTimeFormat('en-US',{
+  timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'
+ }).formatToParts(date).filter(x=>x.type!=='literal').map(x=>[x.type,x.value]));
+ return parts.year+'-'+parts.month+'-'+parts.day;
 };
 async function seeded(page,{today=7,tomorrow=0,progress=false}={}){
  const day=localDay(),next=localDay(1);
