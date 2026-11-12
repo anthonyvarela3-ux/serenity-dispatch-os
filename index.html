@@ -159,6 +159,10 @@ el('date').value=liveDate;el('import-date').value=liveDate;el('date').addEventLi
     '<label><input type="radio" name="manifest-write-mode" value="append">'+
     '<span><b>Add new runs only</b><small>Use when dispatch adds an assignment later; skip already saved runs</small></span></label>'+
     '</fieldset>'+
+    '<label class="manifest-count-check" for="manifest-expected-count">'+
+    '<strong>Expected number of unique runs from RoutingBox</strong>'+
+    '<input type="number" id="manifest-expected-count" min="1" max="100" step="1" placeholder="Enter official run count, e.g. 8" inputmode="numeric">'+
+    '<small>Required for REPLACE. The reviewed final count must match exactly before anything is overwritten.</small></label>'+
     '<button type="button" class="danger" id="manifest-clear-date">Clear ALL runs for selected service date</button>'+
     '<p class="muted">Existing runs are saved locally from earlier sessions, not newly fetched from RoutingBox. Switch to Tomorrow to view the next service date. Clear and Replace affect only that date; they can remove its local event history, so export a backup first. Review two overlapping screenshots as one manifest.</p>';
   one('import-date').after(serviceDateControl);
@@ -174,6 +178,7 @@ el('date').value=liveDate;el('import-date').value=liveDate;el('date').addEventLi
     if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return;
     one('import-date').value=date;
     one('date').value=date;
+    one('manifest-expected-count').value='';
     pending=[];previewErrors=[];
     one('preview-box').innerHTML='';
     render();
@@ -232,6 +237,7 @@ el('date').value=liveDate;el('import-date').value=liveDate;el('date').addEventLi
   one('manifest-today').addEventListener('click',()=>showDate(plusDays(0)));
   one('manifest-tomorrow').addEventListener('click',()=>showDate(plusDays(1)));
   one('import-date').addEventListener('change',()=>{
+    one('manifest-expected-count').value='';
     pending=[];previewErrors=[];
     one('preview-box').innerHTML='';
     one('date').value=one('import-date').value;
@@ -245,6 +251,9 @@ el('date').value=liveDate;el('import-date').value=liveDate;el('date').addEventLi
     }
   });
   one('manifest-clear-date').addEventListener('click',clearSelectedDate);
+  one('manifest-expected-count').addEventListener('input',()=>{
+    if(pending.length)renderReview();
+  });
   currentDateCount();
 
   one('banner').textContent = 'Beta 2: OCR is a draft only. Check every name, time and address, then explicitly approve import. No automatic SMS or live GPS ETA.';
@@ -261,6 +270,9 @@ el('date').value=liveDate;el('import-date').value=liveDate;el('date').addEventLi
   const fingerprint = run => [run.date, run.name, run.pu, run.puAddr, run.du, run.doAddr].map(normalize).join('|');
   const nearFingerprint = run => [run.date, run.name, run.pu, run.du].map(normalize).join('|');
   const pickupFingerprint = run => [run.date, run.name, run.pu].map(normalize).join('|');
+  // A shared pickup clock time with another OCR card can be an OCR-duplicated
+  // passenger OR a legitimately distinct rider. Never silently merge it.
+  const pickupTimeFingerprint = run => [run.date, run.pu].map(normalize).join('|');
   const validRun = run => Boolean(run.date && String(run.name || '').trim() && String(run.puAddr || '').trim() && String(run.doAddr || '').trim() && Number.isFinite(timeM(run.pu)) && Number.isFinite(timeM(run.du)) && timeM(run.du) >= timeM(run.pu));
   const safe = s => esc(s ?? '');
   let previewErrors = [];
@@ -330,21 +342,29 @@ el('date').value=liveDate;el('import-date').value=liveDate;el('date').addEventLi
     const exact=new Set(existingRows.map(fingerprint));
     const near=new Set(existingRows.map(nearFingerprint));
     const pickups=new Set(existingRows.map(pickupFingerprint));
+    const pickupTimes=new Set(existingRows.map(pickupTimeFingerprint));
     let duplicates=0,conflicts=0,invalid=0,ready=0;
     const statuses=pending.map(r=>{
       if(!validRun(r)){invalid++;return 'incomplete'}
-      const fp=fingerprint(r),np=nearFingerprint(r),pp=pickupFingerprint(r);
+      const fp=fingerprint(r),np=nearFingerprint(r),
+        pp=pickupFingerprint(r),pt=pickupTimeFingerprint(r);
       if(exact.has(fp)||near.has(np)){duplicates++;return 'duplicate'}
-      if(pickups.has(pp)){conflicts++;return 'possible match'}
-      exact.add(fp);near.add(np);pickups.add(pp);
+      if((pickups.has(pp)||pickupTimes.has(pt))&&!r._confirmedSharedPickup){
+        conflicts++;return 'possible match'
+      }
+      exact.add(fp);near.add(np);pickups.add(pp);pickupTimes.add(pt);
       ready++;return 'new';
     });
     return {statuses,duplicates,conflicts,invalid,ready};
   }
   function renderReview() {
     const state=reviewState(),date=one('import-date').value,
-          existing=db.runs.filter(r=>r.date===date).length,
-          replacing=mode()==='replace';
+      existing=db.runs.filter(r=>r.date===date).length,
+      replacing=mode()==='replace';
+    const rawExpected=one('manifest-expected-count').value.trim();
+    const expected=Number(rawExpected);
+    const missingExpected=replacing&&!rawExpected;
+    const mismatch=replacing&&rawExpected&&(!Number.isSafeInteger(expected)||expected<1||expected!==state.ready);
     const fields=[['name','Passenger'],['pu','Pickup time'],['puAddr','Pickup address'],
       ['du','Drop-off time'],['doAddr','Drop-off address']];
     const cards=pending.map((r,i)=>{
@@ -352,10 +372,16 @@ el('date').value=liveDate;el('import-date').value=liveDate;el('date').addEventLi
       const inputs=fields.map(([field,label])=>'<label>'+label+
         '<input data-review-index="'+i+'" data-review-field="'+field+'" value="'+safe(r[field])+'"'+
         ((field==='pu'||field==='du')?' placeholder="08:00 AM"':'')+'></label>').join('');
-      return '<div class="panel review-item '+css+'"><div class="bar" style="justify-content:space-between">'+
-        '<b>Card '+(i+1)+' · <span class="status">'+safe(name)+'</span></b>'+
+      const reconcile=name==='possible match'?'<label class="manifest-shared-check">'+
+        '<input type="checkbox" data-allow-shared-index="'+i+'"'+(r._confirmedSharedPickup?' checked':'')+'>'+
+        'These are genuinely TWO different assignments at the SAME pickup time (not overlapping OCR)</label>':'';
+      const diagnostic=name==='incomplete'?'<p class="bad">Missing/invalid field or impossible time: verify and correct this OCR card, or remove it.</p>':
+        name==='possible match'?'<p class="bad">Possible repeated pickup time. Check other screenshot and remove if already shown.</p>':'';
+      return '<div class="panel review-item '+css+'" data-import-review-status="'+name+'">'+
+        '<div class="bar" style="justify-content:space-between"><b>Card '+(i+1)+' · '+
+        '<span class="status">'+safe(name)+'</span></b>'+
         '<button type="button" data-remove-import-index="'+i+'">Remove this card</button></div>'+
-        '<div class="review-grid">'+inputs+'</div></div>';
+        diagnostic+'<div class="review-grid">'+inputs+'</div>'+reconcile+'</div>';
     });
     const visibleCards=cards.filter((_,i)=>state.statuses[i]!=='duplicate').join('');
     const repeatedCards=cards.filter((_,i)=>state.statuses[i]==='duplicate').join('');
@@ -363,23 +389,36 @@ el('date').value=liveDate;el('import-date').value=liveDate;el('date').addEventLi
       state.duplicates+' repeated screenshot card(s) skipped — tap to inspect</summary>'+
       repeatedCards+'</details>':'';
     const errors=previewErrors.map(msg=>'<p class="bad">'+safe(msg)+'</p>').join('');
-    const conflicts=state.conflicts?'<p class="bad">Some cards share a passenger and pickup time but disagree on other details. Correct or remove those cards before saving.</p>':'';
-    const before=existing;
-    const after=replacing?state.ready:existing+state.ready;
-    const readyToCommit=state.ready>0&&!previewErrors.length&&!state.invalid&&!state.conflicts;
-    const warn=before&&replacing?'<p class="bad">REPLACE will remove '+before+
-      ' saved run(s) for '+safe(date)+' before saving the '+state.ready+' reviewed run(s). Other dates remain unchanged.</p>':'';
+    const before=existing,after=replacing?state.ready:existing+state.ready;
+    const blockers=[];
+    if(state.invalid)blockers.push(state.invalid+' incomplete card(s) — correct or remove');
+    if(state.conflicts)blockers.push(state.conflicts+' possible overlap(s) — remove or verify both are different runs');
+    if(previewErrors.length)blockers.push(previewErrors.length+' OCR issue(s) — inspect source screenshots');
+    if(missingExpected)blockers.push('Enter the expected unique run count from RoutingBox above');
+    if(mismatch)blockers.push('Expected '+safe(rawExpected)+' run(s), but '+state.ready+' are ready — reconcile the difference');
+    if(!state.ready)blockers.push('No validated, distinct runs are ready');
+    const readyToCommit=blockers.length===0;
+    const warn=before&&replacing?'<p class="bad">REPLACE would remove '+before+
+      ' saved run(s) for '+safe(date)+' before saving the '+state.ready+
+      ' reviewed run(s). Other service dates are unchanged.</p>':'';
+    const issues=blockers.length?
+      '<div class="manifest-review-blockers" id="manifest-review-status" role="alert"><strong>REPLACEMENT NOT READY — no data will be changed</strong>'+
+      '<ul>'+blockers.map(b=>'<li>'+b+'</li>').join('')+'</ul>'+
+      '<p>Tap the Review issues button for guidance, then correct or remove cards above. The button remains tappable so it can explain the problem.</p></div>':
+      '<p class="manifest-review-ready" id="manifest-review-status" role="status">Ready to save: '+
+      state.ready+' distinct run(s) matches your verified RoutingBox count. You will be asked to confirm replacement.</p>';
     one('preview-box').innerHTML='<div class="panel"><h3>Review the FINAL manifest for '+safe(date)+'</h3>'+
       '<p>'+pending.length+' screenshot/manual cards · '+state.ready+' unique ready · '+
       state.duplicates+' overlapping duplicate(s) skipped · '+state.conflicts+
       ' possible match(es) · '+state.invalid+' incomplete</p>'+
       '<p><b>'+before+' saved now → '+after+' after '+(replacing?'REPLACE':'ADD')+'</b></p>'+
-      warn+errors+conflicts+visibleCards+duplicatesSection+
+      warn+errors+issues+visibleCards+duplicatesSection+
       '<label><input type="checkbox" id="reviewed-all" style="width:auto;margin-right:6px">'+
       'I checked each distinct assignment, both times, all addresses and the final count against RoutingBox.</label>'+
-      '<button id="commit-reviewed" class="primary" '+(readyToCommit?'':'disabled')+'>'+
-      (replacing?'Replace '+safe(date)+' with ':'Add ')+state.ready+' reviewed run(s)</button>'+
-      '<p class="muted">Overlapping screenshot cards are skipped using service date, passenger and both scheduled times. Different pickup times remain separate runs. Other service dates are never removed.</p></div>';
+      '<button type="button" id="commit-reviewed" class="'+(readyToCommit?'primary':'manifest-needs-review')+'">'+
+      (readyToCommit?(replacing?'Replace '+safe(date)+' with ':'Add ')+state.ready+' reviewed run(s)':
+        'Review issues before '+(replacing?'replacing':'adding')+' runs')+'</button>'+
+      '<p class="muted">Never use REPLACE until the unique count, scheduled times and addresses agree with RoutingBox. Repeated screenshot cards are folded below.</p></div>';
   }
   function enterPending(rows, source, issues = []) {
     const date = one('import-date').value;
@@ -391,12 +430,30 @@ el('date').value=liveDate;el('import-date').value=liveDate;el('date').addEventLi
   function attemptCommit() {
     const date=one('import-date').value;
     if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return alert('Select the correct service date before importing.');
-    if(!one('reviewed-all')?.checked)return alert('Review each distinct trip and final count, then check the confirmation box.');
     const state=reviewState();
-    if(state.invalid||previewErrors.length||state.conflicts)
-      return alert('Review incomplete or conflicting cards. Correct/remove them before importing.');
-    if(!state.ready)return alert('There are no unique reviewed assignments ready to import.');
-    const add=pending.filter((r,i)=>state.statuses[i]==='new');
+    const rawExpected=one('manifest-expected-count').value.trim();
+    const expected=Number(rawExpected);
+    const problems=[];
+    if(state.invalid)problems.push(state.invalid+' incomplete card(s)');
+    if(state.conflicts)problems.push(state.conflicts+' possible overlapping assignments');
+    if(previewErrors.length)problems.push(previewErrors.length+' OCR issue(s)');
+    if(mode()==='replace'&&(!rawExpected||!Number.isSafeInteger(expected)||expected<1))
+      problems.push('Expected unique-run count is missing');
+    else if(mode()==='replace'&&state.ready!==expected)
+      problems.push('Expected '+expected+' runs but '+state.ready+' are ready');
+    if(!state.ready)problems.push('No valid unique runs to import');
+    if(problems.length){
+      const msg='REPLACEMENT BLOCKED — nothing has changed.\n\n'+problems.join('\n')+
+        '\n\nCheck the review section for cards to correct or remove.';
+      alert(msg);
+      one('manifest-review-status')?.scrollIntoView({block:'center',behavior:'smooth'});
+      return;
+    }
+    if(!one('reviewed-all')?.checked)
+      return alert('Check the final-count and row-by-row confirmation box after reviewing.');
+    const add=pending.filter((r,i)=>state.statuses[i]==='new').map(r=>{
+      const {_confirmedSharedPickup,...clean}=r;return clean;
+    });
     const old=db.runs.filter(r=>r.date===date);
     const replacing=mode()==='replace';
     const action=replacing?'REPLACE '+old.length+' saved run(s) with '+add.length:
@@ -498,6 +555,12 @@ el('date').value=liveDate;el('import-date').value=liveDate;el('date').addEventLi
     }
   }, true);
   document.addEventListener('change', event => {
+    const shared=event.target.closest('[data-allow-shared-index]');
+    if(shared){
+      const idx=Number(shared.dataset.allowSharedIndex);
+      if(pending[idx])pending[idx]._confirmedSharedPickup=shared.checked;
+      renderReview();return;
+    }
     const input = event.target.closest('[data-review-field]');
     if (!input) return;
     const idx = Number(input.dataset.reviewIndex), field = input.dataset.reviewField;
