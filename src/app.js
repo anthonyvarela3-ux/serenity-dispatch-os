@@ -195,8 +195,10 @@ async function ocr(){
 function preview(){
  try{
  const extracted=parseLines($('rawInput').value);const existing=new Map(state.runs.map(r=>[r.id,r]));
+ const logicalKey=r=>[r.name.toLowerCase().trim(),r.pickup.toLowerCase().trim(),r.dropoff.toLowerCase().trim()].join('|');
+ const byLogical=new Map(state.runs.map(r=>[logicalKey(r),r]));
  let added=0,unchanged=0,changed=0;
- const previewRows=extracted.map(r=>{const e=existing.get(r.id);if(!e){added++;return{run:r,type:'NEW'}};const diff=e.phone!==r.phone||e.direction!==r.direction||e.miles!==r.miles;if(diff)changed++;else unchanged++;return{run:r,type:diff?'CHANGED':'MATCH'}});
+ const previewRows=extracted.map(r=>{const e=existing.get(r.id)||byLogical.get(logicalKey(r));if(!e){added++;return{run:r,type:'NEW',existingId:null}};const diff=e.phone!==r.phone||e.direction!==r.direction||e.miles!==r.miles||e.scheduledPickup!==r.scheduledPickup;if(diff)changed++;else unchanged++;return{run:r,type:diff?'CHANGED':'MATCH',existingId:e.id}});
  importPending=previewRows;
  $('importPreview').innerHTML='<h3>Verification preview · '+added+' new, '+changed+' modified, '+unchanged+' matched</h3>'+previewRows.map(x=>'<div class="preview-item"><b>'+esc(x.type)+'</b> · '+esc(x.run.name)+' · '+hhmm(x.run.scheduledPickup)+' · '+esc(x.run.direction)+'<br><small>'+esc(x.run.pickup)+' → '+esc(x.run.dropoff)+'</small></div>').join('')+'<p class="muted">Existing assignments not present in the new screenshot are preserved and flagged for later review. Completed trip outcomes are never replaced.</p>';
  $('applyImport').disabled=false;status('Review import preview carefully before applying changes.');
@@ -206,13 +208,17 @@ function applyImport(){
  if(!importPending)return;
  if(!confirm('Apply these reviewed changes to FICTIONAL preview data? Existing completed trip history will be preserved.'))return;
  const old=new Map(state.runs.map(r=>[r.id,r]));
- importPending.forEach(({run})=>{
-  const e=old.get(run.id);
+ importPending.forEach(({run,existingId})=>{
+  const e=old.get(existingId||run.id);
   if(e){
    if(e.status==='Completed')return;
    e.edits??=[];
-   for(const key of ['phone','direction','miles'])if(e[key]!==run[key]){e.edits.push({field:key,from:e[key],to:run[key],at:new Date().toISOString(),reason:'reviewed screenshot merge'});e[key]=run[key]}
+   for(const key of ['phone','direction','miles','scheduledPickup'])if(e[key]!==run[key]){
+    e.edits.push({field:key,from:e[key],to:run[key],at:new Date().toISOString(),reason:key==='scheduledPickup'?'reviewed office schedule change or OCR correction':'reviewed screenshot merge'});
+    e[key]=run[key];
+   }
    e.importedPhone=run.phone;
+   // Preserve stable internal ID, trip status, actual events and original sequence.
   }else state.runs.push(run);
  });
  importPending=null;$('applyImport').disabled=true;persist();renderAll();status('Reviewed fictional manifest merged without removing completed records.');
