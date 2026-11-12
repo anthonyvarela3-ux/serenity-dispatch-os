@@ -31,7 +31,8 @@ test('compact manifest combines office pickup + ETA, prioritizes DO ETA over MAS
  await expect(table.locator('thead th')).toHaveCount(5);
  const row1=page.locator('#v7-manifest-rows tr').nth(0);
  await expect(row1).toContainText('Scheduled 8:00 AM');
- await expect(row1).toContainText('Actual 8:25 AM');
+ await expect(row1.locator('.v10-eta-line').first()).toContainText('8:25 AM');
+ await expect(row1).toContainText('Driver actual');
  await expect(row1).toContainText('ETA DO');
  await expect(row1).toContainText('MAS DO 9:00 AM · reference only');
  await expect(row1).toContainText('+25m BEHIND');
