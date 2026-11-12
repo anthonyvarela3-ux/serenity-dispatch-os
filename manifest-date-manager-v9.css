@@ -1,0 +1,31 @@
+/* Serenity manifest service-date safety workflow */
+html.v7-app .manifest-date-manager{border:1px solid var(--border);border-left:4px solid var(--accent);
+ border-radius:11px;background:var(--panel);padding:14px 16px;margin:13px 0 17px;
+ box-shadow:0 4px 15px #00000010}
+html.v7-app .manifest-date-manager h3{font-size:17px;letter-spacing:-.02em;margin:0 0 12px;font-weight:840}
+html.v7-app .manifest-date-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:13px}
+html.v7-app .manifest-date-actions button{min-height:44px;font-size:12px;font-weight:780;padding:8px 13px}
+html.v7-app #manifest-date-count{font-size:12px;color:var(--text);font-weight:790;
+ padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px}
+html.v7-app .manifest-mode{border:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:6px 0 14px;min-width:0}
+html.v7-app .manifest-mode legend{font-size:11px;color:var(--muted);padding:0 0 8px;font-weight:780}
+html.v7-app .manifest-mode label{display:flex;align-items:flex-start;gap:10px;min-height:72px;
+ border:1px solid var(--border);padding:11px 12px;border-radius:10px;background:var(--bg);
+ cursor:pointer;font-size:12px;line-height:1.35}
+html.v7-app .manifest-mode label:has(input:checked){border-color:var(--accent);
+ background:color-mix(in srgb,var(--panel) 84%,var(--accent))}
+html.v7-app .manifest-mode input[type=radio]{width:20px!important;height:20px!important;min-width:20px;flex:0 0 20px;
+ accent-color:var(--accent);margin:1px 0}
+html.v7-app .manifest-mode label span{display:flex;flex-direction:column;gap:5px}
+html.v7-app .manifest-mode label b{font-weight:860;font-size:12px}
+html.v7-app .manifest-mode label small{color:var(--muted);font-size:11px;line-height:1.4}
+html.v7-app #manifest-clear-date{min-height:44px;padding:9px 13px;font-size:12px;font-weight:840;
+ border-color:color-mix(in srgb,#f18491 70%,var(--border));border-radius:8px}
+html.v7-app .manifest-date-manager>p{font-size:11px;color:var(--muted);line-height:1.52;margin:10px 0 0}
+html.v7-app #preview-box .review-item{margin:8px 0}
+html.v7-app #preview-box .review-item button[data-remove-import-index]{min-height:44px;padding:7px 11px;font-size:12px}
+html.v7-app #preview-box #commit-reviewed{min-height:48px;font-weight:820;margin:10px 0}
+html.v7-app #preview-box label{font-size:12px}
+html.v7-app #preview-box input[type=checkbox]{width:19px;height:19px;vertical-align:middle}
+@media(max-width:690px){html.v7-app .manifest-mode{grid-template-columns:1fr}
+ html.v7-app .manifest-date-manager{padding:12px}}
