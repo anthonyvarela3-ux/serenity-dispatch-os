@@ -13,6 +13,19 @@ const DEMO=[
 ['Fictional Rider E','6315550105','Return','11:45 AM','202 Sample Ave, Islip, NY','102 Example St, Bay Shore, NY',8],
 ['Fictional Rider F','6315550106','Outbound','01:00 PM','103 Example St, Bay Shore, NY','203 Sample Ave, Islip, NY',8]
 ];
+// Anonymized representation of the eight unique runs visible across two overlapping
+// RoutingBox screenshots for Friday Nov 13 2026. No personal names, phone numbers,
+// precise street addresses, or patient-specific locations are stored in this public repo.
+const NOV13_SAFE=[
+ ['Test Rider A','','Outbound','07:45 AM','Test pickup · Bay Shore area','Test dropoff · Smithtown area',0],
+ ['Test Rider B','','Outbound','09:15 AM','Test pickup · Seaford area','Test dropoff · Great Neck area',0],
+ ['Test Rider A','','Return','09:45 AM','Test pickup · Smithtown area','Test dropoff · Bay Shore area',0],
+ ['Test Rider C','','Outbound','10:15 AM','Test pickup · Bay Shore area','Test dropoff · Babylon area',0],
+ ['Test Rider B','','Return','11:45 AM','Test pickup · Great Neck area','Test dropoff · Seaford area',0],
+ ['Test Rider D','','Outbound','12:30 PM','Test pickup · Hicksville area','Test dropoff · Massapequa Park area',0],
+ ['Test Rider E','','Outbound','01:30 PM','Test pickup · Shirley area','Test dropoff · Brentwood area',0],
+ ['Test Rider E','','Return','04:00 PM','Test pickup · Brentwood area','Test dropoff · Shirley area',0]
+];
 const toIso=(t,day=dateKey())=>{
  if(!t)return null; const m=String(t).trim().match(/^(\d{1,2}):(\d\d)\s*(AM|PM)$/i);
  if(!m)return null;let h=Number(m[1])%12+(m[3].toUpperCase()==='PM'?12:0);
@@ -56,6 +69,23 @@ function demo(){
  const delays=[-4,0,8,22,18,-3];
  state.runs.forEach((r,i)=>{const t=new Date(Date.parse(r.scheduledPickup)+delays[i]*60000);r.gpsPickupEta=t.toISOString();r.gpsDropoffEta=new Date(t.getTime()+26*60000).toISOString();r.etaUpdatedAt=new Date().toISOString();r.etaSource='DEMO ONLY';});
  state.activeId=state.runs[0].id;persist();renderAll();status('Fictional demonstration loaded. All arrival estimates are invented examples, NOT live routing.');}
+function loadNov13SafeSchedule(){
+ if(!confirm('Replace the current fictional test data with an ANONYMIZED Nov 13 eight-trip schedule? This resets existing browser-local demo notes and status. No real patient information is used.'))return;
+ state=fresh();
+ state.runs=NOV13_SAFE.map((fields,i)=>{
+  const r=asRun(fields,i);
+  r.scheduledPickup=toIso(fields[3],'2026-11-13');
+  r.id=idFor(r);
+  r.etaSource=null;
+  r.gpsPickupEta=null;
+  r.gpsDropoffEta=null;
+  r.previewOnly=true;
+  return r;
+ });
+ state.activeId=state.runs[0].id;
+ persist();renderAll();
+ status('Friday Nov 13: 8 anonymized trips loaded. Names and precise addresses are fictionalized/removed. No live routing ETAs; original patient manifest has not been imported.');
+}
 function classify(r){
  if(!r.etaSource)return{tone:'unknown',label:'No GPS ETA'};
  return SerenityManifestTiming.classifyPickup({direction:r.direction,scheduledPickup:r.scheduledPickup,gpsPickupEta:r.gpsPickupEta,etaUpdatedAt:r.etaUpdatedAt,now:new Date().toISOString(),staleAfterSeconds:r.etaSource==='DEMO ONLY'?Number.MAX_SAFE_INTEGER:45});
@@ -351,6 +381,7 @@ function initEvents(){
  renderAll();
  });
  $('loadDemo').onclick=()=>{if(confirm('Replace the current fictional preview with the sample manifest?'))demo()};
+ $('loadNov13Schedule').onclick=loadNov13SafeSchedule;
  $('previewImport').onclick=preview;$('applyImport').onclick=applyImport;$('runOcr').onclick=ocr;$('useText').onclick=()=>{$('rawInput').focus();status('Paste pipe-delimited fictional trips and select Validate and preview.')};
  $('intelSearch').oninput=renderIntel;
  $('startShift').onclick=()=>shiftAction('start');$('endShift').onclick=()=>shiftAction('end');
