@@ -62,3 +62,7 @@
 .day-timeline-settings label{display:inline-flex;flex-direction:column;gap:6px;min-width:170px;margin:4px 12px 8px 0}
 .day-timeline-settings input{min-height:38px}.day-timeline-settings p{margin:8px 0}
 @media(max-width:850px){.day-timeline-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.day-checkpoint b{font-size:17px}}
+
+.sim-timing-button{border:2px solid #e9b44c!important;background:#544013!important;color:#fff6cf!important;font-weight:900!important}
+.sim-timing-notice{margin:10px 0;padding:12px;border:2px solid #f5b943;border-radius:9px;background:#3e2a13;color:#fff0bd;font-size:13px}
+.simulation-row-badge{text-align:center;color:#ffdd85;font-size:9px;font-weight:900;letter-spacing:.09em}
