@@ -34,7 +34,7 @@ const toIso=(t,day=dateKey())=>{
 const validPhone=p=>/^\d{10,15}$/.test(String(p||'').replace(/\D/g,''));
 const cleanPhone=p=>String(p||'').replace(/\D/g,'');
 const safeLoad=()=>{try{const o=JSON.parse(localStorage.getItem(KEY)||'null');return o&&o.demoOnly===true?o:null}catch{return null}};
-const fresh=()=>({demoOnly:true,runs:[],expanded:null,activeId:null,notes:{},facilities:{},history:[],locationIssues:[],shift:{start:null,end:null,breakStart:null,breakMs:0},settings:{rate:22.5,mult:1.5,weekly:40,font:'compact',density:'compact',theme:'dark'},position:null,lastGps:null});
+const fresh=()=>({demoOnly:true,runs:[],expanded:null,activeId:null,notes:{},facilities:{},history:[],locationIssues:[],dayLog:{},dayTravel:{firstLeg:null,lastLeg:null,weather:0},shift:{start:null,end:null,breakStart:null,breakMs:0},settings:{rate:22.5,mult:1.5,weekly:40,font:'compact',density:'compact',theme:'dark'},position:null,lastGps:null});
 let state=safeLoad()||fresh();let importPending=null,gpsTimer=null,ocrBusy=false;
 const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){status('Local preview storage is full; changes may not persist.','error')}};
 const status=(message,type='info')=>{const n=$('notice');n.textContent=message;n.style.borderColor=type==='error'?'#f87171':'#c38a22'};
@@ -288,7 +288,84 @@ function renderShift(){
  $('shiftSummary').innerHTML='<div class="toolbar"><div class="metric"><small>Shift hours (excluding breaks)</small><b>'+hours.toFixed(2)+' h</b></div><div class="metric"><small>Estimated gross*</small><b>$'+regular.toFixed(2)+'</b></div><div class="metric"><small>Completed trips</small><b>'+completed+'</b></div><div class="metric"><small>Manifest miles*</small><b>'+state.runs.reduce((a,x)=>a+(x.status==='Completed'?Number(x.miles)||0:0),0).toFixed(1)+'</b></div></div><p class="muted">*Straight-time demo estimate only. Weekly overtime cannot be correctly computed without weekly payroll records; multiplier '+mult+' and threshold '+state.settings.weekly+'h are saved but not automatically applied. Manifest miles are not GPS-tracked distance.</p><p class="muted">Started: '+(s.start?new Date(s.start).toLocaleString():'Not started')+' · Ended: '+(s.end?new Date(s.end).toLocaleString():'In progress / not started')+' · Break: '+(breakMs/60000).toFixed(0)+' min</p>';
  $('historyList').innerHTML=state.history.length?state.history.map(x=>'<div class="preview-item"><b>'+esc(x.date)+'</b> · '+x.completed+' completed · '+x.hours.toFixed(2)+' h · $'+x.earnings.toFixed(2)+' estimated</div>').join(''):'<div class="empty">No fictional daily snapshots saved.</div>';
 }
-function renderAll(){renderManifest();renderIntel();renderShift();renderLocationQueue();applyPrefs();}
+const DAY_SEQUENCE=['wake','work','leave','return','home'];
+const DAY_LABELS={wake:'Wake Up',work:'Arrive at Work',leave:'Leave Garage',return:'Back at Garage',home:'Arrive Home'};
+const minutesValid=n=>Number.isFinite(n)&&n>=0;
+function dayMinuteField(id){const raw=$(id).value.trim();if(raw==='')return null;const n=Number(raw);return Number.isInteger(n)&&n>=0&&n<=240?n:NaN}
+function calcTimeline(){
+ const runs=state.runs;
+ const first=runs.length?runs.reduce((a,b)=>Date.parse(a.scheduledPickup)<=Date.parse(b.scheduledPickup)?a:b):null;
+ const last=runs.length?runs.reduce((a,b)=>Date.parse(a.scheduledPickup)>=Date.parse(b.scheduledPickup)?a:b):null;
+ const firstLeg=state.dayTravel?.firstLeg,lastLeg=state.dayTravel?.lastLeg,weather=Number(state.dayTravel?.weather)||0;
+ const planned={wake:null,work:null,leave:null,return:null,home:null};
+ if(first&&minutesValid(firstLeg)){
+  const target=Date.parse(first.scheduledPickup)-10*60000;
+  planned.leave=target-firstLeg*60000;
+  planned.work=planned.leave-7*60000;
+  planned.wake=planned.work-(45+7+weather)*60000;
+ }
+ // Never infer final drop-off from scheduled drop-off or pickup; require an ETA.
+ if(last&&last.gpsDropoffEta&&minutesValid(lastLeg)){
+  planned.return=Date.parse(last.gpsDropoffEta)+lastLeg*60000;
+  planned.home=planned.return+(7+7)*60000;
+ }
+ return {planned,first,last};
+}
+function renderDayTimeline(){
+ const {planned,first,last}=calcTimeline();
+ const logs=state.dayLog||{};
+ for(const k of DAY_SEQUENCE){
+  const actual=logs[k];
+  const t=actual?Date.parse(actual):planned[k];
+  const el=$('day-'+k);
+  el.textContent=Number.isFinite(t)?new Date(t).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'—';
+  el.classList.toggle('actual-time',Boolean(actual));
+  const button=document.querySelector('[data-day-log="'+k+'"]');
+  if(button)button.textContent=actual?'✓ Logged · Edit':'Log '+DAY_LABELS[k];
+ }
+ $('dayTimelineHint').textContent=first?'First pickup: '+hhmm(first.scheduledPickup)+(state.dayTravel?.firstLeg===null||state.dayTravel?.firstLeg===undefined?' · Enter garage→first pickup time for morning plan.':' · Wake-up plan includes 45 min getting ready, 7 min home→work, 7 min garage prep, 10 min early arrival.')+(last&&!last.gpsDropoffEta?' · Home ETA unavailable: no last drop-off ETA.':''):'Load a test manifest to calculate the day. All five times can also be logged manually.';
+}
+function updateDayLog(k){
+ if(!DAY_SEQUENCE.includes(k))return;
+ const current=state.dayLog?.[k];
+ if(current){
+  const input=prompt('Edit '+DAY_LABELS[k]+' actual time (HH:MM AM/PM), or clear to remove the log:',new Date(current).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}));
+  if(input===null)return;
+  if(!input.trim()){
+   if(confirm('Remove recorded '+DAY_LABELS[k]+' time?'))delete state.dayLog[k];
+   else return;
+  }else{
+   const day=state.runs[0]?.scheduledPickup?new Date(state.runs[0].scheduledPickup).toLocaleDateString('en-CA'):new Date().toLocaleDateString('en-CA');
+   const parsed=toIso(input,day);
+   if(!parsed)return alert('Use a time such as 07:15 AM');
+   state.dayLog[k]=parsed;
+  }
+ }else{
+  if(!confirm('Log '+DAY_LABELS[k]+' at the current time?'))return;
+  state.dayLog=state.dayLog||{};state.dayLog[k]=new Date().toISOString();
+ }
+ if(k==='leave'&&state.dayLog.leave&&!state.shift.start){state.shift.start=state.dayLog.leave;state.shift.end=null}
+ if(k==='home'&&state.dayLog.home&&state.shift.start&&!state.shift.end){state.shift.end=state.dayLog.home}
+ persist();renderAll();
+}
+function initDayTimeline(){
+ const p=$('timelineSettingsPanel'),toggle=$('timelineSettingsToggle');
+ const refresh=()=>{
+  $('dayFirstLeg').value=state.dayTravel?.firstLeg??'';
+  $('dayLastLeg').value=state.dayTravel?.lastLeg??'';
+  $('dayWeather').value=state.dayTravel?.weather??0;
+ };
+ refresh();
+ toggle.onclick=()=>{p.hidden=!p.hidden;toggle.setAttribute('aria-expanded',String(!p.hidden));if(!p.hidden)refresh()};
+ $('timelineSaveSettings').onclick=()=>{
+  const a=dayMinuteField('dayFirstLeg'),b=dayMinuteField('dayLastLeg'),weather=dayMinuteField('dayWeather');
+  if(Number.isNaN(a)||Number.isNaN(b)||!minutesValid(weather)||weather>180)return alert('Enter valid nonnegative whole minutes (up to 240 for travel, 180 for weather).');
+  state.dayTravel={firstLeg:a,lastLeg:b,weather};persist();renderDayTimeline();p.hidden=true;toggle.setAttribute('aria-expanded','false');
+ };
+ document.querySelectorAll('[data-day-log]').forEach(b=>b.onclick=()=>updateDayLog(b.dataset.dayLog));
+}
+
+function renderAll(){renderDayTimeline();renderManifest();renderIntel();renderShift();renderLocationQueue();applyPrefs();}
 function applyPrefs(){
  const o=state.settings;
  document.body.classList.toggle('light',o.theme==='light');
@@ -301,7 +378,7 @@ function shiftAction(action){
  if(action==='start'){if(s.start&&!s.end){alert('Shift already active');return}state.shift={start:n,end:null,breakStart:null,breakMs:0}}
  if(action==='end'){if(!s.start||s.end)return alert('Start a shift first');if(s.breakStart){s.breakMs+=Date.now()-Date.parse(s.breakStart);s.breakStart=null}s.end=n}
  if(action==='break'){if(!s.start||s.end)return alert('Start a shift first');if(s.breakStart){s.breakMs+=Date.now()-Date.parse(s.breakStart);s.breakStart=null}else s.breakStart=n}
- persist();renderShift();renderFinanceStrip();
+ persist();renderAll();
 }
 function saveDay(){
  const s=state.shift;if(!s.start||!s.end)return alert('End a fictional shift first.');
@@ -496,5 +573,5 @@ function initDashboardCards(){
  setEditing(false);
 }
 setInterval(()=>{$('clock').textContent=new Date().toLocaleTimeString('en-US');if(!state.expanded && Date.now()%15000<1000)renderManifest();if(state.shift.start&&!state.shift.end){renderShift();renderFinanceStrip()}},1000);
-initEvents();renderAll();initDashboardCards();$('clock').textContent=new Date().toLocaleTimeString('en-US');
+initEvents();renderAll();initDashboardCards();initDayTimeline();$('clock').textContent=new Date().toLocaleTimeString('en-US');
 })();
