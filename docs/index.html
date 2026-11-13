@@ -79,6 +79,8 @@
 .event-history{border:1px solid #2c906e;margin:10px 0}
 @media(max-width:650px){.event-timing-bar{grid-template-columns:1fr}}
 
+.manual-time-badge{color:#ffe3a0;font-weight:900;text-align:center;font-size:9px;letter-spacing:.05em}
+
 </style></head>
 <body><div class="shell">
 <header class="header"><div><h1>SERENITY <span>DISPATCH OS</span></h1><small>Driver cockpit · protected development preview</small></div><div class="right"><span id="clock"></span><span class="pill warn">PREVIEW · NO PATIENT DATA</span></div></header>
@@ -294,17 +296,26 @@ function renderEventTiming(){
  const active=state.runs.find(x=>x.id===state.activeId&&!CLOSED_TRIP_STATUSES.has(x.status))||next;
  const current=$('event-current'),detail=$('event-current-detail'),nextDisplay=$('event-next'),nextDetail=$('event-next-detail');
  if(active){
-  const arrived=actualVariance(active);
-  const events=active.events||{};
-  const stamp=events.arrival||events.boarded||events.enRoute||null;
+  const arrival=actualVariance(active);
   current.textContent=active.name+' · '+active.status;
-  detail.textContent=arrived?'Arrived '+new Date(events.arrival).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})+' · '+arrived.label+' (actual)':stamp?'Last event '+new Date(stamp).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})+' · no actual pickup arrival yet':'No actual arrival logged yet';
- }else{current.textContent='No active runs';detail.textContent='The manifest has no unfinished trips';}
+  if(active.status==='Arrived')detail.textContent='Waiting at pickup since '+hhmm(active.events.arrival)+' · '+(arrival?.label||'')+' · departure unknown';
+  else if(active.status==='En Route to Drop-Off')detail.textContent='Departed '+hhmm(active.events.dropoffDeparture)+(estimatedDropoff(active)?' · projected drop-off '+hhmm(estimatedDropoff(active))+' (assumed drive)':' · drop-off time unknown');
+  else detail.textContent=arrival?'Actual pickup: '+hhmm(active.events.arrival)+' · '+arrival.label:'Scheduled pickup '+hhmm(active.scheduledPickup)+' · travel ETA unknown';
+ }else{
+  current.textContent='No active runs';detail.textContent='All trips closed or no manifest loaded';
+ }
  const upcoming=state.runs.find(x=>!CLOSED_TRIP_STATUSES.has(x.status)&&x.id!==active?.id);
  if(upcoming){
-  const mins=Math.round((Date.parse(upcoming.scheduledPickup)-Date.now())/60000);
   nextDisplay.textContent=upcoming.name+' · '+hhmm(upcoming.scheduledPickup);
-  nextDetail.textContent=mins>=0?mins+' min until scheduled pickup · travel time unknown':Math.abs(mins)+' min past scheduled pickup · travel time unknown';
+  const end=active?.status==='En Route to Drop-Off'?estimatedDropoff(active):null;
+  if(active?.status==='Arrived')nextDetail.textContent='Waiting at pickup · cannot predict next departure';
+  else if(end){
+   const diff=Math.round((Date.parse(upcoming.scheduledPickup)-Date.parse(end))/60000);
+   nextDetail.textContent=(diff>=0?diff+' min gap':'Overlap by '+Math.abs(diff)+' min')+' after projected drop-off · next travel NOT included';
+  }else{
+   const diff=Math.round((Date.parse(upcoming.scheduledPickup)-Date.now())/60000);
+   nextDetail.textContent=(diff>=0?diff+' min until':' '+Math.abs(diff)+' min past')+' scheduled pickup · travel time unknown';
+  }
  }else{nextDisplay.textContent='—';nextDetail.textContent='No later unfinished trip';}
 }
 
@@ -384,21 +395,21 @@ function rowDetails(r){
  const temps=['On my way','Running late','I have arrived','Custom message'];
  const buttons=temps.map((label,i)=>'<button data-action="sms" data-id="'+esc(r.id)+'" data-template="'+i+'">'+label+'</button>').join('');
  const pickupTime=r.gpsPickupEta?hhmm(r.gpsPickupEta):'Unavailable';
- const dropTime=r.gpsDropoffEta?hhmm(r.gpsDropoffEta):'Unavailable';
+ const dropTime=displayedDropoff(r)?hhmm(displayedDropoff(r)):'Unavailable';
  return '<div class="manifest-detail"><div class="two"><div class="detailbox"><strong>Pickup</strong><p>'+esc(r.pickup)+'</p><small>Office '+hhmm(r.scheduledPickup)+' · ETA '+pickupTime+'</small><p><a target="_blank" rel="noopener" href="'+docAddress(r.pickup)+'">Google Maps</a><a target="_blank" rel="noopener" href="'+wazeAddress(r.pickup)+'">Waze</a></p></div><div class="detailbox"><strong>Drop-off</strong><p>'+esc(r.dropoff)+'</p><small>GPS/route ETA '+dropTime+'</small><p><a target="_blank" rel="noopener" href="'+docAddress(r.dropoff)+'">Google Maps</a><a target="_blank" rel="noopener" href="'+wazeAddress(r.dropoff)+'">Waze</a></p></div></div>'+
  '<div class="detailbox"><strong>Customer Intelligence</strong><div class="phone-verification '+(p.verifiedPhone?'is-verified':'is-unverified')+'"><span class="phone-verification-label">'+(p.verifiedPhone?'✓ VERIFIED PHONE':'⚠ PHONE NOT VERIFIED')+'</span><strong>'+esc(contact(r)||'No phone available')+'</strong></div>'+(mismatch?'<p class="phone-mismatch">⚠ The imported number differs from the verified number. Verified number remains preferred. Imported alternative: '+esc(r.importedPhone)+'</p>':'')+'<p>'+esc(p.notes||'No saved customer notes')+'</p><p>'+esc(state.facilities[r.dropoff.toLowerCase()]||'')+'</p><div class="actions"><button class="verify-phone-button" data-action="verifyPhone" data-id="'+esc(r.id)+'">'+(p.verifiedPhone?'Update Verified Number':'✓ Verify / Update Phone')+'</button><button data-action="editCustomer" data-id="'+esc(r.id)+'">Edit customer notes</button><button data-action="editFacility" data-id="'+esc(r.id)+'">Edit facility instructions</button><a href="tel:'+esc(contact(r))+'">Call</a></div></div>'+
  '<div class="detailbox location-issue-tools"><strong>Pickup address verification</strong><small>Original office pickup is preserved: '+esc(r.pickup)+'</small><div class="location-status">'+(pickupIssue(r)?'⚠ '+esc(pickupIssue(r).type)+' · '+esc(pickupIssue(r).status):'No location error logged')+'</div>'+(pickupIssue(r)?.actualAddress?'<p><b>Actual pickup:</b> '+esc(pickupIssue(r).actualAddress)+(pickupIssue(r).verified?' · ✓ Driver verified':' · Not verified')+'</p>':'')+(pickupIssue(r)?.actualGps?'<p><small>GPS evidence ±'+esc(pickupIssue(r).actualGps.accuracyMeters)+'m · Not authoritative address verification</small></p>':'')+'<div class="actions"><button class="location-error-button" data-action="locationError" data-id="'+esc(r.id)+'">⚠ Location Error</button><button class="actual-pickup-button" data-action="actualPickup" data-id="'+esc(r.id)+'">📍 Actual Pickup Location</button><button data-action="capturePickupGPS" data-id="'+esc(r.id)+'">Capture GPS at Pickup</button></div><small>Use only at a safe stop. Nothing here changes the dispatched trip or automatically sends reports to a broker.</small></div>'+ 
  '<div class="detailbox"><strong>Manual ETA preview (not live GPS routing)</strong><div class="inline-edit"><label>Pickup ETA<input type="datetime-local" id="pu-'+esc(state.runs.indexOf(r))+'" value="'+(r.gpsPickupEta?localDateInput(r.gpsPickupEta):'')+'"></label><label>Drop-off ETA<input type="datetime-local" id="do-'+esc(state.runs.indexOf(r))+'" value="'+(r.gpsDropoffEta?localDateInput(r.gpsDropoffEta):'')+'"></label></div><button data-action="saveEta" data-id="'+esc(r.id)+'">Save manually entered ETAs</button><small>ETA source: '+esc(r.etaSource||'Unavailable')+'; manual entries must not be presented as traffic-aware GPS.</small></div>'+
- '<div class="detail-actions">'+buttons+'</div><div class="status-current" role="status" aria-live="polite"><span>CURRENT TRIP STATUS</span><strong>● '+esc(r.status)+'</strong><small>'+(r.updatedAt?'Updated '+new Date(r.updatedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'Not yet changed')+'</small></div><div class="detail-actions status-actions" role="group" aria-label="Choose trip status">'+['En Route','Arrived','Onboard','Canceled in Advance','Canceled at Door','No-Show','Unable to Complete'].map(x=>'<button class="status-choice '+(r.status===x?'selected':'')+'" aria-pressed="'+(r.status===x?'true':'false')+'" data-action="status" data-id="'+esc(r.id)+'" data-value="'+esc(x)+'" '+(x==='Canceled at Door'&&!r.events.arrival?'disabled title="Confirm arrival first"':'')+'>'+(r.status===x?'✓ ':'')+x+'</button>').join('')+'</div>'+
- '<div class="detailbox event-history"><strong>Actual driver time log</strong><p>En route: '+(r.events.enRoute?new Date(r.events.enRoute).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'Not logged')+' · At pickup: '+(r.events.arrival?new Date(r.events.arrival).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'Not logged')+' · Onboard: '+(r.events.boarded?new Date(r.events.boarded).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'Not logged')+' · Finished: '+(r.events.completed?new Date(r.events.completed).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'Not logged')+'</p>'+(actualVariance(r)?'<p><strong>Pickup variance (actual): '+esc(actualVariance(r).label)+'</strong></p>':'')+'<small>Times are recorded when you press the button. They do not automatically determine a travel ETA for the next trip.</small></div>'+ 
+ '<div class="detail-actions">'+buttons+'</div><div class="status-current" role="status" aria-live="polite"><span>CURRENT TRIP STATUS</span><strong>● '+esc(r.status)+'</strong><small>'+(r.updatedAt?'Updated '+new Date(r.updatedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'Not yet changed')+'</small></div><div class="detail-actions status-actions" role="group" aria-label="Choose trip status">'+['En Route','Arrived','En Route to Drop-Off','Arrived at Drop-Off','Canceled in Advance','Canceled at Door','No-Show','Unable to Complete'].map(x=>'<button class="status-choice '+(r.status===x?'selected':'')+'" aria-pressed="'+(r.status===x?'true':'false')+'" data-action="status" data-id="'+esc(r.id)+'" data-value="'+esc(x)+'" '+((x==='Canceled at Door'&&!r.events.arrival)||(x==='En Route to Drop-Off'&&!r.events.arrival)||(x==='Arrived at Drop-Off'&&!r.events.dropoffDeparture)?'disabled title="Complete preceding step first"':'')+'>'+(r.status===x?'✓ ':'')+x+'</button>').join('')+'</div>'+
+ '<div class="detailbox event-history"><strong>Actual driver time log</strong><p>En route to pickup: '+(r.events.enRoute?hhmm(r.events.enRoute):'Not logged')+' · Arrived at pickup: '+(r.events.arrival?hhmm(r.events.arrival):'Not logged')+' · En route to drop-off: '+(r.events.dropoffDeparture?hhmm(r.events.dropoffDeparture):'Not logged')+' · Arrived at drop-off: '+(r.events.dropoffArrival?hhmm(r.events.dropoffArrival):'Not logged')+'</p>'+(actualVariance(r)?'<p><strong>Pickup variance (actual): '+esc(actualVariance(r).label)+'</strong></p>':'')+'<small>Button timestamps are actual. Travel durations are user assumptions, not traffic estimates. Waiting at pickup has no predicted end.</small></div>'+ 
  '<div class="detailbox gross-editor"><strong>Truck gross fare · before deductions</strong><label>Gross fare for this run ($) — separate from driver pay<input type="number" min="0" step="0.01" inputmode="decimal" id="fare-'+esc(state.runs.indexOf(r))+'" value="'+(Number.isFinite(r.grossRevenue)?r.grossRevenue:'')+'" placeholder="Enter gross revenue"></label><button data-action="saveFare" data-id="'+esc(r.id)+'">Save truck gross fare</button><small>Unknown fares are flagged, not estimated from hourly pay.</small></div>'+
  '<div class="finish-control"><button class="finish-button" data-action="finish" data-id="'+esc(r.id)+'" '+(r.status==='Completed'?'disabled':'')+'>'+(r.status==='Completed'?'✓ RUN FINISHED':'✓ FINISH RUN · CLOSE OUT')+'</button><small>'+(r.status==='Completed'?'Closed '+(r.events.completed?new Date(r.events.completed).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'—'):'Confirm completion and record a close-out time')+'</small></div>'+
  '<div class="detailbox"><label>Trip-specific notes<textarea id="tripnotes-'+esc(state.runs.indexOf(r))+'" rows="2">'+esc(r.tripNotes||'')+'</textarea></label><button data-action="saveTripNotes" data-id="'+esc(r.id)+'">Save trip note</button><button data-action="correct" data-id="'+esc(r.id)+'">Correct original imported field</button></div></div>';
 }
 function localDateInput(s){const d=new Date(s);const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes())}
 function tripPhase(r) {
- const labels={'Scheduled':'NOT STARTED','En Route':'EN ROUTE TO PICKUP','Arrived':'AT PICKUP','Onboard':'ONBOARD · TO DROP-OFF','Completed':'✓ RUN FINISHED','Canceled in Advance':'CANCELED','Canceled at Door':'CANCELED AT DOOR','No-Show':'NO-SHOW','Unable to Complete':'UNABLE TO COMPLETE'};
- const tone=['Completed'].includes(r.status)?'phase-done':['En Route','Arrived','Onboard'].includes(r.status)?'phase-active':['Scheduled'].includes(r.status)?'phase-pending':'phase-exception';
+ const labels={'Scheduled':'NOT STARTED','En Route':'EN ROUTE TO PICKUP','Arrived':'AT PICKUP','Onboard':'ONBOARD · TO DROP-OFF','En Route to Drop-Off':'EN ROUTE TO DROP-OFF','Completed':'✓ RUN FINISHED','Canceled in Advance':'CANCELED','Canceled at Door':'CANCELED AT DOOR','No-Show':'NO-SHOW','Unable to Complete':'UNABLE TO COMPLETE'};
+ const tone=['Completed'].includes(r.status)?'phase-done':['En Route','Arrived','Onboard','En Route to Drop-Off'].includes(r.status)?'phase-active':['Scheduled'].includes(r.status)?'phase-pending':'phase-exception';
  return {label:labels[r.status]||r.status,tone};
 }
 function renderFinanceStrip(){
@@ -429,7 +440,7 @@ function renderManifest(){
  renderFinanceStrip();
  $('manifest-list').innerHTML=runs.length?runs.map((r,i)=>{
   const c=displayRunVariance(r),active=r.id===state.activeId,expanded=r.id===state.expanded,completed=r.status==='Completed';
-  return '<div class="manifest-row '+(active?'active ':'')+(completed?'completed':'')+'"><button class="manifest-main" data-action="expand" data-id="'+esc(r.id)+'" aria-expanded="'+expanded+'"><div><div class="name">'+(completed?'✓ ':'')+(i+1)+'. '+esc(r.name)+'</div><div class="direction">'+esc(r.direction)+' · <span class="row-status">'+esc(r.status)+'</span></div></div><div class="times"><div class="timeBlock"><em>SCHEDULED PU</em><span class="timeval">'+hhmm(r.scheduledPickup)+'</span></div><div class="timeBlock"><em>ETA PU</em><span class="timeval">'+(r.gpsPickupEta?hhmm(r.gpsPickupEta):'—')+'</span></div></div><div class="timeBlock"><em>ETA DROP</em><span class="timeval">'+(r.gpsDropoffEta?hhmm(r.gpsDropoffEta):'—')+'</span></div><div class="manifest-progress-cell"><span class="delta '+c.tone+'">'+esc(c.label)+'</span>'+(c.source==='ACTUAL'?'<span class="actual-time-badge">ACTUAL ARRIVAL</span>':'')+'<span class="trip-phase '+tripPhase(r).tone+'">'+esc(tripPhase(r).label)+'</span>'+(r.etaSource==='DEMO ONLY'?'<span class="simulation-row-badge">SAMPLE ETAS</span>':'')+'</div></button>'+(expanded?rowDetails(r):'')+'</div>';
+  return '<div class="manifest-row '+(active?'active ':'')+(completed?'completed':'')+'"><button class="manifest-main" data-action="expand" data-id="'+esc(r.id)+'" aria-expanded="'+expanded+'"><div><div class="name">'+(completed?'✓ ':'')+(i+1)+'. '+esc(r.name)+'</div><div class="direction">'+esc(r.direction)+' · <span class="row-status">'+esc(r.status)+'</span></div></div><div class="times"><div class="timeBlock"><em>SCHEDULED PU</em><span class="timeval">'+hhmm(r.scheduledPickup)+'</span></div><div class="timeBlock"><em>ETA PU</em><span class="timeval">'+(r.gpsPickupEta?hhmm(r.gpsPickupEta):'—')+'</span></div></div><div class="timeBlock"><em>DROP-OFF</em><span class="timeval">'+(displayedDropoff(r)?hhmm(displayedDropoff(r)):'—')+'</span></div><div class="manifest-progress-cell"><span class="delta '+c.tone+'">'+esc(c.label)+'</span>'+(c.source==='ACTUAL'?'<span class="actual-time-badge">ACTUAL ARRIVAL</span>':'')+'<span class="trip-phase '+tripPhase(r).tone+'">'+esc(tripPhase(r).label)+'</span>'+(r.events?.dropoffArrival?'<span class="actual-time-badge">ACTUAL DROP-OFF</span>':r.events?.dropoffDeparture?'<span class="manual-time-badge">ASSUMED DURATION</span>':r.etaSource==='DEMO ONLY'?'<span class="simulation-row-badge">SAMPLE PICKUP</span>':'')+'</div></button>'+(expanded?rowDetails(r):'')+'</div>';
  }).join(''):'<div class="empty">No manifest loaded. Select “Load fictional demo” or import reviewed fictional trip data.</div>';
 }
 function editCustomer(r){
@@ -466,28 +477,58 @@ function correct(r){
  r.edits??=[];r.edits.push({field:key,from:before,to:value,at:new Date().toISOString()});
  r[key]=value;r.updatedAt=new Date().toISOString();persist();renderAll();
 }
-function finishRun(r) {
- if(r.status==='Completed')return;
- if(['Canceled in Advance','Canceled at Door','No-Show','Unable to Complete'].includes(r.status)){alert('Trip has an exception outcome and cannot also be completed.');return;}
- if(!confirm('Finish run for '+r.name+'? This records completion and closes the run.'))return;
- changeStatus(r,'Completed');
+// Event-led temporary test mode. No location or traffic is inferred from a tap.
+function actualDropoff(r){return r.events?.dropoffArrival||null}
+function estimatedDropoff(r){
+ if(actualDropoff(r))return actualDropoff(r);
+ if(r.events?.dropoffDeparture&&Number.isFinite(r.manualDriveMinutes))
+  return new Date(Date.parse(r.events.dropoffDeparture)+r.manualDriveMinutes*60000).toISOString();
+ return null;
 }
+function displayedDropoff(r){return actualDropoff(r)||estimatedDropoff(r)}
+function startDropoffLeg(r){
+ if(CLOSED_TRIP_STATUSES.has(r.status))return alert('This run is closed.');
+ if(!r.events?.arrival)return alert('Press Arrived at Pickup first.');
+ if(r.events.dropoffDeparture)return alert('En Route to Drop-Off has already been logged.');
+ const demoMinutes=r.etaSource==='DEMO ONLY'&&r.gpsPickupEta&&r.gpsDropoffEta?Math.round((Date.parse(r.gpsDropoffEta)-Date.parse(r.gpsPickupEta))/60000):null;
+ const defaultMinutes=Number.isFinite(r.manualDriveMinutes)?r.manualDriveMinutes:demoMinutes;
+ const answer=prompt('Estimated drive duration to drop-off in minutes. Blank = unknown. This is not live traffic:',defaultMinutes==null?'':String(defaultMinutes));
+ if(answer===null)return;
+ const value=answer.trim()===''?null:Number(answer);
+ if(value!==null&&(!Number.isInteger(value)||value<1||value>360))return alert('Use 1–360 whole minutes or leave blank.');
+ if(!confirm('Start En Route to Drop-Off and record the current departure time?'))return;
+ const now=new Date().toISOString();
+ r.events.dropoffDeparture=now;r.events.boarded??=now;
+ r.manualDriveMinutes=value;r.status='En Route to Drop-Off';r.updatedAt=now;state.activeId=r.id;
+ persist();renderAll();
+}
+function arriveAtDropoff(r){
+ if(CLOSED_TRIP_STATUSES.has(r.status))return alert('This run is closed.');
+ if(!r.events?.dropoffDeparture)return alert('Start En Route to Drop-Off first.');
+ if(!confirm('Record arrival at drop-off NOW and close this run?'))return;
+ const now=new Date().toISOString();
+ r.events.dropoffArrival=now;r.events.completed=now;
+ r.status='Completed';r.updatedAt=now;
+ state.activeId=state.runs.find(x=>x.id!==r.id&&!CLOSED_TRIP_STATUSES.has(x.status))?.id||null;
+ persist();renderAll();
+}
+function finishRun(r){arriveAtDropoff(r)}
 function changeStatus(r,v){
- if(v==='En Route'&&r.events.enRoute&&!confirm('En Route time was already logged. Update its recorded time?'))return;
- if(v==='Arrived'&&r.events.arrival&&!confirm('Arrival was already logged. Update the recorded arrival time?'))return;
- if(v==='Onboard'&&r.events.boarded&&!confirm('Onboard time was already logged. Update its recorded time?'))return;
- if(r.status==='Completed'&&v!=='Completed'&&!confirm('This run is already finished. Reopen it and change its status?'))return;
- if(v==='Completed'&&r.status==='Completed')return;
- if(v==='Canceled at Door'&&!r.events.arrival){alert('Confirm Arrived before Canceled at Door.');return}
- if(['Canceled in Advance','Canceled at Door','No-Show','Unable to Complete'].includes(v)&&!confirm('Record '+v+' for this trip? Original assignment remains preserved.'))return;
- if(v==='En Route')r.events.enRoute=new Date().toISOString();
- if(v==='Arrived')r.events.arrival=new Date().toISOString();
- if(v==='Onboard')r.events.boarded=new Date().toISOString();
- if(v==='Completed')r.events.completed=new Date().toISOString();
- if(v==='Canceled at Door')r.events.canceledAtDoor=new Date().toISOString();
- r.status=v;r.updatedAt=new Date().toISOString();
- if(v==='En Route'||v==='Arrived'||v==='Onboard')state.activeId=r.id;
- else if(['Completed','Canceled in Advance','Canceled at Door','No-Show','Unable to Complete'].includes(v))state.activeId=state.runs.find(x=>x.id!==r.id&&!['Completed','Canceled in Advance','Canceled at Door','No-Show','Unable to Complete'].includes(x.status))?.id||null;
+ if(v==='En Route to Drop-Off')return startDropoffLeg(r);
+ if(v==='Arrived at Drop-Off')return arriveAtDropoff(r);
+ if(r.status==='Completed')return alert('This run is already closed.');
+ if(r.status==='En Route to Drop-Off')return alert('Use Arrived at Drop-Off to close this trip.');
+ if(v==='En Route'&&r.events.enRoute&&!confirm('Update En Route to Pickup time?'))return;
+ if(v==='Arrived'&&r.events.arrival&&!confirm('Update Arrived at Pickup time?'))return;
+ if(v==='Canceled at Door'&&!r.events.arrival)return alert('Confirm arrival at pickup first.');
+ if(['Canceled in Advance','Canceled at Door','No-Show','Unable to Complete'].includes(v)&&!confirm('Record '+v+' for this trip?'))return;
+ const now=new Date().toISOString();
+ if(v==='En Route')r.events.enRoute=now;
+ if(v==='Arrived')r.events.arrival=now;
+ if(v==='Canceled at Door')r.events.canceledAtDoor=now;
+ r.status=v;r.updatedAt=now;
+ if(v==='En Route'||v==='Arrived')state.activeId=r.id;
+ else if(CLOSED_TRIP_STATUSES.has(v))state.activeId=state.runs.find(x=>x.id!==r.id&&!CLOSED_TRIP_STATUSES.has(x.status))?.id||null;
  persist();renderAll();
 }
 function sms(r,i){
@@ -533,8 +574,9 @@ function calcTimeline(){
   planned.wake=planned.work-(45+7+weather)*60000;
  }
  // Never infer final drop-off from scheduled drop-off or pickup; require an ETA.
- if(last&&last.gpsDropoffEta&&minutesValid(lastLeg)){
-  planned.return=Date.parse(last.gpsDropoffEta)+lastLeg*60000;
+ const lastKnown=last?displayedDropoff(last):null;
+ if(lastKnown&&minutesValid(lastLeg)){
+  planned.return=Date.parse(lastKnown)+lastLeg*60000;
   planned.home=planned.return+(7+7)*60000;
  }
  return {planned,first,last};
@@ -551,7 +593,7 @@ function renderDayTimeline(){
   const button=document.querySelector('[data-day-log="'+k+'"]');
   if(button)button.textContent=actual?'✓ Logged · Edit':'Log '+DAY_LABELS[k];
  }
- $('dayTimelineHint').textContent=first?'First pickup: '+hhmm(first.scheduledPickup)+(state.dayTravel?.firstLeg===null||state.dayTravel?.firstLeg===undefined?' · Enter garage→first pickup time for morning plan.':' · Wake-up plan includes 45 min getting ready, 7 min home→work, 7 min garage prep, 10 min early arrival.')+(last&&!last.gpsDropoffEta?' · Home ETA unavailable: no last drop-off ETA.':'')+(state.timingSimulation?' · ALL TIMELINE PROJECTIONS ARE SIMULATED, NOT TRAFFIC BASED.':''):'Load a test manifest to calculate the day. All five times can also be logged manually.';
+ $('dayTimelineHint').textContent=first?'First pickup: '+hhmm(first.scheduledPickup)+(state.dayTravel?.firstLeg===null||state.dayTravel?.firstLeg===undefined?' · Enter garage→first pickup time for morning plan.':' · Wake-up plan includes 45 min getting ready, 7 min home→work, 7 min garage prep, 10 min early arrival.')+(last&&!displayedDropoff(last)?' · Home ETA unavailable: no last drop-off ETA.':'')+(state.timingSimulation?' · ALL TIMELINE PROJECTIONS ARE SIMULATED, NOT TRAFFIC BASED.':''):'Load a test manifest to calculate the day. All five times can also be logged manually.';
 }
 function updateDayLog(k){
  if(!DAY_SEQUENCE.includes(k))return;
