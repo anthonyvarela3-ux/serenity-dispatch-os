@@ -66,3 +66,12 @@
 .sim-timing-button{border:2px solid #e9b44c!important;background:#544013!important;color:#fff6cf!important;font-weight:900!important}
 .sim-timing-notice{margin:10px 0;padding:12px;border:2px solid #f5b943;border-radius:9px;background:#3e2a13;color:#fff0bd;font-size:13px}
 .simulation-row-badge{text-align:center;color:#ffdd85;font-size:9px;font-weight:900;letter-spacing:.09em}
+
+.event-timing-bar{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px;margin:8px 0 15px;background:#10263a;border:2px solid #3c92ae;border-radius:10px}
+.event-timing-bar>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.event-timing-bar small{font-weight:900;letter-spacing:.06em;font-size:11px;color:#a5cbe0}
+.event-timing-bar strong{font-size:15px;color:#eafcff;overflow-wrap:anywhere}
+.event-timing-bar span{color:#c7d7e8;font-size:12px}
+.actual-time-badge{color:#69e7a6;text-align:center;font-size:9px;font-weight:900;letter-spacing:.06em}
+.event-history{border:1px solid #2c906e;margin:10px 0}
+@media(max-width:650px){.event-timing-bar{grid-template-columns:1fr}}
