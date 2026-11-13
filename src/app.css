@@ -75,3 +75,5 @@
 .actual-time-badge{color:#69e7a6;text-align:center;font-size:9px;font-weight:900;letter-spacing:.06em}
 .event-history{border:1px solid #2c906e;margin:10px 0}
 @media(max-width:650px){.event-timing-bar{grid-template-columns:1fr}}
+
+.manual-time-badge{color:#ffe3a0;font-weight:900;text-align:center;font-size:9px;letter-spacing:.05em}
