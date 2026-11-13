@@ -86,6 +86,37 @@ function loadNov13SafeSchedule(){
  persist();renderAll();
  status('Friday Nov 13: 8 anonymized trips loaded. Names and precise addresses are fictionalized/removed. No live routing ETAs; original patient manifest has not been imported.');
 }
+
+// Illustrative test inputs only: durations and offsets are NOT GPS or traffic predictions.
+const NOV13_TIMING_OFFSETS=[-4,8,0,17,19,-3,5,0];
+const NOV13_TIMING_DURATIONS=[60,60,14,60,26,13,60,32];
+function simulateNov13Timing(){
+ if(state.runs.length!==NOV13_SAFE.length||!state.runs.every((r,i)=>r.name===NOV13_SAFE[i][0]&&r.previewOnly)){
+  alert('Load the anonymized Nov 13 test schedule first. This sample timing is only for that 8-trip simulation.');return;
+ }
+ if(!confirm('Apply FICTIONAL pickup and drop-off ETA examples to all 8 test trips? These are not live GPS predictions and must not be used for passenger decisions. Existing manually entered sample ETAs will be replaced.'))return;
+ state.runs.forEach((r,i)=>{
+  const pickup=Date.parse(r.scheduledPickup)+NOV13_TIMING_OFFSETS[i]*60000;
+  r.gpsPickupEta=new Date(pickup).toISOString();
+  r.gpsDropoffEta=new Date(pickup+NOV13_TIMING_DURATIONS[i]*60000).toISOString();
+  r.etaSource='DEMO ONLY';
+  r.etaUpdatedAt=new Date().toISOString();
+ });
+ state.dayTravel=state.dayTravel||{};
+ if(state.dayTravel.firstLeg==null)state.dayTravel.firstLeg=20;
+ if(state.dayTravel.lastLeg==null)state.dayTravel.lastLeg=25;
+ state.timingSimulation=true;
+ persist();renderAll();
+ $('dayFirstLeg').value=state.dayTravel.firstLeg;
+ $('dayLastLeg').value=state.dayTravel.lastLeg;
+ $('dayWeather').value=state.dayTravel.weather??0;
+ status('Eight sample ETAs loaded, with simulated lateness/earliness and projected wake/home times. Demonstration values, not real routing.');
+}
+function renderTimingSimulation(){
+ const notice=$('timingSimulationNotice');
+ if(notice)notice.hidden=!state.timingSimulation;
+}
+
 function classify(r){
  if(!r.etaSource)return{tone:'unknown',label:'No GPS ETA'};
  return SerenityManifestTiming.classifyPickup({direction:r.direction,scheduledPickup:r.scheduledPickup,gpsPickupEta:r.gpsPickupEta,etaUpdatedAt:r.etaUpdatedAt,now:new Date().toISOString(),staleAfterSeconds:r.etaSource==='DEMO ONLY'?Number.MAX_SAFE_INTEGER:45});
@@ -205,7 +236,7 @@ function renderManifest(){
  renderFinanceStrip();
  $('manifest-list').innerHTML=runs.length?runs.map((r,i)=>{
   const c=classify(r),active=r.id===state.activeId,expanded=r.id===state.expanded,completed=r.status==='Completed';
-  return '<div class="manifest-row '+(active?'active ':'')+(completed?'completed':'')+'"><button class="manifest-main" data-action="expand" data-id="'+esc(r.id)+'" aria-expanded="'+expanded+'"><div><div class="name">'+(completed?'✓ ':'')+(i+1)+'. '+esc(r.name)+'</div><div class="direction">'+esc(r.direction)+' · <span class="row-status">'+esc(r.status)+'</span></div></div><div class="times"><div class="timeBlock"><em>SCHEDULED PU</em><span class="timeval">'+hhmm(r.scheduledPickup)+'</span></div><div class="timeBlock"><em>ETA PU</em><span class="timeval">'+(r.gpsPickupEta?hhmm(r.gpsPickupEta):'—')+'</span></div></div><div class="timeBlock"><em>ETA DROP</em><span class="timeval">'+(r.gpsDropoffEta?hhmm(r.gpsDropoffEta):'—')+'</span></div><div class="manifest-progress-cell"><span class="delta '+c.tone+'">'+esc(c.label)+'</span><span class="trip-phase '+tripPhase(r).tone+'">'+esc(tripPhase(r).label)+'</span></div></button>'+(expanded?rowDetails(r):'')+'</div>';
+  return '<div class="manifest-row '+(active?'active ':'')+(completed?'completed':'')+'"><button class="manifest-main" data-action="expand" data-id="'+esc(r.id)+'" aria-expanded="'+expanded+'"><div><div class="name">'+(completed?'✓ ':'')+(i+1)+'. '+esc(r.name)+'</div><div class="direction">'+esc(r.direction)+' · <span class="row-status">'+esc(r.status)+'</span></div></div><div class="times"><div class="timeBlock"><em>SCHEDULED PU</em><span class="timeval">'+hhmm(r.scheduledPickup)+'</span></div><div class="timeBlock"><em>ETA PU</em><span class="timeval">'+(r.gpsPickupEta?hhmm(r.gpsPickupEta):'—')+'</span></div></div><div class="timeBlock"><em>ETA DROP</em><span class="timeval">'+(r.gpsDropoffEta?hhmm(r.gpsDropoffEta):'—')+'</span></div><div class="manifest-progress-cell"><span class="delta '+c.tone+'">'+esc(c.label)+'</span><span class="trip-phase '+tripPhase(r).tone+'">'+esc(tripPhase(r).label)+'</span>'+(r.etaSource==='DEMO ONLY'?'<span class="simulation-row-badge">SAMPLE ETAS</span>':'')+'</div></button>'+(expanded?rowDetails(r):'')+'</div>';
  }).join(''):'<div class="empty">No manifest loaded. Select “Load fictional demo” or import reviewed fictional trip data.</div>';
 }
 function editCustomer(r){
@@ -323,7 +354,7 @@ function renderDayTimeline(){
   const button=document.querySelector('[data-day-log="'+k+'"]');
   if(button)button.textContent=actual?'✓ Logged · Edit':'Log '+DAY_LABELS[k];
  }
- $('dayTimelineHint').textContent=first?'First pickup: '+hhmm(first.scheduledPickup)+(state.dayTravel?.firstLeg===null||state.dayTravel?.firstLeg===undefined?' · Enter garage→first pickup time for morning plan.':' · Wake-up plan includes 45 min getting ready, 7 min home→work, 7 min garage prep, 10 min early arrival.')+(last&&!last.gpsDropoffEta?' · Home ETA unavailable: no last drop-off ETA.':''):'Load a test manifest to calculate the day. All five times can also be logged manually.';
+ $('dayTimelineHint').textContent=first?'First pickup: '+hhmm(first.scheduledPickup)+(state.dayTravel?.firstLeg===null||state.dayTravel?.firstLeg===undefined?' · Enter garage→first pickup time for morning plan.':' · Wake-up plan includes 45 min getting ready, 7 min home→work, 7 min garage prep, 10 min early arrival.')+(last&&!last.gpsDropoffEta?' · Home ETA unavailable: no last drop-off ETA.':'')+(state.timingSimulation?' · ALL TIMELINE PROJECTIONS ARE SIMULATED, NOT TRAFFIC BASED.':''):'Load a test manifest to calculate the day. All five times can also be logged manually.';
 }
 function updateDayLog(k){
  if(!DAY_SEQUENCE.includes(k))return;
@@ -365,7 +396,7 @@ function initDayTimeline(){
  document.querySelectorAll('[data-day-log]').forEach(b=>b.onclick=()=>updateDayLog(b.dataset.dayLog));
 }
 
-function renderAll(){renderDayTimeline();renderManifest();renderIntel();renderShift();renderLocationQueue();applyPrefs();}
+function renderAll(){renderTimingSimulation();renderDayTimeline();renderManifest();renderIntel();renderShift();renderLocationQueue();applyPrefs();}
 function applyPrefs(){
  const o=state.settings;
  document.body.classList.toggle('light',o.theme==='light');
@@ -459,6 +490,7 @@ function initEvents(){
  });
  $('loadDemo').onclick=()=>{if(confirm('Replace the current fictional preview with the sample manifest?'))demo()};
  $('loadNov13Schedule').onclick=loadNov13SafeSchedule;
+ $('simulateNov13Timing').onclick=simulateNov13Timing;
  $('previewImport').onclick=preview;$('applyImport').onclick=applyImport;$('runOcr').onclick=ocr;$('useText').onclick=()=>{$('rawInput').focus();status('Paste pipe-delimited fictional trips and select Validate and preview.')};
  $('intelSearch').oninput=renderIntel;
  $('startShift').onclick=()=>shiftAction('start');$('endShift').onclick=()=>shiftAction('end');
