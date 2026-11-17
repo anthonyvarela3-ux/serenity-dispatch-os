@@ -136,4 +136,4 @@ Object.assign(ids.newApproachMiles,{value:'4.5'});
 tap('saveNew');
 check('state.trips.find(t=>t.who==="Z.Z.").driveMiles',8.5);
 check('state.trips.find(t=>t.who==="Z.Z.").repositionMiles',4.5);
-console.log('Passed script checks for Revenue, Back, handoff, persisted selection, Undo, cancellation, and last run.');
+console.log('Beta checks passed for trip events, handoff, schedule updates, route chaining, and mileage estimates.');
