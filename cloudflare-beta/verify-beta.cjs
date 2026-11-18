@@ -22,14 +22,21 @@ class Element {
 }
 for(const m of markup.matchAll(/id="([^"]+)"/g))ids[m[1]]=new Element(m[1]);
 const saved = {};
+ids.modalRoot.hidden=true;
+let onInterval;
+const documentEvents = {};
 const context = vm.createContext({
-  console, confirm:()=>true, prompt:()=>'07:00', setTimeout(){}, clearTimeout(){},
-  document:{getElementById:id=>ids[id]??null,querySelectorAll:()=>[],createElement:()=>new Element(),body:{appendChild(){}}},
+  console, confirm:()=>true, prompt:()=>'07:00', setTimeout(){}, clearTimeout(){}, setInterval(fn,delay){assert.equal(delay,15000);onInterval=fn;},
+  document:{getElementById:id=>ids[id]??null,querySelectorAll:()=>[],addEventListener:(type,fn)=>{documentEvents[type]=fn;},createElement:()=>new Element(),body:{appendChild(){}}},
   localStorage:{getItem:k=>saved[k]??null,setItem:(k,v)=>saved[k]=v},
 });
 const run = s=>vm.runInContext(s,context);
 run(script.split('</script>')[0]);
 const check=(s,result)=>assert.equal(run(s),result);
+check('usesDeviceTime()',true);
+assert.match(ids.modeBadge.textContent,/DEVICE TIME · AUTO/);
+run("function simulationDay(){return Object.assign(seed(),{clockMode:'simulation'})} state=simulationDay();render()");
+
 const tap=id=>{const e=ids[id]; (e.click??e.onclick)();};
 const advance=n=>{for(let i=0;i<n;i++)tap('customerAdvance');};
 check('revenueOpen',false);
@@ -70,7 +77,7 @@ check('state.selected',null);
 assert.match(ids.customerMain.innerHTML,/No runs remaining/);
 check('state.trips.filter(t=>t.outcome).length',8);
 assert.equal([...ids.roster.innerHTML.matchAll(/class="trip done"/g)].length,8);
-run('state=seed();render()');
+run('state=simulationDay();render()');
 check('project()["F-002"].pickup', 552);
 check('project()["F-001"].drop',512);
 check('project()["F-001"].dropRough',true);
@@ -93,7 +100,7 @@ check('state.trips.find(t=>t.id==="F-005").reposition',null);
 check('project()["F-005"].pickup',772);
 check('project()["F-005"].pickupRough',true);
 assert.match(ids.roster.innerHTML,/ETA 12:52 PM · Rough/);
-run('state=seed();state.trips[0].drive=40;state.trips[1].reposition=35;state.trips[1].combinedApproach=null;deviceTime=()=>"07:50";render()');
+run('state=simulationDay();state.trips[0].drive=40;state.trips[1].reposition=35;state.trips[1].combinedApproach=null;deviceTime=()=>"07:50";render()');
 tap('clockMode');
 tap('customerAdvance');
 check('state.trips[0].actual["En Route to Pickup"]',470);
@@ -109,7 +116,7 @@ check('project()["F-002"].pickup',560);
 run('deviceTime=()=>"09:00"');
 tap('customerAdvance');
 check('project()["F-001"].drop',540);
-check('project()["F-002"].pickup',560);
+check('project()["F-002"].pickup',575);
 check('state.trips[1].scheduled',530);
 tap('customerAdvance');
 check('project()["F-002"].pickup',575);
@@ -118,7 +125,7 @@ tap('openNextRun');
 assert.match(ids.customerMain.innerHTML,/Status: Pending/);
 tap('plus5');
 check('state.clockMode','simulation');
-run('state=seed();Object.assign(state.trips[0],{drive:null,driveMiles:20});Object.assign(state.trips[1],{reposition:null,repositionMiles:17.5,combinedApproach:null});render()');
+run('state=simulationDay();Object.assign(state.trips[0],{drive:null,driveMiles:20});Object.assign(state.trips[1],{reposition:null,repositionMiles:17.5,combinedApproach:null});render()');
 check('project()["F-001"].drop',517);
 check('project()["F-002"].pickup',552);
 check('project()["F-002"].pickupRough',true);
@@ -142,7 +149,7 @@ check('state.trips.find(t=>t.who==="Z.Z.").driveMiles',8.5);
 check('state.trips.find(t=>t.who==="Z.Z.").repositionMiles',4.5);
 console.log('Passed script checks for Revenue, Back, handoff, persisted selection, Undo, cancellation, and last run.');
 
-run('state=seed();render()');
+run('state=simulationDay();render()');
 const expected=['pending','to-pickup','at-pickup','on-board','to-dropoff','at-dropoff','completed'];
 for(let i=0;i<expected.length;i++){
   assert.match(ids.roster.innerHTML,new RegExp('class="ride-status '+expected[i]+'"'));
@@ -164,7 +171,7 @@ function adjust(id,kind,min,value,...steps){
   return input.value;
 }
 const contextAdjust=run('adjustQuickField');
-run('state=seed();render()');
+run('state=simulationDay();render()');
 tap('refresh');
 assert.match(ids.modalRoot.innerHTML,/data-quick-id="updateTime" data-step="-60"/);
 assert.equal(adjust('updateTime','time',0,'08:58','5','1'),'09:04');
@@ -194,18 +201,17 @@ check('state.checkpoints["Wake Up"]',366);
 console.log('Quick entry handles time increments, drive minutes, decimal mileage, clearing and keyboard-free test assignment creation.');
 
 
-run(`state=seed();
+run(`state=simulationDay();
   Object.assign(state.trips[0],{drive:40});
   Object.assign(state.trips[1],{reposition:35,combinedApproach:null});
   deviceTime=()=>'07:40';render()`);
 tap('clockMode');
-const tripTwoPlan=run('project()["F-002"].pickup');
 run('deviceTime=()=>"07:45"');
 tap('customerAdvance');
-check('project()["F-002"].pickup',tripTwoPlan);
+check('project()["F-002"].pickup',559);
 run('deviceTime=()=>"08:00"');
 tap('customerAdvance');
-check('project()["F-002"].pickup',tripTwoPlan);
+check('project()["F-002"].pickup',562);
 assert.match(ids.roster.innerHTML,/Arrived 8:00 AM/);
 run('deviceTime=()=>"08:10"');
 tap('customerAdvance');
@@ -219,7 +225,7 @@ check('project()["F-002"].pickup',565);
 run('deviceTime=()=>"09:01"');
 tap('customerAdvance');
 check('project()["F-001"].drop',541);
-check('project()["F-002"].pickup',565);
+check('project()["F-002"].pickup',576);
 assert.equal(ids.betweenRuns.hidden,true);
 run('deviceTime=()=>"09:13"');
 tap('customerAdvance');
@@ -230,16 +236,17 @@ check('state.trips[1].scheduled',530);
 assert.match(ids.betweenRuns.innerHTML,/58 min short before scheduled pickup/);
 assert.match(run('tripWaits(state.trips[0])'),/Drop-off handoff 12m/);
 tap('undo');
-check('forecastTime()',490);
-check('project()["F-002"].pickup',565);
+check('forecastTime()',553);
+check('state.trips[0].actual.Finished',undefined);
+check('project()["F-002"].pickup',588);
 tap('customerAdvance');
 tap('openNextRun');
 run('deviceTime=()=>"09:30"');
 tap('customerAdvance');
-check('project()["F-002"].pickup',588);
+check('project()["F-002"].pickup',605);
 check('state.trips[1].actual["En Route to Pickup"]',570);
 
-run(`state=seed();
+run(`state=simulationDay();
   state.trips[0].reposition=null;
   state.trips[0].repositionMiles=null;
   state.trips[1].scheduled=state.trips[0].scheduled;
@@ -256,10 +263,10 @@ assert.match(ids.roster.innerHTML,/ETA 7:50 AM · If first/);
 run('state.trips[1].scheduled=530;render()');
 check('project()["F-001"].pickup',470);
 assert.match(ids.checkpoints.innerHTML,/Leave for Work/);
-console.log('On Board and Finish Run recalibrate future trips. Other status timestamps, wait durations, Undo, and pickup conflicts are preserved.');
+console.log('On Board and Finish Run anchor the live forecast, which also accounts for elapsed time. Logged timestamps, waits, Undo and conflicts are preserved.');
 
 
-run(`state=seed();
+run(`state=simulationDay();
   const times=[495,540,585,690,840,840];
   state.trips=state.trips.slice(0,times.length);
   state.trips.forEach((t,i)=>Object.assign(t,{scheduled:times[i],drive:null,reposition:null,combinedApproach:null}));
@@ -277,7 +284,7 @@ assert.match(ids.pickupConflicts.innerHTML,/2:00 PM · F-005, F-006/);
 assert.match(ids.roster.innerHTML,/ETA · If first/);
 console.log('All six runs have provisional times before departure, including both alternatives in the 2:00 PM conflict.');
 
-run(`{state=seed();
+run(`{state=simulationDay();
   state.trips=state.trips.slice(0,6);
   const times=[495,540,585,690,840,840];
   state.trips.forEach((t,i)=>Object.assign(t,{scheduled:times[i],drive:null,reposition:null,combinedApproach:null}));
@@ -309,8 +316,8 @@ run('deviceTime=()=>"11:32"');
 advance(1);
 check('project()["F-004"].drop',727);
 tap('customerBack');
-check('forecastTime()',631);
-check('project()["F-004"].drop',722);
+check('forecastTime()',692);
+check('project()["F-004"].drop',734);
 run('deviceTime=()=>"13:34"');
 advance(1);
 check('project()["F-004"].drop',849);
@@ -320,3 +327,71 @@ assert.match(ids.pickupConflicts.innerHTML,/2:00 PM · F-005, F-006/);
 assert.match(ids.warnings.innerHTML,/F-005 · Return pickup 24m late if first/);
 assert.match(ids.warnings.innerHTML,/F-006 · Return pickup 24m late if first/);
 console.log('Nov 18 replay recognizes the return location, preserves schedule and conflict, and carries the boarding delay into both 2:00 PM options.');
+
+run(`state=simulationDay();
+  state.trips=state.trips.slice(0,2);
+  Object.assign(state.trips[0],{drive:35,reposition:15});
+  Object.assign(state.trips[1],{scheduled:540,reposition:15,combinedApproach:null});
+  delete state.clockMode;
+  state.forecastClock=420;
+  deviceTime=()=>'07:40';
+  render()`);
+check('usesDeviceTime()',true);
+assert.equal(ids.clockTop.textContent,'7:40 AM');
+assert.match(ids.roster.innerHTML,/ETA 8:52 AM/);
+ids.notes.value='Unsaved fictional note';
+ids.firstDrive.value='42';
+const beforeTick=run('JSON.stringify(state)');
+run('deviceTime=()=>"08:25"');
+onInterval();
+assert.equal(ids.clockTop.textContent,'8:25 AM');
+assert.match(ids.roster.innerHTML,/ETA 9:37 AM/);
+assert.equal(ids.notes.value,'Unsaved fictional note');
+assert.equal(ids.firstDrive.value,'42');
+check('JSON.stringify(state)',beforeTick);
+check('state.trips[1].scheduled',540);
+assert.equal(ids.revenueBody.hidden,true);
+
+documentEvents.pointerdown({pointerId:1});
+run('deviceTime=()=>"08:26"');
+onInterval();
+assert.equal(ids.clockTop.textContent,'8:25 AM');
+documentEvents.pointerup({pointerId:1});
+run('document.visibilityState="hidden"');
+onInterval();
+assert.equal(ids.clockTop.textContent,'8:25 AM');
+run('document.visibilityState="visible";deviceTime=()=>"08:30"');
+documentEvents.visibilitychange();
+assert.equal(ids.clockTop.textContent,'8:30 AM');
+assert.match(ids.roster.innerHTML,/ETA 9:42 AM/);
+run('deviceTime=()=>"08:31"');
+tap('refresh');
+assert.equal(ids.clockTop.textContent,'8:31 AM');
+check('JSON.stringify(state)',beforeTick);
+
+tap('customerAdvance');
+check('state.trips[0].actual["En Route to Pickup"]',511);
+run('deviceTime=()=>"08:37"');
+onInterval();
+check('project()["F-001"].pickup',526);
+tap('customerAdvance');
+check('state.trips[0].actual["Arrived at Pickup"]',517);
+run('deviceTime=()=>"08:55"');
+onInterval();
+check('project()["F-001"].drop',577);
+check('state.trips[0].actual["Arrived at Pickup"]',517);
+tap('customerAdvance');
+check('project()["F-001"].drop',570);
+run('deviceTime=()=>"09:35"');
+onInterval();
+check('project()["F-001"].drop',575);
+check('project()["F-002"].pickup',590);
+check('state.trips[0].actual["On Board"]',535);
+
+tap('clockMode');
+const simulationTime=ids.clockTop.textContent;
+run('deviceTime=()=>"10:00"');
+onInterval();
+assert.equal(ids.clockTop.textContent,simulationTime);
+check('usesDeviceTime()',false);
+console.log('Device time is automatic by default and refreshes pending, in-progress, and later trips without overwriting events or drafts. Simulation and browser resume work separately.');
