@@ -9,7 +9,15 @@ class Element {
   addEventListener(event, fn){this[event]??=fn;}
   setAttribute(){}
   querySelector(){return new Element();}
-  querySelectorAll(){return [];}
+  querySelectorAll(selector){
+    if(selector!=='[data-fare]')return [];
+    this.fareButtons=[...this.html.matchAll(/data-fare="([^"]+)"/g)].map(match=>{
+      const button=new Element();
+      button.dataset.fare=match[1];
+      return button;
+    });
+    return this.fareButtons;
+  }
   focus(){}
   set innerHTML(value){
     this.html=value;
@@ -582,3 +590,89 @@ tap('undo');
 check('project()["F-003"].afterHandoff',true);
 check('project()["F-003"].earliestDrop',792);
 console.log('If-next drop-offs match the displayed earliest pickup plus boarding and ride time, move with the clock and trip status, and preserve scheduled times and conflicts.');
+
+run(`{
+  state=simulationDay();
+  state.trips=state.trips.slice(0,4);
+  const [first,second,third,canceled]=state.trips;
+  Object.assign(first,{status:5,actual:{'On Board':480,'Arrived at Drop-Off':510},fare:'52.25'});
+  Object.assign(second,{fare:74.10});
+  Object.assign(third,{fare:null});
+  Object.assign(canceled,{status:6,outcome:'Canceled in Advance',fare:999});
+  state.selected=first.id;
+  state.clock=state.forecastClock=515;
+  revenueOpen=false;
+  render();
+}`);
+check('revenue().vehicle',0);
+check('revenue().pending',126.35);
+check('revenue().missing',1);
+check('revenue().done',0);
+assert.equal(ids.revenueBody.hidden,true);
+tap('revenueToggle');
+assert.match(ids.revenueBody.innerHTML,/1 run is missing fares/);
+assert.match(ids.revenueBody.innerHTML,/Remaining \$126.35 · Known day total \$126.35/);
+advance(1);
+check('revenue().vehicle',52.25);
+check('revenue().pending',74.10);
+check('revenue().total',126.35);
+check('revenue().done',1);
+assert.match(ids.revenueBody.innerHTML,/VEHICLE REVENUE · COMPLETED[\s\S]*\$52.25/);
+tap('undo');
+check('revenue().vehicle',0);
+check('revenue().pending',126.35);
+advance(1);
+const fareButton=ids.revenueBody.fareButtons.find(button=>button.dataset.fare==='F-003');
+fareButton.onclick();
+assert.match(ids.modalRoot.innerHTML,/Trip fare · F-003/);
+ids.tripFare.value='40.55';
+tap('saveFare');
+check('revenue().pending',114.65);
+check('revenue().total',166.90);
+check('state.trips[2].fare',40.55);
+check('JSON.parse(localStorage.getItem(STORE)).trips[2].fare',40.55);
+run('state=loadRouteScenario(JSON.parse(localStorage.getItem(STORE)));render()');
+check('revenue().missing',0);
+run('editFare(state.trips[0])');
+ids.tripFare.value='60.15';
+tap('saveFare');
+check('revenue().vehicle',60.15);
+tap('undo');
+check('revenue().vehicle',52.25);
+run('modifyOutcome(state.trips[0],"Canceled in Advance")');
+check('revenue().vehicle',0);
+check('revenue().done',0);
+check('revenue().total',114.65);
+tap('undo');
+check('revenue().vehicle',52.25);
+run('editFare(state.trips[0])');
+ids.tripFare.value='0';
+tap('saveFare');
+check('revenue().vehicle',0);
+check('revenue().paid',1);
+run('editFare(state.trips[0])');
+ids.tripFare.value='';
+tap('saveFare');
+check('revenue().paid',0);
+check('revenue().missing',1);
+check('fareCents("")',null);
+check('fareCents(null)',null);
+check('fareCents(false)',null);
+check('fareCents("52.25")',5225);
+check('fareCents("50x")',null);
+check('fareCents(-1)',null);
+check('fareCents("10001")',null);
+run('editFare(state.trips[2])');
+assert.equal(adjust('tripFare','dollars',0,'40.55','5','-1'),'44.55');
+assert.equal(adjust('tripFare','dollars',0,'9999','5'),'10000');
+run(`{
+  const imported=simulationDay();
+  delete imported.trips[0].fare;
+  imported.trips[0].revenue='32.10';
+  imported.trips[1].fare=null;
+  imported.trips[1].revenue=99;
+  state=loadRouteScenario(imported);
+}`);
+check('state.trips[0].fare','32.10');
+check('state.trips[1].fare',null);
+console.log('Vehicle revenue moves fares at Finish Run, excludes canceled trips, supports edits and Undo, preserves missing and zero fares, and reloads saved amounts.');
