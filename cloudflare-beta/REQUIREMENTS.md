@@ -31,8 +31,8 @@ Reuse original CV4 town centers. Prefer saved loaded mileage. Otherwise estimate
 
 ## Persistent daily controls and display
 
-- Daily checkpoint controls show Wake Up and Arrive Home.
-- Both controls stay in a fixed upper-right dock on every main screen, with tap to log and long press to correct.
+- Daily read-only information displays show calculated Wake Up and estimated Arrive Home.
+- Both displays stay in a fixed upper-right dock on every main screen. They have no tap or hold actions, no diamond indicators and no manual logging. Values follow the manifest forecast and timing settings, ignoring legacy checkpoint logs.
 - Keep morning back-calculation and garage timing assumptions in the forecast.
 - A neighboring control cycles Day, Dusk and Night. Dusk uses a muted warm palette.
 - Store the display preference independently of the manifest so imports, reset and Undo preserve the chosen appearance.

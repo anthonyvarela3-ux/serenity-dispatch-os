@@ -193,12 +193,12 @@ check('state.trips.find(t=>t.who==="Test 9").drive',11);
 check('state.trips.find(t=>t.who==="Test 9").reposition',4);
 check('state.trips.find(t=>t.who==="Test 9").driveMiles',1.2);
 check('state.trips.find(t=>t.who==="Test 9").repositionMiles',null);
-run('editCheckpoint("Wake Up")');
+run('let testTime;requestTime("Test time adjustment","Test time",360,t=>testTime=t)');
 assert.equal(adjust('quickTime','time',0,'00:02','-5'),'00:00');
 assert.equal(adjust('quickTime','time',0,'23:58','5'),'23:59');
 assert.equal(adjust('quickTime','time',0,'06:00','5','1'),'06:06');
 tap('saveQuickTime');
-check('state.checkpoints["Wake Up"]',366);
+check('testTime',366);
 console.log('Quick entry handles time increments, drive minutes, decimal mileage, clearing and keyboard-free test assignment creation.');
 
 
@@ -655,24 +655,23 @@ assert.equal(ids.revenueBody.hidden,false);
 assert.match(ids.revenueBody.innerHTML,/Suffolk published rate estimate/);
 console.log('Published livery estimates populate automatically from loaded miles or town distance, carry through Finish Run, exclude cancellations, and preserve saved fares and Undo.');
 
-run('state=simulationDay();state.checkpoints["Leave Garage"]=440;render()');
-assert.match(ids.checkpoints.innerHTML,/Planned 6:27 AM/);
-assert.equal([...ids.checkpoints.innerHTML.matchAll(/data-checkpoint=/g)].length,2);
-ids.wakeCheckpoint.onclick();
+run('state=simulationDay();state.checkpoints={"Leave Garage":440,"Wake Up":420,"Arrive Home":1020};render()');
+assert.match(ids.checkpoints.innerHTML,/Wake Up · Estimated 6:27 AM/);
+assert.doesNotMatch(ids.checkpoints.innerHTML,/<button|data-checkpoint=|Tap to log|Hold to edit|✓/);
+assert.equal([...ids.checkpoints.innerHTML.matchAll(/class="checkpoint-info"/g)].length,2);
+for(const id of ['wakeCheckpoint','homeCheckpoint']){
+  assert.equal(ids[id].onclick,undefined);
+  assert.equal(ids[id].pointerdown,undefined);
+  assert.equal(ids[id].dataset.holdInstalled,undefined);
+}
+const homeBefore=ids.checkpoints.innerHTML.match(/id="homeCheckpoint"[\s\S]*$/)[0];
+run('state.trips[0].scheduled+=30;render()');
+assert.match(ids.checkpoints.innerHTML,/Wake Up · Estimated 6:57 AM/);
+run('state.trips.at(-1).drive+=20;render()');
+assert.notEqual(ids.checkpoints.innerHTML.match(/id="homeCheckpoint"[\s\S]*$/)[0],homeBefore);
 check('state.checkpoints["Wake Up"]',420);
-assert.match(ids.checkpoints.innerHTML,/✓ 7:00 AM/);
-run('setClock(1020)');
-ids.homeCheckpoint.onclick();
 check('state.checkpoints["Arrive Home"]',1020);
-tap('undo');
-check('state.checkpoints["Arrive Home"]',undefined);
 check('state.checkpoints["Leave Garage"]',440);
-run('editCheckpoint("Arrive Home")');
-ids.quickTime.value='17:20';
-tap('saveQuickTime');
-check('state.checkpoints["Arrive Home"]',1040);
-assert.equal(ids.wakeCheckpoint.dataset.holdInstalled,'1');
-assert.equal(ids.homeCheckpoint.dataset.holdInstalled,'1');
 check('displayTheme','night');
 tap('themeToggle');
 check('displayTheme','day');
@@ -700,7 +699,7 @@ for(const tab of ['cockpit','customer','manifest','settings']){
 run('change("Checkpoint display test",()=>state.checkpoints["Wake Up"]=430)');
 tap('undo');
 check('displayTheme','dusk');
-console.log('Two persistent checkpoint buttons support logging, correction and Undo. All three themes cycle and persist separately while unsaved fields and navigation are preserved.');
+console.log('Two persistent read-only checkpoint displays follow manifest timing and ignore legacy logs. All three themes cycle and persist separately while unsaved fields and navigation are preserved.');
 
 const copiedDrafts=[];
 const openedApps=[];

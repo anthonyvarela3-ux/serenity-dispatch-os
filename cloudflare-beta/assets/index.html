@@ -67,11 +67,10 @@ button[data-hold-installed="1"]::after,.trip[data-hold-installed="1"] .name::aft
   background:var(--surface);border-radius:14px;box-shadow:0 4px 18px #0003;
 }
 .quickdock .checkpoints{display:flex;gap:8px}
-.quickdock .btn{min-height:48px;min-width:94px;padding:6px 10px}
+.quickdock .btn,.quickdock .checkpoint-info{min-height:48px;min-width:94px;padding:6px 10px}
+.quickdock .checkpoint-info{background:var(--inset);color:var(--text);border:1px solid var(--border);border-radius:10px;text-align:center;font-weight:700;cursor:default}
 .quickdock .checkpoint-label{display:block;font-size:11px}
 .quickdock .checkpoint-time{display:block;font-size:14px;margin-top:3px}
-.quickdock .btn[data-checkpoint]::after{position:absolute;top:7px;right:7px;margin:0;width:4px;height:4px}
-.quickdock .btn[data-checkpoint]{position:relative;padding-right:16px}
 .quickdock #themeToggle{min-width:86px}
 .shell{padding-top:calc(env(safe-area-inset-top,0px) + var(--dock-height) + 14px)}
 .mainnav{top:calc(env(safe-area-inset-top,0px) + var(--dock-height) + 8px)}
@@ -82,7 +81,7 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-off
 @media(max-width:420px){
   .quickdock{right:8px;left:8px;justify-content:flex-end;gap:6px}
   .quickdock .checkpoints{flex:1;gap:6px}
-  .quickdock .btn{min-width:0;flex:1;padding-left:8px;padding-right:12px}
+  .quickdock .btn,.quickdock .checkpoint-info{min-width:0;flex:1;padding-left:8px;padding-right:8px}
   .quickdock #themeToggle{min-width:76px}
 }
 </style></head><body><div class="quickdock" role="group" aria-label="Daily checkpoints and display">
@@ -661,15 +660,12 @@ renderRevenue(revenue(now));
 if(!refreshOnly){
 const eventHTML=e=>'<div class="event">'+fmt(e.time)+' · '+esc(e.label)+'</div>';$('allEvents').innerHTML=state.events.slice().reverse().map(eventHTML).join('')||'<span class="muted small">No events yet.</span>';
 }
-const first=state.trips[0]?.scheduled??480;
-const wake=first-state.settings.early-state.settings.firstDrive-state.settings.garagePrep-state.settings.commute-45;
-$('checkpoints').innerHTML=[['wakeCheckpoint','Wake Up',wake],['homeCheckpoint','Arrive Home',home]].map(([id,label,planned])=>{
-  const logged=state.checkpoints[label]!=null;
-  return '<button type="button" class="btn'+(logged?' active':'')+'" id="'+id+'" data-checkpoint="'+label+
-    '" aria-label="'+label+' · '+(logged?'Logged ':'Planned ')+fmt(state.checkpoints[label]??planned)+'. Tap to log now. Hold to edit.">'+
-    '<span class="checkpoint-label">'+label+'</span><span class="checkpoint-time">'+
-    (logged?'✓ ':'')+fmt(state.checkpoints[label]??planned)+'</span></button>';
-}).join('');
+const first=state.trips[0]?.scheduled;
+const wake=first==null?null:first-state.settings.early-state.settings.firstDrive-state.settings.garagePrep-state.settings.commute-45;
+$('checkpoints').innerHTML=[['wakeCheckpoint','Wake Up',wake],['homeCheckpoint','Arrive Home',home]].map(([id,label,planned])=>
+  '<div class="checkpoint-info" id="'+id+'" aria-label="'+label+' · Estimated '+fmt(planned)+'">'+
+    '<span class="checkpoint-label">'+label+'</span><span class="checkpoint-time">'+fmt(planned)+'</span></div>'
+).join('');
 
 $('customerMain').innerHTML=handoff?
   '<div class="paneltitle" role="status">NEXT RUN · '+esc(sel.id)+' · '+esc(sel.who)+'</div>'+
@@ -692,8 +688,7 @@ document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b
 wireDynamic();
 renderMessages();
 if(focus&&!focus.isConnected){
-  const replacement=focus.id?$(focus.id):focus.dataset.trip?document.querySelector('[data-trip="'+CSS.escape(focus.dataset.trip)+'"]'):
-    focus.dataset.checkpoint?document.querySelector('[data-checkpoint="'+CSS.escape(focus.dataset.checkpoint)+'"]'):null;
+  const replacement=focus.id?$(focus.id):focus.dataset.trip?document.querySelector('[data-trip="'+CSS.escape(focus.dataset.trip)+'"]'):null;
   replacement?.focus({preventScroll:true});
 }
 }
@@ -829,21 +824,13 @@ function editTrip(t){modal('Edit fictional assignment · '+t.id,'<div class="two
   quickField('eApproachMiles','Previous stop → pickup mileage','miles',t.repositionMiles,{optional:true})+
   quickField('eCombined','Combined drive from previous pickup via drop-off (minutes)','minutes',t.combinedApproach,{min:1,optional:true})+
   quickField('eFare','Fictional trip fare ($)','dollars',t.fare??'',{optional:true})+'</div>','<button class="btn primary" id="saveTrip">Save Correction</button><button class="btn" id="closeModal">Cancel</button>');$('eKind').value=t.kind;$('closeModal').onclick=closeModal;$('saveTrip').onclick=()=>{const a=$('eWho').value.trim(),tm=parse24($('eTime').value),scheduledDrop=readOptionalTime('eDropTime'),d=readMinutes('eDrive',1),r=readMinutes('eReposition',0),combinedApproach=readMinutes('eCombined',1),driveMiles=readMiles('eDriveMiles',0.1),repositionMiles=readMiles('eApproachMiles',0),fareInput=$('eFare').value.trim(),fare=fareInput===''?null:Number(fareInput);if(!a||tm==null||Number.isNaN(scheduledDrop)||Number.isNaN(d)||Number.isNaN(r)||Number.isNaN(combinedApproach)||Number.isNaN(driveMiles)||Number.isNaN(repositionMiles)||(fare!==null&&(!Number.isFinite(fare)||fare<0||fare>10000))){alert('Check all fields, fare and HH:MM time');return}change('Edit '+t.id,()=>reviseSchedule(()=>Object.assign(t,{who:a,scheduled:tm,scheduledDrop,kind:$('eKind').value,drive:d,reposition:r,driveMiles,repositionMiles,combinedApproach,fare}),t.id));closeModal()}}
-function wireDynamic(){document.querySelectorAll('[data-trip]').forEach(el=>{el.onclick=()=>{state.selected=el.dataset.trip;persist();render()};installHold(el,()=>{state.selected=el.dataset.trip;persist();render();stepMenu(selected())})});for(const [id,label] of [['wakeCheckpoint','Wake Up'],['homeCheckpoint','Arrive Home']]){
-  const button=$(id);
-  button.onclick=()=>change('Log '+label,()=>{state.checkpoints[label]=state.clock});
-  installHold(button,()=>editCheckpoint(label));
-}document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editTrip(state.trips.find(t=>t.id===b.dataset.edit)));const rev=$('revenuePanel');installHold(rev,()=>{revenueOpen=!revenueOpen;render()});installHold($('shift'),shiftCorrection)}
+function wireDynamic(){document.querySelectorAll('[data-trip]').forEach(el=>{el.onclick=()=>{state.selected=el.dataset.trip;persist();render()};installHold(el,()=>{state.selected=el.dataset.trip;persist();render();stepMenu(selected())})});document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editTrip(state.trips.find(t=>t.id===b.dataset.edit)));const rev=$('revenuePanel');installHold(rev,()=>{revenueOpen=!revenueOpen;render()});installHold($('shift'),shiftCorrection)}
 function installHold(el,cb){if(el.dataset.holdInstalled==='1')return;el.dataset.holdInstalled='1';
   if(el.tagName==='BUTTON'||el.matches?.('.trip')){
     el.title='Hold for options';
     el.setAttribute('aria-description','Press and hold for options.');
   }
   let timer,held=false,startX=0,startY=0;el.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;held=false;startX=e.clientX;startY=e.clientY;timer=setTimeout(()=>{held=true;cb()},600)});for(const ev of ['pointerup','pointercancel','pointerleave'])el.addEventListener(ev,()=>clearTimeout(timer));el.addEventListener('pointermove',e=>{if(Math.abs(e.clientX-startX)>12||Math.abs(e.clientY-startY)>12)clearTimeout(timer)});el.addEventListener('click',e=>{if(held){e.preventDefault();e.stopImmediatePropagation();held=false}},true);el.addEventListener('contextmenu',e=>{e.preventDefault();clearTimeout(timer);if(!held){held=true;cb()}})}
-function editCheckpoint(k){
-  requestTime('Correct '+k,k,state.checkpoints[k]??currentTime(),
-    t=>change('Correct '+k,()=>state.checkpoints[k]=t));
-}
 function shiftCorrection(){modal('Shift time correction','<p class="small muted">Edit start/end times or reopen the shift. All changes are recorded and undoable.</p><div class="two trip-entry">'+
   quickField('shiftStart','Start (blank means unset)','time',state.shift.start==null?'':minutes24(state.shift.start),{optional:true})+
   quickField('shiftEnd','End (blank means open)','time',state.shift.end==null?'':minutes24(state.shift.end),{optional:true})+'</div>','<button class="btn primary" id="saveShift">Save correction</button><button class="btn" id="closeModal">Cancel</button>');$('closeModal').onclick=closeModal;$('saveShift').onclick=()=>{let a=$('shiftStart').value.trim(),b=$('shiftEnd').value.trim(),s=a===''?null:parse24(a),e=b===''?null:parse24(b);if((a!==''&&s===null)||(b!==''&&e===null)||(e!==null&&(s===null||e<s))){alert('Check HH:MM values. End must follow start.');return}change('Correct shift time',()=>state.shift={start:s,end:e});closeModal()}}
