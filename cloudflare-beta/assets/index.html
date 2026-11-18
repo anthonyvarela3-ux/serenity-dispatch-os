@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><title>Serenity 2.0 | Cloudflare Demo 003 · Drop-Off ETA</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><title>Serenity 2.0 | Cloudflare Demo 003 · Automatic Trip ETAs</title><style>
 :root{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;color:#eaf2ff;background:#07101e;font-synthesis:none}*{box-sizing:border-box}body{margin:0}button,input,select,textarea{font:inherit}button{cursor:pointer;touch-action:manipulation}button:disabled{opacity:.35;cursor:not-allowed}.shell{max-width:1530px;margin:auto;padding:16px 18px 50px}.top{display:flex;gap:16px;align-items:center;justify-content:space-between;padding:15px 20px;background:#101d33;border:1px solid #253c55;border-radius:17px}.brand{font-size:21px;letter-spacing:.08em;font-weight:900;color:#51e0d4}.sub{font-size:12px;color:#9db1c5;margin-top:3px}.pill{background:#163c49;color:#80f6e3;border:1px solid #277f82;border-radius:30px;padding:7px 11px;font-size:12px;font-weight:800}.mainnav,.toolbar,.flex{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.mainnav{margin-top:13px}.btn{background:#1c3048;color:#eaf2ff;border:1px solid #34536d;padding:10px 14px;border-radius:10px;font-weight:700;font-size:13px}.btn:hover{background:#28445f}.btn.active{background:#126b72;border-color:#47dace}.btn.primary{background:#00a9a0;color:#03242b;border-color:#39d6c4}.btn.danger{background:#552c36;border-color:#a34b58}.btn.warn{background:#523b24;border-color:#a57a38}.btn.big{font-size:17px;padding:15px 20px}.toolbar{margin:14px 0}.metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:14px 0}.metric,.panel{background:#101d33;border:1px solid #294058;border-radius:15px;padding:15px}.metric .m-title{font-size:10px;color:#90a8bf;text-transform:uppercase;letter-spacing:.09em;font-weight:800}.metric .m-value{font-size:22px;font-weight:850;margin-top:6px}.panel{margin-bottom:13px}.grid{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(300px,.85fr);gap:13px}.paneltitle{font-size:14px;font-weight:850;letter-spacing:.03em;margin-bottom:10px}.muted{color:#96adc3}.small{font-size:12px}.micro{font-size:11px}.notice{background:#2a2332;border:1px solid #85586b;border-radius:10px;padding:10px 12px;color:#f9c5ba;margin:10px 0}.good{color:#6ee5b3}.warntext{color:#ffd077}.bad{color:#ff8e91}.purple{color:#d5a4ff}.rosthead,.trip{display:grid;grid-template-columns:64px minmax(95px,1.1fr) minmax(134px,1.35fr) minmax(98px,1fr) minmax(93px,1fr) minmax(95px,1fr);gap:8px;align-items:center}.rosthead{font-size:10px;color:#94a9c1;font-weight:800;text-transform:uppercase;padding:8px 10px}.trip{border:1px solid #273e55;padding:11px 10px;margin:5px 0;border-radius:10px;background:#0b172a;cursor:pointer;min-height:66px}.trip.selected{border-color:#2bdbcf;background:#102c40;box-shadow:inset 4px 0 #30ddca}.trip.done{border-color:#1a2c44}.trip.done > :not(:last-child){opacity:.48}.trip .name{font-weight:800}.trip .t{font-size:13px;font-weight:750}.trip .info{font-size:10px;color:#93a8be;margin-top:4px}.tag{display:inline-block;font-size:10px;border-radius:5px;padding:5px 6px;background:#244052;color:#eaf8ff;font-weight:800}.tag.green{background:#074f45;color:#71edbf}.tag.yellow{background:#51411c;color:#ffe085}.tag.red{background:#622a37;color:#ff9ca4}.tag.purple{background:#47305f;color:#e1bcff}.statusline{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:11px 12px;border:1px solid #2b4d5e;border-radius:10px;background:#0a1a2a;margin-bottom:10px}.actions{display:flex;gap:8px;flex-wrap:wrap}.context{position:absolute;z-index:9;background:#1a3046;border:1px solid #59b5b8;border-radius:12px;box-shadow:0 12px 30px #0008;padding:8px;width:270px;max-height:360px;overflow:auto}.context button{display:block;width:100%;margin:3px 0;text-align:left}.field{display:flex;flex-direction:column;gap:5px;margin:6px 0}.field label{color:#a8bed0;font-size:11px;font-weight:700}.field input,.field textarea,.field select{background:#081427;border:1px solid #37516b;border-radius:8px;color:#edf7ff;padding:10px;min-width:0}.field textarea{min-height:60px}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.events{max-height:215px;overflow:auto}.event{padding:6px 0;border-bottom:1px solid #26394c;font-size:11px;color:#c1d2df}.hidden,[hidden]{display:none!important}.modalshade{position:fixed;inset:0;background:#000b;z-index:20;display:flex;align-items:center;justify-content:center;padding:16px}.modal{max-height:90vh;overflow:auto;width:min(540px,100%);background:#132339;border:1px solid #3a5b73;padding:20px;border-radius:16px}.modal h3{margin:0 0 12px}.split{display:grid;grid-template-columns:1fr 1fr;gap:8px}.foot{font-size:11px;color:#92a7ba;padding:9px}.checkpoints{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}.checkpoint{background:#0a192b;border:1px solid #2b435a;border-radius:10px;padding:9px}.checkpoint strong{display:block;font-size:10px;color:#91aac0}.checkpoint b{display:block;font-size:14px;margin:5px 0}.checkpoint button{font-size:11px;padding:6px 7px}.warninglist{font-size:12px;max-height:120px;overflow:auto}.warninglist div{padding:6px 0;border-bottom:1px solid #263b4e}@media(max-width:1000px){.metrics{grid-template-columns:repeat(3,1fr)}.grid{grid-template-columns:1fr}.rosthead,.trip{grid-template-columns:54px 1.1fr 1.4fr 1fr 1fr 1fr}}@media(max-width:640px){.shell{padding:8px}.brand{font-size:15px}.metrics{grid-template-columns:repeat(2,1fr)}.rosthead,.trip{grid-template-columns:38px 1fr 1fr 1fr;gap:5px}.rosthead>*:nth-child(5),.rosthead>*:nth-child(6),.trip>*:nth-child(5),.trip>*:nth-child(6){display:none}.checkpoints{grid-template-columns:repeat(2,1fr)}}
 
 .filterbar{display:flex;gap:7px;flex-wrap:wrap;margin:5px 0 12px}.filterbar .btn{padding:8px 11px;min-height:39px}.revenuehead{display:flex;justify-content:space-between;align-items:center;gap:12px}.revenuegrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:13px}.revenuegrid>div{padding:13px;border-radius:12px;background:#0b172a;border:1px solid #29475a}.revenueamount{font-size:25px;font-weight:850;margin:7px 0;color:#7be4db}.mainnav{position:sticky;top:0;z-index:8;background:#07101eee;padding:10px 0;border-bottom:1px solid #26415a;backdrop-filter:blur(8px)}.mainnav .btn{min-height:44px}.revenuehead .btn{min-width:90px}@media(max-width:620px){.revenuegrid{grid-template-columns:1fr}}
@@ -25,14 +25,15 @@ button[data-hold-installed="1"]::after,.trip[data-hold-installed="1"] .name::aft
 .modal .toolbar .btn{min-height:44px}
 .earliest-pickup,.trip .earliest-pickup{color:#7be4db;font-weight:750;font-size:11px;margin-top:4px}
 .earliest-pickup.overdue,.trip .earliest-pickup.overdue{color:#ffd17e}
+.dropoff-times .dropoff-detail{color:#a6c5dc;font-size:11px;margin-top:4px;font-weight:650}
 @media(max-width:480px){.trip-entry{grid-template-columns:1fr}}
-</style></head><body><div class="shell"><header class="top"><div><div class="brand">SERENITY <span style="color:#e2eefa">DISPATCH OS</span></div><div class="sub">Cloudflare Demo 003 · Drop-Off ETA · Public-landmark simulation · NO REAL PATIENT DATA</div></div><div class="flex"><span class="pill" id="modeBadge">DEVICE TIME · AUTO</span><strong id="clockTop">—</strong></div></header>
+</style></head><body><div class="shell"><header class="top"><div><div class="brand">SERENITY <span style="color:#e2eefa">DISPATCH OS</span></div><div class="sub">Cloudflare Demo 003 · Automatic Trip ETAs · Public-landmark simulation · NO REAL PATIENT DATA</div></div><div class="flex"><span class="pill" id="modeBadge">DEVICE TIME · AUTO</span><strong id="clockTop">—</strong></div></header>
 <nav class="mainnav"><button class="btn active" data-tab="cockpit">Cockpit</button><button class="btn" data-tab="customer">Active Trip</button><button class="btn" data-tab="manifest">Manifest</button><button class="btn" data-tab="settings">Settings</button></nav>
-<div class="toolbar"><button class="btn" id="refresh">↻ Update Day</button><button class="btn primary" id="updateRideEta" hidden>Update Drop-Off ETA</button><button class="btn" id="clockMode" aria-pressed="false">Use Device Time</button><button class="btn" id="undo">↶ Undo Last</button><button class="btn warn" id="shift">Start Shift</button></div><details class="panel" style="padding:10px 14px"><summary style="cursor:pointer;font-weight:800;color:#7be4db">SIMULATION CLOCK · Tap to expand test controls</summary><div class="toolbar" style="margin-bottom:0"><button class="btn primary" id="nextTime">⏭ Next Event</button><button class="btn" id="plus5">+5 min</button><button class="btn" id="plus15">+15 min</button><button class="btn" id="minus5">−5 min</button><button class="btn" id="setTime">Set Time</button></div><p class="small muted">Changing the simulation clock switches event logging back to simulation time.</p></details>
-<div class="notice" style="background:#132a31;border-color:#307a84;color:#c6fff7"><strong>PUBLIC SIMULATION — NO PATIENT DATA.</strong> Fictional initials and public landmarks only. Scheduled times are preserved for testing. ETAs use manual assumptions, not live traffic. Do not type real customer information, even in notes, phones, backup import, or new trips.</div>
+<div class="toolbar"><button class="btn" id="refresh">↻ Update Day</button><button class="btn" id="clockMode" aria-pressed="false">Use Device Time</button><button class="btn" id="undo">↶ Undo Last</button><button class="btn warn" id="shift">Start Shift</button></div><details class="panel" style="padding:10px 14px"><summary style="cursor:pointer;font-weight:800;color:#7be4db">SIMULATION CLOCK · Tap to expand test controls</summary><div class="toolbar" style="margin-bottom:0"><button class="btn primary" id="nextTime">⏭ Next Event</button><button class="btn" id="plus5">+5 min</button><button class="btn" id="plus15">+15 min</button><button class="btn" id="minus5">−5 min</button><button class="btn" id="setTime">Set Time</button></div><p class="small muted">Changing the simulation clock switches event logging back to simulation time.</p></details>
+<div class="notice" style="background:#132a31;border-color:#307a84;color:#c6fff7"><strong>PUBLIC SIMULATION — NO PATIENT DATA.</strong> Fictional initials and public landmarks only. Scheduled times are preserved for testing. ETAs update from trip status, device time and saved drive estimates. Do not type real customer information, even in notes, phones, backup import, or new trips.</div>
 <div class="metrics"><div class="metric"><div class="m-title">Progress</div><div class="m-value" id="mProgress">0 / 8</div></div><div class="metric"><div class="m-title">Next pickup variance</div><div class="m-value" id="mVariance">—</div></div><div class="metric"><div class="m-title">Remaining trips</div><div class="m-value" id="mRemaining">8</div></div><div class="metric"><div class="m-title">Shift duration</div><div class="m-value" id="mShift">—</div></div><div class="metric"><div class="m-title">Projected home</div><div class="m-value" id="mHome">—</div></div></div>
 <section class="panel" id="checkpointPanel"><div class="paneltitle">DAILY CHECKPOINTS <span class="muted small">· Tap to log · Long-press to edit</span></div><div class="checkpoints" id="checkpoints"></div></section>
-<main id="cockpit" class="page"><div class="grid"><div class="panel"><div class="paneltitle">FULL-DAY MANIFEST <span class="muted small">· Original order retained · Tap trip to focus · ◇ Hold for options</span></div><div class="notice" id="pickupConflicts" role="status" hidden></div><div class="rosthead"><span>Trip</span><span>Rider</span><span>Scheduled / ETA</span><span>Drop-off</span><span>Variance</span><span>Status</span></div><div class="filterbar" id="statusFilters" aria-label="Manifest status filters"><button type="button" class="btn active" data-filter="All">All</button><button type="button" class="btn" data-filter="Pending">Pending</button><button type="button" class="btn" data-filter="Active">Active</button><button type="button" class="btn" data-filter="Completed">Completed</button><button type="button" class="btn" data-filter="Canceled">Canceled</button></div><div id="roster"></div></div><div><div class="panel" id="activePanel"></div><div class="panel" id="betweenRuns" hidden></div><div class="panel" id="revenuePanel"><div class="revenuehead"><div><div class="paneltitle" style="margin-bottom:2px">REVENUE</div><div class="small muted">Driver income · Vehicle revenue</div></div><button type="button" class="btn" id="revenueToggle" aria-expanded="false" aria-controls="revenueBody">Show ▾</button></div><div id="revenueBody" hidden></div><div class="micro muted" style="margin-top:9px">Hold the Revenue panel to reveal or hide details.</div></div><div class="panel"><div class="paneltitle">SCHEDULE INTELLIGENCE</div><div class="warninglist" id="warnings"></div></div></div></div></main>
+<main id="cockpit" class="page"><div class="grid"><div class="panel"><div class="paneltitle">FULL-DAY MANIFEST <span class="muted small">· Original order retained · Tap trip to focus · ◇ Hold for options</span></div><div class="notice" id="pickupConflicts" role="status" hidden></div><div class="rosthead"><span>Trip</span><span>Rider</span><span>Scheduled / ETA</span><span>Drop-off / ETA</span><span>Variance</span><span>Status</span></div><div class="filterbar" id="statusFilters" aria-label="Manifest status filters"><button type="button" class="btn active" data-filter="All">All</button><button type="button" class="btn" data-filter="Pending">Pending</button><button type="button" class="btn" data-filter="Active">Active</button><button type="button" class="btn" data-filter="Completed">Completed</button><button type="button" class="btn" data-filter="Canceled">Canceled</button></div><div id="roster"></div></div><div><div class="panel" id="activePanel"></div><div class="panel" id="betweenRuns" hidden></div><div class="panel" id="revenuePanel"><div class="revenuehead"><div><div class="paneltitle" style="margin-bottom:2px">REVENUE</div><div class="small muted">Driver income · Vehicle revenue</div></div><button type="button" class="btn" id="revenueToggle" aria-expanded="false" aria-controls="revenueBody">Show ▾</button></div><div id="revenueBody" hidden></div><div class="micro muted" style="margin-top:9px">Hold the Revenue panel to reveal or hide details.</div></div><div class="panel"><div class="paneltitle">SCHEDULE INTELLIGENCE</div><div class="warninglist" id="warnings"></div></div></div></div></main>
 <main id="customer" class="page hidden"><div class="grid"><div class="panel"><div id="customerMain"></div></div><div class="panel"><div class="paneltitle">DRIVER NOTES <span class="muted small">· Fictional test data only</span></div><div class="field"><label>Customer / facility instructions</label><textarea id="notes" placeholder="Door, pickup point, call preference…"></textarea></div><button class="btn primary" id="saveNotes">Save Notes</button><div class="field"><label>Verified phone (test-only)</label><input id="phone" placeholder="No real phone numbers"></div><button class="btn" id="savePhone">Save Verified Number</button><div class="paneltitle" style="margin-top:18px">MESSAGE PREVIEW</div><select id="messageType" class="btn"><option value="10">10 minutes out</option><option value="curb">At curb</option><option value="confirm">Confirm pickup</option><option value="late">Running late</option></select><p id="messagePreview" class="small"></p><button class="btn" id="copyMessage">Copy fictional draft</button><div class="notice micro">Messaging is preview-only. No SMS is sent, and no live GPS or traffic service is connected.</div></div></div></main>
 <main id="manifest" class="page hidden"><div class="grid"><div class="panel"><div class="paneltitle">MANIFEST TOOLS</div><p class="small muted">PUBLIC DEMO ONLY: Eight fictional riders, using a realistic pickup schedule and public landmark areas. No actual patient names, home addresses, phone numbers, or run IDs. Do not enter actual patient information into this publicly hosted demo.</p><div class="actions"><button class="btn primary" id="addTrip">＋ Add Test Trip</button><button class="btn" id="exportData">Export JSON Backup</button><label class="btn">Import Demo JSON Backup<input type="file" id="importData" accept="application/json,.json" hidden></label><button class="btn danger" id="reset">Reset Fictional Demo</button></div><div class="notice">Screenshot OCR is not implemented in Demo 003. This build deliberately does not upload images, contact external servers, or simulate successful recognition.</div><div class="paneltitle">CURRENT ASSIGNMENTS</div><div id="manifestRows"></div></div><div class="panel"><div class="paneltitle">IMPORT & MERGE ROADMAP</div><p class="small">Next: package and verify genuine on-device OCR for RoutingBox screenshots, then show added / changed / missing trips for approval. Existing events and completed trips must survive any update.</p><p class="small">This foundation permits manual fictional-trip additions and JSON backups for verifying the state engine, but is not approved for real patient manifests.</p></div></div></main>
 <main id="settings" class="page hidden"><div class="grid"><div class="panel"><div class="paneltitle">DRIVER SETTINGS</div><div class="two"><div class="field"><label>Driver hourly rate ($, fictional test)</label><input type="number" id="hourlyRate" min="0" max="500" step="0.25"></div><div class="field"><label>Overtime threshold (hours/day, test estimate only)</label><input type="number" id="overtimeAfter" min="1" max="24" step="1"></div><div class="field"><label>Overtime multiplier (test assumption)</label><input type="number" id="overtimeMultiplier" min="1" max="3" step="0.25"></div><div class="field"><label>Home → garage (minutes)</label><input type="number" id="commute" min="0" max="180"></div><div class="field"><label>Garage preparation (minutes)</label><input type="number" id="garagePrep" min="0" max="180"></div><div class="field"><label>Pickup target early (minutes)</label><input type="number" id="early" min="0" max="60"></div><div class="field"><label>Garage → first pickup (simulated minutes)</label><input type="number" id="firstDrive" min="1" max="180"></div></div><button class="btn primary" id="saveSettings">Save Settings</button><div class="notice micro">Travel times are fictional/manual assumptions, not GPS estimates. Local browser storage is intended only for non-sensitive testing.</div></div><div class="panel"><div class="paneltitle">AUDIT LOG <span class="muted small">· Latest first</span></div><div id="allEvents" class="events" style="max-height:430px"></div><button class="btn" id="exportLog">Export Event Log</button></div></div></main>
@@ -145,10 +146,11 @@ function lastFinishedRun(){
     .sort((a,b)=>b.actual.Finished-a.actual.Finished).at(0);
 }
 function forecastTime(now=currentTime()){
-  const boarded=state.trips.filter(t=>!t.outcome&&t.status>=3&&t.status<6)
-    .map(t=>t.actual['On Board']).filter(Number.isFinite);
+  const activeTimes=state.trips.filter(t=>!t.outcome&&t.status>=3&&t.status<6)
+    .flatMap(t=>['On Board','En Route to Drop-Off','Arrived at Drop-Off'].map(stage=>t.actual[stage]))
+    .filter(Number.isFinite);
   const baseline=usesDeviceTime()?now:(state.forecastClock??state.clock);
-  return Math.max(baseline,lastFinishedRun()?.actual.Finished??0,...boarded);
+  return Math.max(baseline,lastFinishedRun()?.actual.Finished??0,...activeTimes);
 }
 function sameLocation(a,b){
   const normalize=value=>String(value??'').toLowerCase().replace(/[^a-z0-9]/g,'');
@@ -194,9 +196,10 @@ function project(clock=forecastTime()){
     const pickupDeparture=t.actual['En Route to Pickup'];
     const atPickup=live&&t.status===2&&actualPickup!=null;
     const drivingToPickup=live&&t.status===1&&Number.isFinite(pickupDeparture);
+    const earliestDeparture=result[origin]?.activeRide?cursor:clock;
     const arrival=atPickup?Math.max(cursor,actualPickup):
       drivingToPickup?Math.max(cursor,pickupDeparture+connection.minutes):
-      combined?Math.max(clock,previousDeparture+t.combinedApproach,result[origin]?.updatedDrop==null?0:cursor):cursor+connection.minutes;
+      combined?Math.max(earliestDeparture,previousDeparture+t.combinedApproach):cursor+connection.minutes;
     const target=t.scheduled-state.settings.early;
     const group=t.status<3?conflicts.get(t.scheduled):null;
     if(group){
@@ -204,7 +207,7 @@ function project(clock=forecastTime()){
       let totalRides=0;
       for(const option of group){
         // Other options have a different origin if they go first.
-        const leg=option.id===t.id?connection:connectionTo(option,origin);
+        const leg=option.id===t.id?connection:connectionTo(option,origin,origins.get(option.id)===origin);
         const pickup=Math.max(target,option.id===t.id?arrival:cursor+leg.minutes);
         const drive=legMinutes(option.drive,option.driveMiles)??defaultRideMinutes;
         latestFirstPickup=Math.max(latestFirstPickup,pickup);
@@ -222,25 +225,26 @@ function project(clock=forecastTime()){
     }
     const drive=legMinutes(t.drive,t.driveMiles)??defaultRideMinutes;
     const boarded=t.actual['On Board']??null;
+    const driveStarted=t.actual['En Route to Drop-Off']??null;
+    const activeRide=t.status>=3;
     const plannedPickup=Math.max(arrival,target);
-    const anchor=boarded??(plannedPickup+boardingMinutes);
-    const updatedDrop=Number.isFinite(t.updatedDropEta)?t.updatedDropEta:null;
-    const dropEta=updatedDrop??(anchor+drive);
-    const projectedDrop=Math.max(clock,dropEta);
+    // Until departure is logged, assume the passenger could leave at the current time.
+    const anchor=activeRide?(driveStarted??(t.status===3?clock:boarded??clock)):
+      plannedPickup+boardingMinutes;
+    const dropEta=anchor+drive;
+    const ready=Math.max(clock,actualDrop??dropEta);
     const overdue=t===riding&&actualDrop==null&&clock>=dropEta;
     const projectedPickupRough=combined?previousDepartureRough:cursorRough||connection.rough;
-    const pickup=actualPickup??(t.status>=3?boarded:plannedPickup);
+    const pickup=actualPickup??(activeRide?boarded:plannedPickup);
     const pickupRough=pickup!=null&&actualPickup==null&&boarded==null&&projectedPickupRough;
-    const projectedDropRough=updatedDrop==null&&(t.drive==null||(boarded==null&&projectedPickupRough));
-    result[t.id]={pickup,drop:actualDrop??projectedDrop,pickupRough,
-      dropRough:actualDrop==null&&projectedDropRough,orderPending,connection,
-      ready:projectedDrop,readyRough:projectedDropRough,updatedDrop,overdue,
-      overdueSince:overdue?dropEta:null};
-    // Arrival is recorded, while the onward schedule keeps its plan until Finish Run.
-    cursor=projectedDrop;
-    cursorRough=projectedDropRough;
-    previousDeparture=updatedDrop==null?anchor:projectedDrop-drive;
-    previousDepartureRough=boarded==null&&projectedPickupRough;
+    const projectedDropRough=actualDrop==null&&(t.drive==null||(!activeRide&&projectedPickupRough));
+    result[t.id]={pickup,drop:actualDrop??ready,pickupRough,dropRough:projectedDropRough,
+      orderPending,connection,activeRide,ready,readyRough:projectedDropRough,
+      overdueSince:overdue?dropEta:null,handoff:actualDrop!=null&&activeRide};
+    cursor=ready;
+    cursorRough=projectedDropRough||result[t.id].handoff;
+    previousDeparture=activeRide?ready-drive:anchor;
+    previousDepartureRough=activeRide?cursorRough:projectedPickupRough;
   }
   addEarliestPickups(result,trips,origins,clock,riding);
   return result;
@@ -268,13 +272,11 @@ function addEarliestPickups(projected,trips,origins,clock,riding){
     const alreadyThere=origin===trip.id+':pickup'||leg.sameStop;
     let eta=ready+(alreadyThere?0:leg.minutes);
     let rough=!alreadyThere&&leg.rough;
-    const boarded=riding?.actual['On Board'];
     const departed=trip.actual['En Route to Pickup'];
-    if(!alreadyThere&&useSaved&&Number.isFinite(boarded)&&Number.isFinite(trip.combinedApproach)&&
+    if(!alreadyThere&&useSaved&&riding&&Number.isFinite(trip.combinedApproach)&&
       legMinutes(trip.reposition,trip.repositionMiles)==null){
       const rideMinutes=legMinutes(riding.drive,riding.driveMiles)??defaultRideMinutes;
-      eta=release.updatedDrop==null?Math.max(ready,boarded+trip.combinedApproach):
-        ready+Math.max(0,trip.combinedApproach-rideMinutes);
+      eta=ready+Math.max(0,trip.combinedApproach-rideMinutes);
       rough=true;
     }else if(!riding&&!alreadyThere&&trip.status===1&&Number.isFinite(departed)&&departed>=lastStop.time){
       eta=Math.max(ready,departed+leg.minutes);
@@ -282,13 +284,16 @@ function addEarliestPickups(projected,trips,origins,clock,riding){
     projected[trip.id].earliest=eta;
     projected[trip.id].afterRide=!!riding;
     projected[trip.id].earliestRough=rough||!!release?.readyRough;
-    projected[trip.id].earliestOverdue=!!release?.overdue;
+    projected[trip.id].earliestOverdue=release?.overdueSince!=null;
+    projected[trip.id].afterHandoff=!!release?.handoff;
   }
 }
 function earliestPickupText(p){
   if(!Number.isFinite(p.earliest))return '';
-  const label=p.earliestOverdue?'Earliest possible':p.afterRide?'After current ride':'Leave now';
-  const detail=p.earliestOverdue?' · Drop-off overdue':p.earliestRough?' · Rough':'';
+  const label=p.earliestOverdue?'Earliest possible':p.afterHandoff?'After handoff':
+    p.afterRide?'After current ride':'Leave now';
+  const detail=p.earliestOverdue?' · Drop-off overdue':p.afterHandoff?' · Earliest possible':
+    p.earliestRough?' · Rough':'';
   return '<div class="info earliest-pickup'+(p.earliestOverdue?' overdue':'')+'">'+label+' · '+fmt(p.earliest)+detail+'</div>';
 }
 function pickupText(t,p){
@@ -299,9 +304,17 @@ function pickupText(t,p){
 function dropLabel(t,p){
   if(t.actual['Arrived at Drop-Off']!=null)return 'Actual arrival';
   if(t.actual.Finished!=null)return 'Actual finish';
-  if(p.overdue)return 'ETA overdue';
-  if(p.updatedDrop!=null)return 'Updated ETA';
-  return p.conflict?'ETA · If first':p.orderPending?'ETA · Order pending':p.dropRough?'ETA · Rough':'ETA';
+  if(p.overdueSince!=null)return 'ETA overdue';
+  if(p.drop==null)return 'ETA unavailable';
+  return p.conflict?'Live ETA · If first':p.orderPending?'Live ETA · Order pending':
+    p.dropRough?'Live ETA · Rough':'Live ETA';
+}
+function dropoffTimes(t,p){
+  const scheduled=Number.isInteger(t.scheduledDrop)&&t.scheduledDrop>=0&&t.scheduledDrop<1440?
+    fmt(t.scheduledDrop):'—';
+  const time=p.overdueSince??p.drop;
+  return '<div class="dropoff-times"><strong>'+scheduled+'</strong>'+
+    '<div class="dropoff-detail">'+dropLabel(t,p)+(time==null?'':' · '+fmt(time))+'</div></div>';
 }
 function badge(t,p){if(t.outcome==='Completed'||t.status===6)return['Done','green'];if(t.outcome)return['Canceled','purple'];if(p?.conflict)return['Order pending','yellow'];if(p?.pickup==null)return['ETA unknown',''];let delay=p.pickup-t.scheduled;if(delay<=0)return[delay===0?'0 min':(-delay)+' min early',p.pickupRough?'':'green'];return['+'+delay+'m',t.kind==='Return'?'purple':delay<=15?'yellow':'red']}
 function selectNextRun(){
@@ -316,7 +329,6 @@ function logStep(t){
     const updateTrip=()=>{
       t.status++;
       t.actual[next]=state.clock;
-      if(t.status===3)delete t.updatedDropEta;
       if(t.status===6)t.outcome='Completed';
     };
     if(t.status===2||t.status===5)reviseSchedule(updateTrip,t.id);
@@ -324,7 +336,7 @@ function logStep(t){
     if(t.status===6)selectNextRun();
   });
 }
-function backTrip(t){if(!t||t.status<=0||state.handoff===t.id)return;const prev=t.status;change('Back one stage for '+t.id,()=>{delete t.actual[stages[prev]];t.status=prev-1;t.outcome=null;if(t.status<3)delete t.updatedDropEta});}
+function backTrip(t){if(!t||t.status<=0||state.handoff===t.id)return;const prev=t.status;change('Back one stage for '+t.id,()=>{delete t.actual[stages[prev]];t.status=prev-1;t.outcome=null});}
 function overrideStatus(t,level){if(!t)return;
   if(level===0){
     if(t.status===0&&!t.outcome)return;
@@ -333,7 +345,6 @@ function overrideStatus(t,level){if(!t)return;
       t.status = 0;
       t.outcome = null;
       t.actual = {};
-      delete t.updatedDropEta;
     });
     return;
   }
@@ -346,13 +357,16 @@ function overrideStatus(t,level){if(!t)return;
         t.outcome=level===6?'Completed':null;
         for(const key of stages.slice(level+1))delete t.actual[key];
         t.actual[name]=mins;
-        if(level<=3)delete t.updatedDropEta;
       },t.id);
       if(level===6)selectNextRun();
     });
   });
 }
 function minutes24(n){return String(Math.floor(n/60)%24).padStart(2,'0')+':'+String(n%60).padStart(2,'0')};function parse24(s){if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(s))return null;return toM(s)}
+function readOptionalTime(id){
+  const value=$(id).value;
+  return value===''?null:(parse24(value)??NaN);
+}
 const quickSteps={time:[-60,-5,-1,1,5,60],minutes:[-5,-1,1,5],miles:[-1,-0.1,0.1,1]};
 function quickField(id,label,kind,value,{min=0,optional=false,expanded=false}={}){
   const unit=kind==='miles'?'mi':'min';
@@ -433,10 +447,6 @@ const now=currentTime(),clock=forecastTime(now);
 lastRenderedTime=now;
 const focus=refreshOnly?document.activeElement:null;
 const proj=project(clock),unfinished=state.trips.filter(t=>!t.outcome&&t.status<6),finished=state.trips.filter(t=>t.outcome||t.status===6),next=unfinished[0];
-const ride=currentRide();
-const rideEta=$('updateRideEta');
-rideEta.hidden=!ride||ride.status>=5;
-rideEta.classList.toggle('warn',!!(ride&&proj[ride.id].overdue));
 const dropTrip=lastFinishedRun();
 const finalDrop=unfinished.length===0?dropTrip?.actual.Finished:
   unfinished.some(t=>proj[t.id].drop==null)?null:Math.max(clock,...unfinished.map(t=>proj[t.id].drop));
@@ -448,8 +458,8 @@ $('clockMode').textContent=deviceMode?'Device Time On':'Use Device Time';
 $('clockMode').setAttribute('aria-pressed',String(deviceMode));
 $('modeBadge').textContent=deviceMode?'DEVICE TIME · AUTO':'SIMULATION · LOCAL';
 $('clockTop').textContent=fmt(now);$('mProgress').textContent=finished.length+' / '+state.trips.length;$('mRemaining').textContent=unfinished.length;$('mVariance').textContent=next&&proj[next.id].pickup!=null?((proj[next.id].pickup-next.scheduled)>0?'+':'')+(proj[next.id].pickup-next.scheduled)+' min':'—';$('mHome').textContent=fmt(home);$('mShift').textContent=state.shift.start===null?'—':duration(Math.max(0,(state.shift.end??now)-state.shift.start));$('shift').textContent=state.shift.start===null?'Start Shift':state.shift.end===null?'End Shift · Hold to Correct':'Reopen Shift · Hold to Correct';
-document.querySelectorAll('[data-filter]').forEach(b=>{b.classList.toggle('active',b.dataset.filter===rosterFilter);const count=state.trips.filter(t=>filterStatus(t)===b.dataset.filter).length;b.textContent=b.dataset.filter+(b.dataset.filter==='All'?'':(' · '+count))});$('roster').innerHTML=state.trips.filter(t=>rosterFilter==='All'||filterStatus(t)===rosterFilter).map((t,i)=>{const p=proj[t.id],b=badge(t,p),variance=p.conflict?'Order pending':p.pickup==null?(t.outcome?'—':'ETA unknown'):(p.pickup-t.scheduled>0?'+':'')+(p.pickup-t.scheduled)+' min';return '<div class="trip '+(t.id===state.selected?'selected ':'')+(t.outcome||t.status===6?'done':'')+'" data-trip="'+esc(t.id)+'" tabindex="0"><div><span class="tag">'+(i+1)+'</span><div class="info">'+esc(t.id)+'</div></div><div><div class="name">'+esc(t.who)+'</div><div class="info">'+esc(t.kind)+'</div></div><div><div class="t">'+fmt(t.scheduled)+'</div><div class="info">'+pickupText(t,p)+'</div>'+earliestPickupText(p)+connectionLabel(p)+'</div><div class="t">'+fmt(p.overdueSince??p.drop)+(p.drop==null?'':'<div class="info">'+dropLabel(t,p)+'</div>')+'</div><div><span class="tag '+b[1]+'">'+esc(variance)+'</span></div><div>'+rideStatus(t)+'</div></div>'}).join('');
-const sel=selected(),sp=sel&&proj[sel.id],handoff=sel&&state.handoff===sel.id;$('activePanel').innerHTML=sel?'<div class="paneltitle">'+(handoff?'NEXT RUN':'ACTIVE TRIP')+' <span class="muted small">· ◇ Hold for options</span></div><div class="statusline"><div><div style="font-weight:900">'+esc(sel.id)+' · '+esc(sel.who)+'</div><div class="small muted">'+esc(sel.kind)+' · '+rideStatus(sel)+'</div></div><span class="tag '+badge(sel,sp)[1]+'">'+badge(sel,sp)[0]+'</span></div><div class="two"><div><div class="muted micro">PICKUP</div><strong>'+fmt(sel.scheduled)+'</strong><div class="micro muted">'+pickupText(sel,sp)+'</div>'+earliestPickupText(sp)+connectionLabel(sp)+'</div><div><div class="muted micro">DROP-OFF · '+dropLabel(sel,sp)+'</div><strong>'+fmt(sp.overdueSince??sp.drop)+'</strong><div class="micro muted">Drive '+(sel.drive!=null?sel.drive+'m planned':sel.driveMiles!=null?legMinutes(null,sel.driveMiles)+'m rough at 30 mph':defaultRideMinutes+'m assumed')+'</div></div></div><div class="actions" style="margin-top:13px"><button class="btn primary big" id="openActiveTrip">Open Active Trip →</button></div>':'<div class="paneltitle">'+(unfinished.length?'Select a trip after confirming order':'No runs remaining')+'</div>';
+document.querySelectorAll('[data-filter]').forEach(b=>{b.classList.toggle('active',b.dataset.filter===rosterFilter);const count=state.trips.filter(t=>filterStatus(t)===b.dataset.filter).length;b.textContent=b.dataset.filter+(b.dataset.filter==='All'?'':(' · '+count))});$('roster').innerHTML=state.trips.filter(t=>rosterFilter==='All'||filterStatus(t)===rosterFilter).map((t,i)=>{const p=proj[t.id],b=badge(t,p),variance=p.conflict?'Order pending':p.pickup==null?(t.outcome?'—':'ETA unknown'):(p.pickup-t.scheduled>0?'+':'')+(p.pickup-t.scheduled)+' min';return '<div class="trip '+(t.id===state.selected?'selected ':'')+(t.outcome||t.status===6?'done':'')+'" data-trip="'+esc(t.id)+'" tabindex="0"><div><span class="tag">'+(i+1)+'</span><div class="info">'+esc(t.id)+'</div></div><div><div class="name">'+esc(t.who)+'</div><div class="info">'+esc(t.kind)+'</div></div><div><div class="t">'+fmt(t.scheduled)+'</div><div class="info">'+pickupText(t,p)+'</div>'+earliestPickupText(p)+connectionLabel(p)+'</div><div class="t">'+dropoffTimes(t,p)+'</div><div><span class="tag '+b[1]+'">'+esc(variance)+'</span></div><div>'+rideStatus(t)+'</div></div>'}).join('');
+const sel=selected(),sp=sel&&proj[sel.id],handoff=sel&&state.handoff===sel.id;$('activePanel').innerHTML=sel?'<div class="paneltitle">'+(handoff?'NEXT RUN':'ACTIVE TRIP')+' <span class="muted small">· ◇ Hold for options</span></div><div class="statusline"><div><div style="font-weight:900">'+esc(sel.id)+' · '+esc(sel.who)+'</div><div class="small muted">'+esc(sel.kind)+' · '+rideStatus(sel)+'</div></div><span class="tag '+badge(sel,sp)[1]+'">'+badge(sel,sp)[0]+'</span></div><div class="two"><div><div class="muted micro">PICKUP</div><strong>'+fmt(sel.scheduled)+'</strong><div class="micro muted">'+pickupText(sel,sp)+'</div>'+earliestPickupText(sp)+connectionLabel(sp)+'</div><div><div class="muted micro">SCHEDULED DROP-OFF</div>'+dropoffTimes(sel,sp)+'<div class="micro muted">Drive '+(sel.drive!=null?sel.drive+'m planned':sel.driveMiles!=null?legMinutes(null,sel.driveMiles)+'m rough at 30 mph':defaultRideMinutes+'m assumed')+'</div></div></div><div class="actions" style="margin-top:13px"><button class="btn primary big" id="openActiveTrip">Open Active Trip →</button></div>':'<div class="paneltitle">'+(unfinished.length?'Select a trip after confirming order':'No runs remaining')+'</div>';
 $('openActiveTrip')?.addEventListener('click',()=>{selectedTab='customer';render()});
 const warnings=[];
 const conflicts=[...unresolvedPickups()].map(([time,trips])=>
@@ -473,7 +483,7 @@ $('customerMain').innerHTML=handoff?
   '<div class="statusline">'+rideStatus(sel,'Status: ')+'<strong>Scheduled '+fmt(sel.scheduled)+'</strong></div>'+
   '<p>'+esc(sel.pickupArea)+'</p>'+earliestPickupText(sp)+connectionLabel(sp)+
   '<button class="btn primary big" id="openNextRun">Open Next Run</button>'
-  :sel?'<div class="paneltitle">ACTIVE TRIP · '+esc(sel.id)+' · '+esc(sel.who)+'</div><div class="statusline">'+rideStatus(sel,'Status: ')+'<strong>Scheduled '+fmt(sel.scheduled)+'</strong></div><div class="split"><div class="panel"><div class="micro muted">PICKUP AREA</div><b>'+esc(sel.pickupArea)+'</b><div class="micro muted">'+pickupText(sel,sp)+'</div>'+earliestPickupText(sp)+connectionLabel(sp)+'</div><div class="panel"><div class="micro muted">DROP-OFF AREA</div><b>'+esc(sel.dropArea)+'</b><div class="micro muted">'+dropLabel(sel,sp)+' · '+fmt(sp.overdueSince??sp.drop)+'</div></div></div>'+tripWaits(sel)+'<div class="actions"><button class="btn primary big" id="customerAdvance" '+(sel.outcome||sel.status===6?'disabled':'')+'>'+esc(sel.status===0&&!sel.outcome?'Start Pickup':stepLabels[sel.status]||'Done')+'</button><button class="btn" id="customerBack" '+(sel.status===0?'disabled':'')+'>↶ Back</button></div><div class="notice micro">These are public-landmark substitutes, not actual trip destinations. Travel estimates are manually simulated, not from Google Maps traffic.</div>':'<div class="paneltitle" role="status">'+(unfinished.length?'Confirm order with dispatch, then select the trip in Cockpit':'No runs remaining')+'</div>';
+  :sel?'<div class="paneltitle">ACTIVE TRIP · '+esc(sel.id)+' · '+esc(sel.who)+'</div><div class="statusline">'+rideStatus(sel,'Status: ')+'<strong>Scheduled '+fmt(sel.scheduled)+'</strong></div><div class="split"><div class="panel"><div class="micro muted">PICKUP AREA</div><b>'+esc(sel.pickupArea)+'</b><div class="micro muted">'+pickupText(sel,sp)+'</div>'+earliestPickupText(sp)+connectionLabel(sp)+'</div><div class="panel"><div class="micro muted">DROP-OFF AREA</div><b>'+esc(sel.dropArea)+'</b><div class="micro muted">Scheduled drop-off</div>'+dropoffTimes(sel,sp)+'</div></div>'+tripWaits(sel)+'<div class="actions"><button class="btn primary big" id="customerAdvance" '+(sel.outcome||sel.status===6?'disabled':'')+'>'+esc(sel.status===0&&!sel.outcome?'Start Pickup':stepLabels[sel.status]||'Done')+'</button><button class="btn" id="customerBack" '+(sel.status===0?'disabled':'')+'>↶ Back</button></div><div class="notice micro">These are public-landmark substitutes, not actual trip destinations. Travel estimates use trip status, the clock and saved drive times.</div>':'<div class="paneltitle" role="status">'+(unfinished.length?'Confirm order with dispatch, then select the trip in Cockpit':'No runs remaining')+'</div>';
 $('openNextRun')?.addEventListener('click',()=>{
   state.handoff = null;
   persist();
@@ -497,13 +507,14 @@ function messageFor(t,type){if(!t)return '';const lead='Hi '+t.who+', this is yo
 function stepMenu(t){if(!t)return;modal('Trip options · '+t.id,'<div class="small muted">Actions use the selected clock and can be undone. Corrections preserve event history unless you use Undo.</div><div class="actions" id="stepOptions" style="margin-top:12px">'+stages.map((x,i)=>'<button class="btn" data-stage="'+i+'">'+esc(i===0?'Set Pending':x)+'</button>').join('')+'<button class="btn warn" id="lateCancel">Canceled at Door</button><button class="btn danger" id="cancelAdvance">Canceled in Advance</button></div><p class="small muted">Use a stage button to correct a timestamp/status. Use the main button in Active Trip to advance one step.</p>');$('stepOptions').querySelectorAll('[data-stage]').forEach(b=>b.addEventListener('click',()=>{closeModal();overrideStatus(t,+b.dataset.stage)}));$('lateCancel').onclick=()=>{closeModal();modifyOutcome(t,'Canceled at Door')};$('cancelAdvance').onclick=()=>{closeModal();modifyOutcome(t,'Canceled in Advance')}}
 function editTrip(t){modal('Edit fictional assignment · '+t.id,'<div class="two trip-entry"><div class="field"><label for="eWho">Fictional rider label</label><input id="eWho" value="'+esc(t.who)+'"></div>'+
   quickField('eTime','Scheduled pickup','time',minutes24(t.scheduled),{expanded:true})+
+  quickField('eDropTime','Scheduled drop-off','time',t.scheduledDrop==null?'':minutes24(t.scheduledDrop),{optional:true})+
   '<div class="field"><label for="eKind">Direction</label><select id="eKind"><option>Outbound</option><option>Return</option></select></div>'+
   quickField('eDrive','Pickup → drop-off (minutes)','minutes',t.drive,{min:1,optional:true})+
   quickField('eDriveMiles','Pickup → drop-off mileage','miles',t.driveMiles,{min:0.1,optional:true})+
   quickField('eReposition','Previous stop → this pickup (minutes)','minutes',t.reposition,{optional:true})+
   quickField('eApproachMiles','Previous stop → pickup mileage','miles',t.repositionMiles,{optional:true})+
   quickField('eCombined','Combined drive from previous pickup via drop-off (minutes)','minutes',t.combinedApproach,{min:1,optional:true})+
-  '<div class="field"><label>Fictional trip fare ($), blank if unknown</label><input type="number" id="eFare" min="0" max="10000" step="0.01" value="'+(t.fare??'')+'"></div></div>','<button class="btn primary" id="saveTrip">Save Correction</button><button class="btn" id="closeModal">Cancel</button>');$('eKind').value=t.kind;$('closeModal').onclick=closeModal;$('saveTrip').onclick=()=>{const a=$('eWho').value.trim(),tm=parse24($('eTime').value),d=readMinutes('eDrive',1),r=readMinutes('eReposition',0),combinedApproach=readMinutes('eCombined',1),driveMiles=readMiles('eDriveMiles',0.1),repositionMiles=readMiles('eApproachMiles',0),fareInput=$('eFare').value.trim(),fare=fareInput===''?null:Number(fareInput);if(!a||tm==null||Number.isNaN(d)||Number.isNaN(r)||Number.isNaN(combinedApproach)||Number.isNaN(driveMiles)||Number.isNaN(repositionMiles)||(fare!==null&&(!Number.isFinite(fare)||fare<0||fare>10000))){alert('Check all fields, fare and HH:MM time');return}change('Edit '+t.id,()=>reviseSchedule(()=>Object.assign(t,{who:a,scheduled:tm,kind:$('eKind').value,drive:d,reposition:r,driveMiles,repositionMiles,combinedApproach,fare}),t.id));closeModal()}}
+  '<div class="field"><label>Fictional trip fare ($), blank if unknown</label><input type="number" id="eFare" min="0" max="10000" step="0.01" value="'+(t.fare??'')+'"></div></div>','<button class="btn primary" id="saveTrip">Save Correction</button><button class="btn" id="closeModal">Cancel</button>');$('eKind').value=t.kind;$('closeModal').onclick=closeModal;$('saveTrip').onclick=()=>{const a=$('eWho').value.trim(),tm=parse24($('eTime').value),scheduledDrop=readOptionalTime('eDropTime'),d=readMinutes('eDrive',1),r=readMinutes('eReposition',0),combinedApproach=readMinutes('eCombined',1),driveMiles=readMiles('eDriveMiles',0.1),repositionMiles=readMiles('eApproachMiles',0),fareInput=$('eFare').value.trim(),fare=fareInput===''?null:Number(fareInput);if(!a||tm==null||Number.isNaN(scheduledDrop)||Number.isNaN(d)||Number.isNaN(r)||Number.isNaN(combinedApproach)||Number.isNaN(driveMiles)||Number.isNaN(repositionMiles)||(fare!==null&&(!Number.isFinite(fare)||fare<0||fare>10000))){alert('Check all fields, fare and HH:MM time');return}change('Edit '+t.id,()=>reviseSchedule(()=>Object.assign(t,{who:a,scheduled:tm,scheduledDrop,kind:$('eKind').value,drive:d,reposition:r,driveMiles,repositionMiles,combinedApproach,fare}),t.id));closeModal()}}
 function wireDynamic(){document.querySelectorAll('[data-trip]').forEach(el=>{el.onclick=()=>{state.selected=el.dataset.trip;persist();render()};installHold(el,()=>{state.selected=el.dataset.trip;persist();render();stepMenu(selected())})});document.querySelectorAll('[data-checkpoint]').forEach(b=>{b.onclick=()=>change('Log '+b.dataset.checkpoint,()=>{state.checkpoints[b.dataset.checkpoint]=state.clock});installHold(b,()=>editCheckpoint(b.dataset.checkpoint))});document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editTrip(state.trips.find(t=>t.id===b.dataset.edit)));const rev=$('revenuePanel');installHold(rev,()=>{revenueOpen=!revenueOpen;render()});installHold($('shift'),shiftCorrection)}
 function installHold(el,cb){if(el.dataset.holdInstalled==='1')return;el.dataset.holdInstalled='1';
   if(el.tagName==='BUTTON'||el.matches?.('.trip')){
@@ -551,27 +562,6 @@ $('clockMode').onclick=()=>{
     state.forecastClock=state.clock=currentTime();
   });
 };
-function updateRideEta(){
-  const ride=currentRide();
-  if(!ride||ride.status>=5)return;
-  const minutes=project()[ride.id].ready-currentTime();
-  modal('Update Drop-Off ETA · '+ride.id,
-    '<p class="small muted">Enter the minutes remaining from your navigation app.</p>'+
-    quickField('dropEtaMinutes','Minutes remaining to drop-off','minutes',minutes>0?minutes:null,{min:1,expanded:true}),
-    '<button class="btn primary" id="saveRideEta">Update ETAs</button>'+
-    '<button class="btn" id="closeModal">Cancel</button>');
-  $('saveRideEta').onclick=()=>{
-    const remaining=readMinutes('dropEtaMinutes',1);
-    if(!Number.isInteger(remaining)){alert('Enter minutes remaining to drop-off.');return;}
-    closeModal();
-    if(ride!==currentRide()||ride.status>=5)return;
-    change('Update '+ride.id+' drop-off ETA by '+remaining+' min remaining',()=>{
-      ride.updatedDropEta=state.clock+remaining;
-    });
-    toast('Upcoming pickup ETAs updated');
-  };
-}
-$('updateRideEta').onclick=updateRideEta;
 function updateDay(){
   if(usesDeviceTime()){
     render(true);
@@ -599,11 +589,12 @@ function addTrip(){
   const fictionalLabel='Test '+(state.tripSeq+1);
   modal('Add fictional trip','<div class="two trip-entry"><div class="field"><label for="newWho">Fictional rider label</label><input id="newWho" placeholder="'+fictionalLabel+'"></div>'+
   quickField('newTime','Scheduled pickup','time',minutes24(pickup),{expanded:true})+
+  quickField('newDropTime','Scheduled drop-off','time','',{optional:true})+
   '<div class="field"><label for="newKind">Direction</label><select id="newKind"><option>Outbound</option><option>Return</option></select></div>'+
   quickField('newDrive','Pickup → drop-off (minutes)','minutes',null,{min:1,optional:true})+
   quickField('newDriveMiles','Pickup → drop-off mileage','miles',null,{min:0.1,optional:true})+
   quickField('newApproach','Previous stop → this pickup (minutes)','minutes',null,{optional:true})+
-  quickField('newApproachMiles','Previous stop → pickup mileage','miles',null,{optional:true})+'</div>','<button class="btn primary" id="saveNew">Add Assignment</button><button class="btn" id="closeModal">Cancel</button>');$('closeModal').onclick=closeModal;$('saveNew').onclick=()=>{let who=($('newWho').value??'').trim()||fictionalLabel,tm=parse24($('newTime').value),drive=readMinutes('newDrive',1),reposition=readMinutes('newApproach',0),driveMiles=readMiles('newDriveMiles',0.1),repositionMiles=readMiles('newApproachMiles',0);if(tm===null||Number.isNaN(drive)||Number.isNaN(reposition)||Number.isNaN(driveMiles)||Number.isNaN(repositionMiles)){alert('Check pickup time and drive estimates');return}change('Add fictional assignment',()=>reviseSchedule(()=>{state.tripSeq++;let id='F-'+String(state.tripSeq).padStart(3,'0');state.trips.push({id,who,scheduled:tm,kind:$('newKind').value,drive,reposition,driveMiles,repositionMiles,pickupArea:'Public test pickup',dropArea:'Public test destination',status:0,actual:{},notes:'',phone:'',fare:null,outcome:null});}));closeModal()}}
+  quickField('newApproachMiles','Previous stop → pickup mileage','miles',null,{optional:true})+'</div>','<button class="btn primary" id="saveNew">Add Assignment</button><button class="btn" id="closeModal">Cancel</button>');$('closeModal').onclick=closeModal;$('saveNew').onclick=()=>{let who=($('newWho').value??'').trim()||fictionalLabel,tm=parse24($('newTime').value),scheduledDrop=readOptionalTime('newDropTime'),drive=readMinutes('newDrive',1),reposition=readMinutes('newApproach',0),driveMiles=readMiles('newDriveMiles',0.1),repositionMiles=readMiles('newApproachMiles',0);if(tm===null||Number.isNaN(scheduledDrop)||Number.isNaN(drive)||Number.isNaN(reposition)||Number.isNaN(driveMiles)||Number.isNaN(repositionMiles)){alert('Check pickup time and drive estimates');return}change('Add fictional assignment',()=>reviseSchedule(()=>{state.tripSeq++;let id='F-'+String(state.tripSeq).padStart(3,'0');state.trips.push({id,who,scheduled:tm,scheduledDrop,kind:$('newKind').value,drive,reposition,driveMiles,repositionMiles,pickupArea:'Public test pickup',dropArea:'Public test destination',status:0,actual:{},notes:'',phone:'',fare:null,outcome:null});}));closeModal()}}
 function download(name,body,type){const blob=new Blob([body],{type});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000)}
 $('revenueToggle').onclick=()=>{revenueOpen=!revenueOpen;render()};
 $('nextTime').onclick=()=>{
