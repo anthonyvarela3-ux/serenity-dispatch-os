@@ -136,4 +136,55 @@ Object.assign(ids.newApproachMiles,{value:'4.5'});
 tap('saveNew');
 check('state.trips.find(t=>t.who==="Z.Z.").driveMiles',8.5);
 check('state.trips.find(t=>t.who==="Z.Z.").repositionMiles',4.5);
-console.log('Beta checks passed for trip events, handoff, schedule updates, route chaining, and mileage estimates.');
+console.log('Passed script checks for Revenue, Back, handoff, persisted selection, Undo, cancellation, and last run.');
+
+run('state=seed();render()');
+const expected=['pending','to-pickup','at-pickup','on-board','to-dropoff','at-dropoff','completed'];
+for(let i=0;i<expected.length;i++){
+  assert.match(ids.roster.innerHTML,new RegExp('class="ride-status '+expected[i]+'"'));
+  if(i<expected.length-1){
+    assert.match(ids.customerMain.innerHTML,new RegExp('class="ride-status '+expected[i]+'"'));
+    tap('customerAdvance');
+  }
+}
+assert.match(ids.customerMain.innerHTML,/NEXT RUN · F-002/);
+check('rideStatus({status:2,outcome:"Canceled at Door"}).includes("canceled-door")',true);
+check('rideStatus({status:0,outcome:"Canceled in Advance"}).includes("canceled-advance")',true);
+console.log('Status colors follow all seven stages and both cancellation outcomes.');
+
+function adjust(id,kind,min,value,...steps){
+  const input=ids[id];
+  Object.assign(input,{min:String(min),value});
+  input.dataset.quickKind=kind;
+  for(const step of steps)contextAdjust(input,step);
+  return input.value;
+}
+const contextAdjust=run('adjustQuickField');
+run('state=seed();render()');
+tap('refresh');
+assert.match(ids.modalRoot.innerHTML,/data-quick-id="updateTime" data-step="-60"/);
+assert.equal(adjust('updateTime','time',0,'08:58','5','1'),'09:04');
+tap('applyDay');
+check('state.clock',544);
+tap('addTrip');
+assert.match(ids.modalRoot.innerHTML,/id="newWho" placeholder="Test 9"/);
+assert.equal(adjust('newTime','time',0,'09:05','60','-5','1'),'10:01');
+Object.assign(ids.newKind,{value:'Outbound'});
+assert.equal(adjust('newDrive','minutes',1,'','-5'),'');
+assert.equal(adjust('newDrive','minutes',1,'','5','5','1'),'11');
+assert.equal(adjust('newApproach','minutes',0,'','5','-1'),'4');
+assert.equal(adjust('newDriveMiles','miles',0.1,'','1','0.1','0.1'),'1.2');
+assert.equal(adjust('newApproachMiles','miles',0,'0.9','0.1','clear'),'');
+tap('saveNew');
+check('state.trips.find(t=>t.who==="Test 9").scheduled',601);
+check('state.trips.find(t=>t.who==="Test 9").drive',11);
+check('state.trips.find(t=>t.who==="Test 9").reposition',4);
+check('state.trips.find(t=>t.who==="Test 9").driveMiles',1.2);
+check('state.trips.find(t=>t.who==="Test 9").repositionMiles',null);
+run('editCheckpoint("Wake Up")');
+assert.equal(adjust('quickTime','time',0,'00:02','-5'),'00:00');
+assert.equal(adjust('quickTime','time',0,'23:58','5'),'23:59');
+assert.equal(adjust('quickTime','time',0,'06:00','5','1'),'06:06');
+tap('saveQuickTime');
+check('state.checkpoints["Wake Up"]',366);
+console.log('Quick entry handles time increments, drive minutes, decimal mileage, clearing and keyboard-free test assignment creation.');
