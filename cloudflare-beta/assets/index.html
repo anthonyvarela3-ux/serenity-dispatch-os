@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><title>Serenity 2.0 | Cloudflare Demo 003 · Vehicle Revenue</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><title>Serenity 2.0 | Cloudflare Demo 003 · Livery Estimates</title><style>
 :root{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;color:#eaf2ff;background:#07101e;font-synthesis:none}*{box-sizing:border-box}body{margin:0}button,input,select,textarea{font:inherit}button{cursor:pointer;touch-action:manipulation}button:disabled{opacity:.35;cursor:not-allowed}.shell{max-width:1530px;margin:auto;padding:16px 18px 50px}.top{display:flex;gap:16px;align-items:center;justify-content:space-between;padding:15px 20px;background:#101d33;border:1px solid #253c55;border-radius:17px}.brand{font-size:21px;letter-spacing:.08em;font-weight:900;color:#51e0d4}.sub{font-size:12px;color:#9db1c5;margin-top:3px}.pill{background:#163c49;color:#80f6e3;border:1px solid #277f82;border-radius:30px;padding:7px 11px;font-size:12px;font-weight:800}.mainnav,.toolbar,.flex{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.mainnav{margin-top:13px}.btn{background:#1c3048;color:#eaf2ff;border:1px solid #34536d;padding:10px 14px;border-radius:10px;font-weight:700;font-size:13px}.btn:hover{background:#28445f}.btn.active{background:#126b72;border-color:#47dace}.btn.primary{background:#00a9a0;color:#03242b;border-color:#39d6c4}.btn.danger{background:#552c36;border-color:#a34b58}.btn.warn{background:#523b24;border-color:#a57a38}.btn.big{font-size:17px;padding:15px 20px}.toolbar{margin:14px 0}.metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:14px 0}.metric,.panel{background:#101d33;border:1px solid #294058;border-radius:15px;padding:15px}.metric .m-title{font-size:10px;color:#90a8bf;text-transform:uppercase;letter-spacing:.09em;font-weight:800}.metric .m-value{font-size:22px;font-weight:850;margin-top:6px}.panel{margin-bottom:13px}.grid{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(300px,.85fr);gap:13px}.paneltitle{font-size:14px;font-weight:850;letter-spacing:.03em;margin-bottom:10px}.muted{color:#96adc3}.small{font-size:12px}.micro{font-size:11px}.notice{background:#2a2332;border:1px solid #85586b;border-radius:10px;padding:10px 12px;color:#f9c5ba;margin:10px 0}.good{color:#6ee5b3}.warntext{color:#ffd077}.bad{color:#ff8e91}.purple{color:#d5a4ff}.rosthead,.trip{display:grid;grid-template-columns:64px minmax(95px,1.1fr) minmax(134px,1.35fr) minmax(98px,1fr) minmax(93px,1fr) minmax(95px,1fr);gap:8px;align-items:center}.rosthead{font-size:10px;color:#94a9c1;font-weight:800;text-transform:uppercase;padding:8px 10px}.trip{border:1px solid #273e55;padding:11px 10px;margin:5px 0;border-radius:10px;background:#0b172a;cursor:pointer;min-height:66px}.trip.selected{border-color:#2bdbcf;background:#102c40;box-shadow:inset 4px 0 #30ddca}.trip.done{border-color:#1a2c44}.trip.done > :not(:last-child){opacity:.48}.trip .name{font-weight:800}.trip .t{font-size:13px;font-weight:750}.trip .info{font-size:10px;color:#93a8be;margin-top:4px}.tag{display:inline-block;font-size:10px;border-radius:5px;padding:5px 6px;background:#244052;color:#eaf8ff;font-weight:800}.tag.green{background:#074f45;color:#71edbf}.tag.yellow{background:#51411c;color:#ffe085}.tag.red{background:#622a37;color:#ff9ca4}.tag.purple{background:#47305f;color:#e1bcff}.statusline{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:11px 12px;border:1px solid #2b4d5e;border-radius:10px;background:#0a1a2a;margin-bottom:10px}.actions{display:flex;gap:8px;flex-wrap:wrap}.context{position:absolute;z-index:9;background:#1a3046;border:1px solid #59b5b8;border-radius:12px;box-shadow:0 12px 30px #0008;padding:8px;width:270px;max-height:360px;overflow:auto}.context button{display:block;width:100%;margin:3px 0;text-align:left}.field{display:flex;flex-direction:column;gap:5px;margin:6px 0}.field label{color:#a8bed0;font-size:11px;font-weight:700}.field input,.field textarea,.field select{background:#081427;border:1px solid #37516b;border-radius:8px;color:#edf7ff;padding:10px;min-width:0}.field textarea{min-height:60px}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.events{max-height:215px;overflow:auto}.event{padding:6px 0;border-bottom:1px solid #26394c;font-size:11px;color:#c1d2df}.hidden,[hidden]{display:none!important}.modalshade{position:fixed;inset:0;background:#000b;z-index:20;display:flex;align-items:center;justify-content:center;padding:16px}.modal{max-height:90vh;overflow:auto;width:min(540px,100%);background:#132339;border:1px solid #3a5b73;padding:20px;border-radius:16px}.modal h3{margin:0 0 12px}.split{display:grid;grid-template-columns:1fr 1fr;gap:8px}.foot{font-size:11px;color:#92a7ba;padding:9px}.checkpoints{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}.checkpoint{background:#0a192b;border:1px solid #2b435a;border-radius:10px;padding:9px}.checkpoint strong{display:block;font-size:10px;color:#91aac0}.checkpoint b{display:block;font-size:14px;margin:5px 0}.checkpoint button{font-size:11px;padding:6px 7px}.warninglist{font-size:12px;max-height:120px;overflow:auto}.warninglist div{padding:6px 0;border-bottom:1px solid #263b4e}@media(max-width:1000px){.metrics{grid-template-columns:repeat(3,1fr)}.grid{grid-template-columns:1fr}.rosthead,.trip{grid-template-columns:54px 1.1fr 1.4fr 1fr 1fr 1fr}}@media(max-width:640px){.shell{padding:8px}.brand{font-size:15px}.metrics{grid-template-columns:repeat(2,1fr)}.rosthead,.trip{grid-template-columns:38px 1fr 1fr 1fr;gap:5px}.rosthead>*:nth-child(5),.rosthead>*:nth-child(6),.trip>*:nth-child(5),.trip>*:nth-child(6){display:none}.checkpoints{grid-template-columns:repeat(2,1fr)}}
 
 .filterbar{display:flex;gap:7px;flex-wrap:wrap;margin:5px 0 12px}.filterbar .btn{padding:8px 11px;min-height:39px}.revenuehead{display:flex;justify-content:space-between;align-items:center;gap:12px}.revenuegrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:13px}.revenuegrid>div{padding:13px;border-radius:12px;background:#0b172a;border:1px solid #29475a}.revenueamount{font-size:25px;font-weight:850;margin:7px 0;color:#7be4db}.mainnav{position:sticky;top:0;z-index:8;background:#07101eee;padding:10px 0;border-bottom:1px solid #26415a;backdrop-filter:blur(8px)}.mainnav .btn{min-height:44px}.revenuehead .btn{min-width:90px}@media(max-width:620px){.revenuegrid{grid-template-columns:1fr}}
@@ -27,7 +27,7 @@ button[data-hold-installed="1"]::after,.trip[data-hold-installed="1"] .name::aft
 .earliest-pickup.overdue,.trip .earliest-pickup.overdue{color:#ffd17e}
 .dropoff-times .dropoff-detail{color:#a6c5dc;font-size:11px;margin-top:4px;font-weight:650}
 @media(max-width:480px){.trip-entry{grid-template-columns:1fr}}
-</style></head><body><div class="shell"><header class="top"><div><div class="brand">SERENITY <span style="color:#e2eefa">DISPATCH OS</span></div><div class="sub">Cloudflare Demo 003 · Vehicle Revenue · Public-landmark simulation · NO REAL PATIENT DATA</div></div><div class="flex"><span class="pill" id="modeBadge">DEVICE TIME · AUTO</span><strong id="clockTop">—</strong></div></header>
+</style></head><body><div class="shell"><header class="top"><div><div class="brand">SERENITY <span style="color:#e2eefa">DISPATCH OS</span></div><div class="sub">Cloudflare Demo 003 · Livery Estimates · Public-landmark simulation · NO REAL PATIENT DATA</div></div><div class="flex"><span class="pill" id="modeBadge">DEVICE TIME · AUTO</span><strong id="clockTop">—</strong></div></header>
 <nav class="mainnav"><button class="btn active" data-tab="cockpit">Cockpit</button><button class="btn" data-tab="customer">Active Trip</button><button class="btn" data-tab="manifest">Manifest</button><button class="btn" data-tab="settings">Settings</button></nav>
 <div class="toolbar"><button class="btn" id="refresh">↻ Update Day</button><button class="btn" id="clockMode" aria-pressed="false">Use Device Time</button><button class="btn" id="undo">↶ Undo Last</button><button class="btn warn" id="shift">Start Shift</button></div><details class="panel" style="padding:10px 14px"><summary style="cursor:pointer;font-weight:800;color:#7be4db">SIMULATION CLOCK · Tap to expand test controls</summary><div class="toolbar" style="margin-bottom:0"><button class="btn primary" id="nextTime">⏭ Next Event</button><button class="btn" id="plus5">+5 min</button><button class="btn" id="plus15">+15 min</button><button class="btn" id="minus5">−5 min</button><button class="btn" id="setTime">Set Time</button></div><p class="small muted">Changing the simulation clock switches event logging back to simulation time.</p></details>
 <div class="notice" style="background:#132a31;border-color:#307a84;color:#c6fff7"><strong>PUBLIC SIMULATION — NO PATIENT DATA.</strong> Fictional initials and public landmarks only. Scheduled times are preserved for testing. ETAs update from trip status, device time and saved drive estimates. Do not type real customer information, even in notes, phones, backup import, or new trips.</div>
@@ -114,12 +114,51 @@ function fareCents(value){
   if(!Number.isFinite(amount)||amount<0||amount>10000)return null;
   return Math.round(amount*100);
 }
+// Published unmodified Suffolk livery rates. eMedNY spreadsheet dated 2026-04-05.
+// A0100 $6.89 per trip and S0215 $3.87 per loaded mile, effective 2022-04-01.
+// https://www.emedny.org/ProviderManuals/Transportation/PDFS/Transportation_Fee_Schedule.xls
+const liveryRate={baseCents:689,mileCents:387};
+// Reuse the original CV4 town centers for rough offline distance estimates.
+const revenueTownCenters=[["huntington station",[40.84,-73.415]],["long island city",[40.7447,-73.9485]],["rockville centre",[40.659,-73.647]],["lake ronkonkoma",[40.812,-73.118]],["center moriches",[40.795,-72.793]],["massapequa park",[40.68,-73.454]],["jackson heights",[40.7516,-73.883]],["east patchogue",[40.765,-72.98]],["port jefferson",[40.946,-73.069]],["queens village",[40.723,-73.737]],["middle village",[40.717,-73.882]],["central islip",[40.7831,-73.1972]],["east moriches",[40.806,-72.756]],["north babylon",[40.725,-73.325]],["new hyde park",[40.735,-73.688]],["valley stream",[40.664,-73.708]],["west sayville",[40.738,-73.102]],["fresh meadows",[40.739,-73.793]],["richmond hill",[40.697,-73.831]],["mastic beach",[40.771,-72.848]],["west babylon",[40.714,-73.356]],["hampton bays",[40.871,-72.518]],["brightwaters",[40.719,-73.266]],["farmingville",[40.835,-73.037]],["forest hills",[40.718,-73.8448]],["howard beach",[40.658,-73.842]],["stony brook",[40.912,-73.125]],["southampton",[40.884,-72.393]],["westhampton",[40.811,-72.637]],["east meadow",[40.714,-73.559]],["garden city",[40.727,-73.65]],["kew gardens",[40.709,-73.831]],["lindenhurst",[40.686,-73.373]],["farmingdale",[40.732,-73.445]],["east islip",[40.728,-73.183]],["west islip",[40.71,-73.293]],["ronkonkoma",[40.812,-73.118]],["massapequa",[40.671,-73.473]],["holtsville",[40.814,-73.05]],["huntington",[40.868,-73.426]],["blue point",[40.752,-73.034]],["centereach",[40.864,-73.083]],["lake grove",[40.853,-73.118]],["hicksville",[40.768,-73.525]],["long beach",[40.588,-73.658]],["whitestone",[40.792,-73.811]],["rego park",[40.726,-73.8631]],["bay shore",[40.725,-73.25]],["brentwood",[40.789,-73.298]],["patchogue",[40.765,-73.016]],["wyandanch",[40.751,-73.371]],["hauppauge",[40.825,-73.203]],["dix hills",[40.796,-73.332]],["deer park",[40.762,-73.328]],["smithtown",[40.856,-73.2]],["riverhead",[40.917,-72.662]],["nesconset",[40.846,-73.155]],["hempstead",[40.706,-73.619]],["plainview",[40.776,-73.467]],["manhasset",[40.797,-73.7]],["glen cove",[40.862,-73.633]],["oceanside",[40.635,-73.638]],["levittown",[40.726,-73.514]],["sunnyside",[40.7432,-73.9241]],["manhattan",[40.75,-73.98]],["sayville",[40.748,-73.092]],["holbrook",[40.803,-73.076]],["melville",[40.793,-73.415]],["bellport",[40.757,-72.938]],["westbury",[40.756,-73.587]],["bethpage",[40.744,-73.482]],["freeport",[40.658,-73.583]],["bellmore",[40.669,-73.528]],["lynbrook",[40.656,-73.676]],["woodside",[40.7451,-73.9023]],["elmhurst",[40.738,-73.8785]],["flushing",[40.758,-73.8329]],["brooklyn",[40.678,-73.944]],["medford",[40.812,-73.008]],["shirley",[40.798,-72.871]],["commack",[40.842,-73.292]],["babylon",[40.695,-73.326]],["oakdale",[40.741,-73.149]],["bohemia",[40.771,-73.117]],["bayport",[40.748,-73.054]],["mineola",[40.749,-73.641]],["syosset",[40.822,-73.503]],["merrick",[40.663,-73.551]],["wantagh",[40.673,-73.509]],["seaford",[40.673,-73.489]],["astoria",[40.764,-73.923]],["bayside",[40.768,-73.774]],["jamaica",[40.702,-73.799]],["mastic",[40.798,-72.846]],["selden",[40.865,-73.045]],["queens",[40.7282,-73.7949]],["coram",[40.868,-73.003]],["islip",[40.73,-73.21]],["bronx",[40.8448,-73.8648]]];
+function revenueTown(area){
+  const text=String(area??'').trim().toLowerCase();
+  const town=text.split(',')[1]?.trim();
+  return revenueTownCenters.find(([name])=>name===town)??
+    revenueTownCenters.find(([name])=>text.includes(name));
+}
+function revenueMiles(trip){
+  if(typeof trip.driveMiles==='number'&&Number.isFinite(trip.driveMiles)&&trip.driveMiles>=0)
+    return {miles:Math.round(trip.driveMiles*10)/10,source:'Saved loaded mileage'};
+  const pickup=revenueTown(trip.pickupArea),drop=revenueTown(trip.dropArea);
+  if(pickup&&drop&&pickup[0]!==drop[0]){
+    const rad=value=>value*Math.PI/180;
+    const [lat1,lon1]=pickup[1],[lat2,lon2]=drop[1];
+    const a=Math.sin(rad(lat2-lat1)/2)**2+
+      Math.cos(rad(lat1))*Math.cos(rad(lat2))*Math.sin(rad(lon2-lon1)/2)**2;
+    const direct=3958.8*2*Math.atan2(Math.sqrt(a),Math.sqrt(Math.max(0,1-a)));
+    // Planning allowance for roads. This is an estimate from town centers.
+    return {miles:Math.max(0.1,Math.round(direct*1.25*10)/10),
+      source:pickup[0]+' → '+drop[0]+' · Town distance estimate'};
+  }
+  if(Number.isFinite(trip.drive)&&trip.drive>=0)
+    return {miles:Math.round(trip.drive*5)/10,source:'Drive-time distance estimate at 30 mph'};
+  if(pickup&&drop)return {miles:3,source:'Same-town distance assumption'};
+  return null;
+}
+function tripRevenue(trip){
+  const saved=fareCents(trip.fare);
+  if(saved!=null)return {cents:saved,estimated:false,source:'Saved fare'};
+  const distance=revenueMiles(trip);
+  if(!distance)return {cents:null,estimated:true,source:'Loaded distance needed'};
+  return {cents:liveryRate.baseCents+Math.round(liveryRate.mileCents*distance.miles),
+    estimated:true,source:distance.source,miles:distance.miles};
+}
 function revenue(now=currentTime()){
   const completed=state.trips.filter(t=>filterStatus(t)==='Completed');
   const remaining=state.trips.filter(t=>!t.outcome&&t.status<6);
-  const sum=trips=>trips.reduce((total,t)=>total+(fareCents(t.fare)??0),0)/100;
-  const paid=completed.filter(t=>fareCents(t.fare)!=null).length;
-  const pendingPriced=remaining.filter(t=>fareCents(t.fare)!=null).length;
+  const sum=trips=>trips.reduce((total,t)=>total+(tripRevenue(t).cents??0),0)/100;
+  const paid=completed.filter(t=>tripRevenue(t).cents!=null).length;
+  const pendingPriced=remaining.filter(t=>tripRevenue(t).cents!=null).length;
   const vehicle=sum(completed),pending=sum(remaining);
   const mins=state.shift.start==null?null:Math.max(0,(state.shift.end??now)-state.shift.start);
   const hours=mins==null?null:mins/60,rate=Number(state.settings.hourlyRate)||0;
@@ -128,44 +167,32 @@ function revenue(now=currentTime()){
   return {done:completed.length,paid,vehicle,pending,pendingPriced,
     missing:completed.length+remaining.length-paid-pendingPriced,total:sum([...completed,...remaining]),hours,driver};
 }
-function editFare(t){
-  if(!t)return;
-  const cents=fareCents(t.fare);
-  modal('Trip fare · '+t.id+' · '+t.who,
-    quickField('tripFare','Fare ($)','dollars',cents==null?'':(cents/100).toFixed(2),{optional:true,expanded:true}),
-    '<button class="btn primary" id="saveFare">Save Fare</button><button class="btn" id="closeModal">Cancel</button>');
-  $('saveFare').onclick=()=>{
-    const raw=$('tripFare').value.trim();
-    const amount=raw===''?null:fareCents(raw);
-    if(raw!==''&&amount==null){alert('Enter a fare from $0 to $10,000, with at most two decimal places.');return;}
-    closeModal();
-    change('Update fare for '+t.id,()=>t.fare=amount==null?null:amount/100);
-  };
-}
 function renderRevenue(r){
   $('revenueBody').hidden=!revenueOpen;
   $('revenueToggle').textContent=revenueOpen?'Hide ▴':'Show ▾';
   $('revenueToggle').setAttribute('aria-expanded',String(revenueOpen));
   const rows=state.trips.map(t=>{
-    const cents=fareCents(t.fare);
+    const quote=tripRevenue(t);
     const canceled=filterStatus(t)==='Canceled';
     return '<div class="event"><strong>'+esc(t.id)+' · '+esc(t.who)+'</strong>'+
       '<div class="micro muted">'+esc(statusText(t))+(canceled?' · Excluded from totals':'')+'</div>'+
-      '<button class="btn" data-fare="'+esc(t.id)+'">'+(cents==null?'Set Fare':money(cents/100)+' · Edit')+'</button></div>';
+      '<div class="small">'+(quote.cents==null?'—':money(quote.cents/100))+
+      (quote.estimated?' · Estimate':'')+'</div>'+
+      '<div class="micro muted">'+esc(quote.source)+(quote.miles==null?'':' · '+quote.miles.toFixed(1)+' loaded mi')+'</div></div>';
   }).join('');
   $('revenueBody').innerHTML='<div class="revenuegrid"><div>'+
     '<div class="small muted">DRIVER INCOME · ESTIMATE</div><div class="revenueamount">'+
     (r.driver==null?'—':money(r.driver))+'</div><div class="micro muted">'+
     (r.hours==null?'Start shift to estimate income':r.hours.toFixed(2)+' hours · rate '+money(state.settings.hourlyRate||0)+'/hr')+
-    '</div></div><div><div class="small muted">VEHICLE REVENUE · COMPLETED</div>'+
+    '</div></div><div><div class="small muted">VEHICLE REVENUE · ESTIMATED COMPLETED</div>'+
     '<div class="revenueamount">'+money(r.vehicle)+'</div>'+
-    '<div class="micro muted">'+r.paid+' of '+r.done+' completed runs have fares</div>'+
-    '<div class="small">Remaining '+money(r.pending)+' · Known day total '+money(r.total)+'</div></div></div>'+
-    (r.missing?'<p class="small warntext">'+r.missing+' run'+(r.missing===1?' is':'s are')+
-      ' missing fares. Totals include saved amounts.</p>':'')+
-    '<div class="events" aria-label="Trip fares">'+rows+'</div>';
-  $('revenueBody').querySelectorAll('[data-fare]').forEach(button=>button.onclick=()=>
-    editFare(state.trips.find(t=>t.id===button.dataset.fare)));
+    '<div class="micro muted">'+r.paid+' of '+r.done+' completed runs priced</div>'+
+    '<div class="small">Remaining '+money(r.pending)+' · Projected day total '+money(r.total)+'</div></div></div>'+
+    '<p class="small muted">Livery · Suffolk published rate estimate · $6.89 base + $3.87 per loaded mile. '+
+      'Town distances are rough estimates. Your provider agreement may differ.</p>'+
+    (r.missing?'<p class="small warntext">'+r.missing+' run'+(r.missing===1?' needs':'s need')+
+      ' loaded distance for an estimate.</p>':'')+
+    '<div class="events" aria-label="Trip revenue estimates">'+rows+'</div>';
 }
 function routeOrder(){
   const underway=state.trips.filter(t=>!t.outcome&&t.status>=3&&t.status<6);
