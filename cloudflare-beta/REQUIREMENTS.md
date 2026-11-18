@@ -28,3 +28,11 @@ Reuse original CV4 town centers. Prefer saved loaded mileage. Otherwise estimate
 - Open a device SMS draft with encoded recipient and message, with copy fallback.
 - Google Voice opens its Messages page and copies the draft for the driver to paste and send. Account selection stays with the driver.
 - Recipient phone numbers and manifests remain in browser storage. Opening messaging apps is a deliberate driver action.
+
+## Persistent daily controls and display
+
+- Daily checkpoint controls show Wake Up and Arrive Home.
+- Both controls stay in a fixed upper-right dock on every main screen, with tap to log and long press to correct.
+- Keep morning back-calculation and garage timing assumptions in the forecast.
+- A neighboring control cycles Day, Dusk and Night. Dusk uses a muted warm palette.
+- Store the display preference independently of the manifest so imports, reset and Undo preserve the chosen appearance.
