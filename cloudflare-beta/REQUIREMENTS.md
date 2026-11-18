@@ -21,10 +21,10 @@ Reuse original CV4 town centers. Prefer saved loaded mileage. Otherwise estimate
 
 ## Customer messaging
 
-- English and Spanish previews include Anthony, the rider's first-name label, pickup address, scheduled pickup and current ETA when available.
+- English and Spanish courtesy messages use Anthony’s relaxed introduction. Confirm Pickup includes scheduled time and pickup location.
 - One-tap templates include 10m Out, Running Early, At Curb, Running Late and Confirm Pickup.
-- Use calculated ETA instead of assuming ten minutes. Expired drop-off forecasts and unfinished handoffs produce an ETA-confirmation message.
-- Save the message language per trip. Refresh the preview from the current forecast.
+- 10m Out always states approximately ten minutes. Running Early, At Curb and Running Late are fixed driver-selected messages, independent of the route forecast.
+- Save the message language per trip. Courtesy wording stays stable across clock updates, trip states, missing forecasts and completed runs.
 - Open a device SMS draft with encoded recipient and message, with copy fallback.
 - Google Voice opens its Messages page and copies the draft for the driver to paste and send. Account selection stays with the driver.
 - Recipient phone numbers and manifests remain in browser storage. Opening messaging apps is a deliberate driver action.

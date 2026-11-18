@@ -661,76 +661,87 @@ context.navigator={
 };
 context.window={open:(...args)=>{openedApps.push(args);}};
 run('state=simulationDay();state.clockMode="device";Object.assign(state.trips[0],{who:"José Rivera",pickupArea:"Public library – North & West entrance, Huntington, NY",scheduled:500,reposition:15,drive:20});state.selected="F-001";deviceTime=()=>"07:50";render();');
+const tenMinuteMessage="Hi, it's Anthony from Serenity. I just wanted to let you know I'm on my way. I'm approximately ten minutes out. I'll see you soon.";
+const templates={
+  '10':tenMinuteMessage,
+  early:"Hi, it's Anthony from Serenity. I'm running a little early for your pickup. If you're ready, I can pick you up a bit sooner. Just let me know what works for you.",
+  curb:"Hi, it's Anthony from Serenity. I'm outside for your pickup. Come on out when you're ready. I'll see you in a moment.",
+  late:"Hi, it's Anthony from Serenity. I'm running a little behind for your pickup. Thanks for your patience. I'll be there as soon as I can."
+};
 tap('macro10');
-assert.match(ids.messagePreview.value,/Hi José! I’m Anthony/);
-assert.match(ids.messagePreview.value,/Public library – North & West entrance/);
-assert.match(ids.messagePreview.value,/8:05 AM \(about 15 min\)/);
-assert.doesNotMatch(ids.messagePreview.value,/about 10 minutes/);
+assert.equal(ids.messagePreview.value,tenMinuteMessage);
 assert.equal(ids.openSms.attributes['aria-disabled'],'true');
 assert.equal(ids.openSms.attributes.href,undefined);
 ids.notes.value='Unsaved test note';
 tap('messageEs');
-assert.match(ids.messagePreview.value,/¡Hola José! Soy Anthony/);
-assert.match(ids.messagePreview.value,/8:05 a. m. \(aproximadamente 15 min\)/);
+assert.match(ids.messagePreview.value,/Hola, soy Anthony de Serenity/);
+assert.match(ids.messagePreview.value,/unos diez minutos/);
 check('JSON.parse(localStorage.getItem(STORE)).trips[0].messageLanguage','es');
 assert.equal(ids.notes.value,'Unsaved test note');
+const spanishTen=ids.messagePreview.value;
 run('deviceTime=()=>"07:51"');
 onInterval();
-assert.match(ids.messagePreview.value,/8:06 a. m./);
+assert.equal(ids.messagePreview.value,spanishTen);
 assert.equal(ids.notes.value,'Unsaved test note');
 tap('macroEarly');
-assert.match(ids.messagePreview.value,/antes de su hora programada a las 8:20 a. m./);
-run('deviceTime=()=>"08:30"');
-onInterval();
-assert.doesNotMatch(ids.messagePreview.value,/antes de su hora programada/);
+assert.match(ids.messagePreview.value,/un poco antes/);
 tap('macroCurb');
-assert.match(ids.messagePreview.value,/junto a la acera/);
+assert.match(ids.messagePreview.value,/Ya estoy afuera/);
 tap('messageEn');
-assert.match(ids.messagePreview.value,/outside at the curb/);
-assert.match(ids.messagePreview.value,/Anthony/);
+assert.equal(ids.messagePreview.value,templates.curb);
 tap('macroConfirm');
 assert.match(ids.messagePreview.value,/8:20 AM/);
+assert.match(ids.messagePreview.value,/Public library – North & West entrance/);
 tap('macroLate');
-assert.match(ids.messagePreview.value,/Thank you for your patience/);
+assert.equal(ids.messagePreview.value,templates.late);
+for(const type of ['10','early','curb','late']){
+  for(let status=0;status<=6;status++){
+    context.statusUnderTest=status;
+    run('selected().status=statusUnderTest;selected().outcome=statusUnderTest===6?"Completed":null;selected().drive=null;selected().driveMiles=null;selected().actual={};render()');
+    assert.equal(run('messageFor(selected(),'+JSON.stringify(type)+',"en")'),templates[type]);
+    const spanish=run('messageFor(selected(),'+JSON.stringify(type)+',"es")');
+    assert.match(spanish,/Hola, soy Anthony de Serenity/);
+    assert.doesNotMatch(spanish,/estimación|confirmaré/);
+  }
+}
+tap('macro10');
+assert.equal(ids.messagePreview.value,tenMinuteMessage);
+assert.doesNotMatch(ids.messageContext.textContent,/estimate|confirmation/i);
 ids.phone.value='(631) 555-0123';
 tap('savePhone');
 check('selected().phone','+16315550123');
 assert.match(ids.openSms.attributes.href,/^sms:\+16315550123&body=/);
-assert.match(decodeURIComponent(ids.openSms.attributes.href.split('&body=')[1]),/Hi José! I’m Anthony/);
+assert.equal(decodeURIComponent(ids.openSms.attributes.href.split('&body=')[1]),tenMinuteMessage);
 check('messagePhone("6315550123")','+16315550123');
 check('messagePhone("+34 612 345 678")','+34612345678');
 check('messagePhone("555")',null);
 check('messagePhone("6315550123?body=oops")',null);
 check('smsDraftUrl("invalid","text")',null);
 assert.match(run('smsDraftUrl("6315550123","A & B? # español",false)'),/\?body=A%20%26%20B%3F%20%23%20espa%C3%B1ol$/);
-run('Object.assign(state.trips[0],{status:4,actual:{"On Board":470,"En Route to Drop-Off":471}});state.selected="F-002";deviceTime=()=>"09:00";render();');
+run('Object.assign(state.trips[0],{status:4,outcome:null,actual:{"On Board":470,"En Route to Drop-Off":471}});state.selected="F-002";deviceTime=()=>"09:00";render();');
 tap('macro10');
-assert.match(ids.messagePreview.value,/I’m finishing another ride/);
-assert.match(ids.messagePreview.value,/I’ll confirm my arrival time/);
-assert.match(ids.messageContext.textContent,/Arrival needs confirmation/);
+assert.equal(ids.messagePreview.value,tenMinuteMessage);
 tap('messageEs');
-assert.match(ids.messagePreview.value,/Le confirmaré la hora/);
-assert.match(ids.messagePreview.value,/otro viaje/);
+assert.equal(ids.messagePreview.value,spanishTen);
 run('state.selected=null;state.trips.forEach(t=>t.outcome="Completed");render()');
 assert.equal(ids.messagePreview.value,'');
 assert.equal(ids.copyMessage.disabled,true);
 assert.equal(ids.openSms.attributes.href,undefined);
-
 (async()=>{
   run('state=simulationDay();Object.assign(state.trips[0],{who:"Alex",phone:"+16315550123",messageLanguage:"es"});state.selected="F-001";render();');
   tap('macroCurb');
   await ids.copyMessage.onclick();
-  assert.match(copiedDrafts.at(-1),/¡Hola Alex! Soy Anthony/);
+  assert.match(copiedDrafts.at(-1),/Hola, soy Anthony de Serenity/);
   await ids.copyRecipient.onclick();
   assert.equal(copiedDrafts.at(-1),'+16315550123');
   await ids.openVoice.onclick();
   assert.deepEqual(openedApps.at(-1),['https://voice.google.com/messages','_blank','noopener,noreferrer']);
-  assert.match(copiedDrafts.at(-1),/junto a la acera/);
+  assert.match(copiedDrafts.at(-1),/Ya estoy afuera/);
   context.navigator.clipboard.writeText=async()=>{throw Error('Clipboard unavailable');};
   await ids.copyMessage.onclick();
   assert.match(ids.messageFeedback.textContent,/Select and copy/);
-  assert.match(ids.messagePreview.value,/¡Hola Alex!/);
+  assert.match(ids.messagePreview.value,/Hola, soy Anthony/);
   await ids.openVoice.onclick();
   assert.match(ids.messageFeedback.textContent,/Copy the message from this preview/);
-  console.log('EN/ES macros refresh names, pickup locations and live ETAs, suppress stale times, encode SMS drafts, persist language and provide Google Voice copy fallbacks.');
+  console.log('All courtesy macros keep friendly fixed wording across trip states and clock changes. Confirmation variables, language, SMS encoding and Google Voice fallbacks pass.');
 })().catch(error=>{console.error(error);process.exitCode=1;});
