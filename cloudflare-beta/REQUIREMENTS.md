@@ -18,3 +18,13 @@ https://www.emedny.org/ProviderManuals/Transportation/PDFS/Transportation_Fee_Sc
 ## Distance assumptions
 
 Reuse original CV4 town centers. Prefer saved loaded mileage. Otherwise estimate between towns using great-circle distance multiplied by 1.25 for roads. Within one town use saved drive minutes at 30 mph, or a three-mile assumption when no duration is provided. Keep these planning estimates labeled in the beta.
+
+## Customer messaging
+
+- English and Spanish previews include Anthony, the rider's first-name label, pickup address, scheduled pickup and current ETA when available.
+- One-tap templates include 10m Out, Running Early, At Curb, Running Late and Confirm Pickup.
+- Use calculated ETA instead of assuming ten minutes. Expired drop-off forecasts and unfinished handoffs produce an ETA-confirmation message.
+- Save the message language per trip. Refresh the preview from the current forecast.
+- Open a device SMS draft with encoded recipient and message, with copy fallback.
+- Google Voice opens its Messages page and copies the draft for the driver to paste and send. Account selection stays with the driver.
+- Recipient phone numbers and manifests remain in browser storage. Opening messaging apps is a deliberate driver action.

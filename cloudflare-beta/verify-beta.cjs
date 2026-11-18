@@ -5,9 +5,10 @@ const html = fs.readFileSync('assets/index.html','utf8');
 const [markup, script] = html.split('<script>');
 const ids = {};
 class Element {
-  constructor(id){this.id=id; this.value=''; this.dataset={}; this.style={}; this.classList={toggle(){}};}
+  constructor(id){this.id=id; this.value=''; this.dataset={}; this.style={}; this.attributes={}; this.classList={toggle(){}};}
   addEventListener(event, fn){this[event]??=fn;}
-  setAttribute(){}
+  setAttribute(name,value){this.attributes[name]=value;}
+  removeAttribute(name){delete this.attributes[name];}
   querySelector(){return new Element();}
   querySelectorAll(){return [];}
   focus(){}
@@ -651,3 +652,85 @@ check('revenue().missing',0);
 assert.equal(ids.revenueBody.hidden,false);
 assert.match(ids.revenueBody.innerHTML,/Suffolk published rate estimate/);
 console.log('Published livery estimates populate automatically from loaded miles or town distance, carry through Finish Run, exclude cancellations, and preserve saved fares and Undo.');
+
+const copiedDrafts=[];
+const openedApps=[];
+context.navigator={
+  userAgent:'Mozilla/5.0 (iPad)',
+  clipboard:{writeText:async text=>{copiedDrafts.push(text);}},
+};
+context.window={open:(...args)=>{openedApps.push(args);}};
+run('state=simulationDay();state.clockMode="device";Object.assign(state.trips[0],{who:"José Rivera",pickupArea:"Public library – North & West entrance, Huntington, NY",scheduled:500,reposition:15,drive:20});state.selected="F-001";deviceTime=()=>"07:50";render();');
+tap('macro10');
+assert.match(ids.messagePreview.value,/Hi José! I’m Anthony/);
+assert.match(ids.messagePreview.value,/Public library – North & West entrance/);
+assert.match(ids.messagePreview.value,/8:05 AM \(about 15 min\)/);
+assert.doesNotMatch(ids.messagePreview.value,/about 10 minutes/);
+assert.equal(ids.openSms.attributes['aria-disabled'],'true');
+assert.equal(ids.openSms.attributes.href,undefined);
+ids.notes.value='Unsaved test note';
+tap('messageEs');
+assert.match(ids.messagePreview.value,/¡Hola José! Soy Anthony/);
+assert.match(ids.messagePreview.value,/8:05 a. m. \(aproximadamente 15 min\)/);
+check('JSON.parse(localStorage.getItem(STORE)).trips[0].messageLanguage','es');
+assert.equal(ids.notes.value,'Unsaved test note');
+run('deviceTime=()=>"07:51"');
+onInterval();
+assert.match(ids.messagePreview.value,/8:06 a. m./);
+assert.equal(ids.notes.value,'Unsaved test note');
+tap('macroEarly');
+assert.match(ids.messagePreview.value,/antes de su hora programada a las 8:20 a. m./);
+run('deviceTime=()=>"08:30"');
+onInterval();
+assert.doesNotMatch(ids.messagePreview.value,/antes de su hora programada/);
+tap('macroCurb');
+assert.match(ids.messagePreview.value,/junto a la acera/);
+tap('messageEn');
+assert.match(ids.messagePreview.value,/outside at the curb/);
+assert.match(ids.messagePreview.value,/Anthony/);
+tap('macroConfirm');
+assert.match(ids.messagePreview.value,/8:20 AM/);
+tap('macroLate');
+assert.match(ids.messagePreview.value,/Thank you for your patience/);
+ids.phone.value='(631) 555-0123';
+tap('savePhone');
+check('selected().phone','+16315550123');
+assert.match(ids.openSms.attributes.href,/^sms:\+16315550123&body=/);
+assert.match(decodeURIComponent(ids.openSms.attributes.href.split('&body=')[1]),/Hi José! I’m Anthony/);
+check('messagePhone("6315550123")','+16315550123');
+check('messagePhone("+34 612 345 678")','+34612345678');
+check('messagePhone("555")',null);
+check('messagePhone("6315550123?body=oops")',null);
+check('smsDraftUrl("invalid","text")',null);
+assert.match(run('smsDraftUrl("6315550123","A & B? # español",false)'),/\?body=A%20%26%20B%3F%20%23%20espa%C3%B1ol$/);
+run('Object.assign(state.trips[0],{status:4,actual:{"On Board":470,"En Route to Drop-Off":471}});state.selected="F-002";deviceTime=()=>"09:00";render();');
+tap('macro10');
+assert.match(ids.messagePreview.value,/I’m finishing another ride/);
+assert.match(ids.messagePreview.value,/I’ll confirm my arrival time/);
+assert.match(ids.messageContext.textContent,/Arrival needs confirmation/);
+tap('messageEs');
+assert.match(ids.messagePreview.value,/Le confirmaré la hora/);
+assert.match(ids.messagePreview.value,/otro viaje/);
+run('state.selected=null;state.trips.forEach(t=>t.outcome="Completed");render()');
+assert.equal(ids.messagePreview.value,'');
+assert.equal(ids.copyMessage.disabled,true);
+assert.equal(ids.openSms.attributes.href,undefined);
+
+(async()=>{
+  run('state=simulationDay();Object.assign(state.trips[0],{who:"Alex",phone:"+16315550123",messageLanguage:"es"});state.selected="F-001";render();');
+  tap('macroCurb');
+  await ids.copyMessage.onclick();
+  assert.match(copiedDrafts.at(-1),/¡Hola Alex! Soy Anthony/);
+  await ids.copyRecipient.onclick();
+  assert.equal(copiedDrafts.at(-1),'+16315550123');
+  await ids.openVoice.onclick();
+  assert.deepEqual(openedApps.at(-1),['https://voice.google.com/messages','_blank','noopener,noreferrer']);
+  assert.match(copiedDrafts.at(-1),/junto a la acera/);
+  context.navigator.clipboard.writeText=async()=>{throw Error('Clipboard unavailable');};
+  await ids.copyMessage.onclick();
+  assert.match(ids.messageFeedback.textContent,/Select and copy/);
+  assert.match(ids.messagePreview.value,/¡Hola Alex!/);
+  await ids.openVoice.onclick();
+  assert.match(ids.messageFeedback.textContent,/Copy the message from this preview/);
+  console.log('EN/ES macros refresh names, pickup locations and live ETAs, suppress stale times, encode SMS drafts, persist language and provide Google Voice copy fallbacks.');
+})().catch(error=>{console.error(error);process.exitCode=1;});
