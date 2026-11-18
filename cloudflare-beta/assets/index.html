@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><title>Serenity 2.0 | Cloudflare Demo 003 · Mileage Estimates / Status Colors / Quick Entry</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><title>Serenity 2.0 | Cloudflare Demo 003 · Waypoint Timing</title><style>
 :root{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;color:#eaf2ff;background:#07101e;font-synthesis:none}*{box-sizing:border-box}body{margin:0}button,input,select,textarea{font:inherit}button{cursor:pointer;touch-action:manipulation}button:disabled{opacity:.35;cursor:not-allowed}.shell{max-width:1530px;margin:auto;padding:16px 18px 50px}.top{display:flex;gap:16px;align-items:center;justify-content:space-between;padding:15px 20px;background:#101d33;border:1px solid #253c55;border-radius:17px}.brand{font-size:21px;letter-spacing:.08em;font-weight:900;color:#51e0d4}.sub{font-size:12px;color:#9db1c5;margin-top:3px}.pill{background:#163c49;color:#80f6e3;border:1px solid #277f82;border-radius:30px;padding:7px 11px;font-size:12px;font-weight:800}.mainnav,.toolbar,.flex{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.mainnav{margin-top:13px}.btn{background:#1c3048;color:#eaf2ff;border:1px solid #34536d;padding:10px 14px;border-radius:10px;font-weight:700;font-size:13px}.btn:hover{background:#28445f}.btn.active{background:#126b72;border-color:#47dace}.btn.primary{background:#00a9a0;color:#03242b;border-color:#39d6c4}.btn.danger{background:#552c36;border-color:#a34b58}.btn.warn{background:#523b24;border-color:#a57a38}.btn.big{font-size:17px;padding:15px 20px}.toolbar{margin:14px 0}.metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:14px 0}.metric,.panel{background:#101d33;border:1px solid #294058;border-radius:15px;padding:15px}.metric .m-title{font-size:10px;color:#90a8bf;text-transform:uppercase;letter-spacing:.09em;font-weight:800}.metric .m-value{font-size:22px;font-weight:850;margin-top:6px}.panel{margin-bottom:13px}.grid{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(300px,.85fr);gap:13px}.paneltitle{font-size:14px;font-weight:850;letter-spacing:.03em;margin-bottom:10px}.muted{color:#96adc3}.small{font-size:12px}.micro{font-size:11px}.notice{background:#2a2332;border:1px solid #85586b;border-radius:10px;padding:10px 12px;color:#f9c5ba;margin:10px 0}.good{color:#6ee5b3}.warntext{color:#ffd077}.bad{color:#ff8e91}.purple{color:#d5a4ff}.rosthead,.trip{display:grid;grid-template-columns:64px minmax(95px,1.1fr) minmax(134px,1.35fr) minmax(98px,1fr) minmax(93px,1fr) minmax(95px,1fr);gap:8px;align-items:center}.rosthead{font-size:10px;color:#94a9c1;font-weight:800;text-transform:uppercase;padding:8px 10px}.trip{border:1px solid #273e55;padding:11px 10px;margin:5px 0;border-radius:10px;background:#0b172a;cursor:pointer;min-height:66px}.trip.selected{border-color:#2bdbcf;background:#102c40;box-shadow:inset 4px 0 #30ddca}.trip.done{border-color:#1a2c44}.trip.done > :not(:last-child){opacity:.48}.trip .name{font-weight:800}.trip .t{font-size:13px;font-weight:750}.trip .info{font-size:10px;color:#93a8be;margin-top:4px}.tag{display:inline-block;font-size:10px;border-radius:5px;padding:5px 6px;background:#244052;color:#eaf8ff;font-weight:800}.tag.green{background:#074f45;color:#71edbf}.tag.yellow{background:#51411c;color:#ffe085}.tag.red{background:#622a37;color:#ff9ca4}.tag.purple{background:#47305f;color:#e1bcff}.statusline{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:11px 12px;border:1px solid #2b4d5e;border-radius:10px;background:#0a1a2a;margin-bottom:10px}.actions{display:flex;gap:8px;flex-wrap:wrap}.context{position:absolute;z-index:9;background:#1a3046;border:1px solid #59b5b8;border-radius:12px;box-shadow:0 12px 30px #0008;padding:8px;width:270px;max-height:360px;overflow:auto}.context button{display:block;width:100%;margin:3px 0;text-align:left}.field{display:flex;flex-direction:column;gap:5px;margin:6px 0}.field label{color:#a8bed0;font-size:11px;font-weight:700}.field input,.field textarea,.field select{background:#081427;border:1px solid #37516b;border-radius:8px;color:#edf7ff;padding:10px;min-width:0}.field textarea{min-height:60px}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.events{max-height:215px;overflow:auto}.event{padding:6px 0;border-bottom:1px solid #26394c;font-size:11px;color:#c1d2df}.hidden,[hidden]{display:none!important}.modalshade{position:fixed;inset:0;background:#000b;z-index:20;display:flex;align-items:center;justify-content:center;padding:16px}.modal{max-height:90vh;overflow:auto;width:min(540px,100%);background:#132339;border:1px solid #3a5b73;padding:20px;border-radius:16px}.modal h3{margin:0 0 12px}.split{display:grid;grid-template-columns:1fr 1fr;gap:8px}.foot{font-size:11px;color:#92a7ba;padding:9px}.checkpoints{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}.checkpoint{background:#0a192b;border:1px solid #2b435a;border-radius:10px;padding:9px}.checkpoint strong{display:block;font-size:10px;color:#91aac0}.checkpoint b{display:block;font-size:14px;margin:5px 0}.checkpoint button{font-size:11px;padding:6px 7px}.warninglist{font-size:12px;max-height:120px;overflow:auto}.warninglist div{padding:6px 0;border-bottom:1px solid #263b4e}@media(max-width:1000px){.metrics{grid-template-columns:repeat(3,1fr)}.grid{grid-template-columns:1fr}.rosthead,.trip{grid-template-columns:54px 1.1fr 1.4fr 1fr 1fr 1fr}}@media(max-width:640px){.shell{padding:8px}.brand{font-size:15px}.metrics{grid-template-columns:repeat(2,1fr)}.rosthead,.trip{grid-template-columns:38px 1fr 1fr 1fr;gap:5px}.rosthead>*:nth-child(5),.rosthead>*:nth-child(6),.trip>*:nth-child(5),.trip>*:nth-child(6){display:none}.checkpoints{grid-template-columns:repeat(2,1fr)}}
 
 .filterbar{display:flex;gap:7px;flex-wrap:wrap;margin:5px 0 12px}.filterbar .btn{padding:8px 11px;min-height:39px}.revenuehead{display:flex;justify-content:space-between;align-items:center;gap:12px}.revenuegrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:13px}.revenuegrid>div{padding:13px;border-radius:12px;background:#0b172a;border:1px solid #29475a}.revenueamount{font-size:25px;font-weight:850;margin:7px 0;color:#7be4db}.mainnav{position:sticky;top:0;z-index:8;background:#07101eee;padding:10px 0;border-bottom:1px solid #26415a;backdrop-filter:blur(8px)}.mainnav .btn{min-height:44px}.revenuehead .btn{min-width:90px}@media(max-width:620px){.revenuegrid{grid-template-columns:1fr}}
@@ -24,13 +24,13 @@ button[data-hold-installed="1"]::after,.trip[data-hold-installed="1"] .name::aft
 .quick-buttons .btn{min-height:46px;padding:4px;font-size:14px;white-space:nowrap}
 .modal .toolbar .btn{min-height:44px}
 @media(max-width:480px){.trip-entry{grid-template-columns:1fr}}
-</style></head><body><div class="shell"><header class="top"><div><div class="brand">SERENITY <span style="color:#e2eefa">DISPATCH OS</span></div><div class="sub">Cloudflare Demo 003 · Mileage Estimates / Status Colors / Quick Entry · Public-landmark simulation · NO REAL PATIENT DATA</div></div><div class="flex"><span class="pill" id="modeBadge">SIMULATION · LOCAL</span><strong id="clockTop">07:00 AM</strong></div></header>
+</style></head><body><div class="shell"><header class="top"><div><div class="brand">SERENITY <span style="color:#e2eefa">DISPATCH OS</span></div><div class="sub">Cloudflare Demo 003 · Waypoint Timing · Public-landmark simulation · NO REAL PATIENT DATA</div></div><div class="flex"><span class="pill" id="modeBadge">SIMULATION · LOCAL</span><strong id="clockTop">07:00 AM</strong></div></header>
 <nav class="mainnav"><button class="btn active" data-tab="cockpit">Cockpit</button><button class="btn" data-tab="customer">Active Trip</button><button class="btn" data-tab="manifest">Manifest</button><button class="btn" data-tab="settings">Settings</button></nav>
 <div class="toolbar"><button class="btn" id="refresh">↻ Update Day</button><button class="btn" id="clockMode" aria-pressed="false">Use Device Time</button><button class="btn" id="undo">↶ Undo Last</button><button class="btn warn" id="shift">Start Shift</button></div><details class="panel" style="padding:10px 14px"><summary style="cursor:pointer;font-weight:800;color:#7be4db">SIMULATION CLOCK · Tap to expand test controls</summary><div class="toolbar" style="margin-bottom:0"><button class="btn primary" id="nextTime">⏭ Next Event</button><button class="btn" id="plus5">+5 min</button><button class="btn" id="plus15">+15 min</button><button class="btn" id="minus5">−5 min</button><button class="btn" id="setTime">Set Time</button></div><p class="small muted">Changing the simulation clock switches event logging back to simulation time.</p></details>
 <div class="notice" style="background:#132a31;border-color:#307a84;color:#c6fff7"><strong>PUBLIC SIMULATION — NO PATIENT DATA.</strong> Fictional initials and public landmarks only. Scheduled times are preserved for testing. ETAs use manual assumptions, not live traffic. Do not type real customer information, even in notes, phones, backup import, or new trips.</div>
 <div class="metrics"><div class="metric"><div class="m-title">Progress</div><div class="m-value" id="mProgress">0 / 8</div></div><div class="metric"><div class="m-title">Next pickup variance</div><div class="m-value" id="mVariance">—</div></div><div class="metric"><div class="m-title">Remaining trips</div><div class="m-value" id="mRemaining">8</div></div><div class="metric"><div class="m-title">Shift duration</div><div class="m-value" id="mShift">—</div></div><div class="metric"><div class="m-title">Projected home</div><div class="m-value" id="mHome">—</div></div></div>
 <section class="panel" id="checkpointPanel"><div class="paneltitle">DAILY CHECKPOINTS <span class="muted small">· Tap to log · Long-press to edit</span></div><div class="checkpoints" id="checkpoints"></div></section>
-<main id="cockpit" class="page"><div class="grid"><div class="panel"><div class="paneltitle">FULL-DAY MANIFEST <span class="muted small">· Original order retained · Tap trip to focus · ◇ Hold for options</span></div><div class="rosthead"><span>Trip</span><span>Rider</span><span>Scheduled / ETA</span><span>Drop-off ETA</span><span>Variance</span><span>Status</span></div><div class="filterbar" id="statusFilters" aria-label="Manifest status filters"><button type="button" class="btn active" data-filter="All">All</button><button type="button" class="btn" data-filter="Pending">Pending</button><button type="button" class="btn" data-filter="Active">Active</button><button type="button" class="btn" data-filter="Completed">Completed</button><button type="button" class="btn" data-filter="Canceled">Canceled</button></div><div id="roster"></div></div><div><div class="panel" id="activePanel"></div><div class="panel" id="revenuePanel"><div class="revenuehead"><div><div class="paneltitle" style="margin-bottom:2px">REVENUE</div><div class="small muted">Driver income · Vehicle revenue</div></div><button type="button" class="btn" id="revenueToggle" aria-expanded="false" aria-controls="revenueBody">Show ▾</button></div><div id="revenueBody" hidden></div><div class="micro muted" style="margin-top:9px">Hold the Revenue panel to reveal or hide details.</div></div><div class="panel"><div class="paneltitle">SCHEDULE INTELLIGENCE</div><div class="warninglist" id="warnings"></div></div></div></div></main>
+<main id="cockpit" class="page"><div class="grid"><div class="panel"><div class="paneltitle">FULL-DAY MANIFEST <span class="muted small">· Original order retained · Tap trip to focus · ◇ Hold for options</span></div><div class="notice" id="pickupConflicts" role="status" hidden></div><div class="rosthead"><span>Trip</span><span>Rider</span><span>Scheduled / ETA</span><span>Drop-off</span><span>Variance</span><span>Status</span></div><div class="filterbar" id="statusFilters" aria-label="Manifest status filters"><button type="button" class="btn active" data-filter="All">All</button><button type="button" class="btn" data-filter="Pending">Pending</button><button type="button" class="btn" data-filter="Active">Active</button><button type="button" class="btn" data-filter="Completed">Completed</button><button type="button" class="btn" data-filter="Canceled">Canceled</button></div><div id="roster"></div></div><div><div class="panel" id="activePanel"></div><div class="panel" id="betweenRuns" hidden></div><div class="panel" id="revenuePanel"><div class="revenuehead"><div><div class="paneltitle" style="margin-bottom:2px">REVENUE</div><div class="small muted">Driver income · Vehicle revenue</div></div><button type="button" class="btn" id="revenueToggle" aria-expanded="false" aria-controls="revenueBody">Show ▾</button></div><div id="revenueBody" hidden></div><div class="micro muted" style="margin-top:9px">Hold the Revenue panel to reveal or hide details.</div></div><div class="panel"><div class="paneltitle">SCHEDULE INTELLIGENCE</div><div class="warninglist" id="warnings"></div></div></div></div></main>
 <main id="customer" class="page hidden"><div class="grid"><div class="panel"><div id="customerMain"></div></div><div class="panel"><div class="paneltitle">DRIVER NOTES <span class="muted small">· Fictional test data only</span></div><div class="field"><label>Customer / facility instructions</label><textarea id="notes" placeholder="Door, pickup point, call preference…"></textarea></div><button class="btn primary" id="saveNotes">Save Notes</button><div class="field"><label>Verified phone (test-only)</label><input id="phone" placeholder="No real phone numbers"></div><button class="btn" id="savePhone">Save Verified Number</button><div class="paneltitle" style="margin-top:18px">MESSAGE PREVIEW</div><select id="messageType" class="btn"><option value="10">10 minutes out</option><option value="curb">At curb</option><option value="confirm">Confirm pickup</option><option value="late">Running late</option></select><p id="messagePreview" class="small"></p><button class="btn" id="copyMessage">Copy fictional draft</button><div class="notice micro">Messaging is preview-only. No SMS is sent, and no live GPS or traffic service is connected.</div></div></div></main>
 <main id="manifest" class="page hidden"><div class="grid"><div class="panel"><div class="paneltitle">MANIFEST TOOLS</div><p class="small muted">PUBLIC DEMO ONLY: Eight fictional riders, using a realistic pickup schedule and public landmark areas. No actual patient names, home addresses, phone numbers, or run IDs. Do not enter actual patient information into this publicly hosted demo.</p><div class="actions"><button class="btn primary" id="addTrip">＋ Add Test Trip</button><button class="btn" id="exportData">Export JSON Backup</button><label class="btn">Import Demo JSON Backup<input type="file" id="importData" accept="application/json,.json" hidden></label><button class="btn danger" id="reset">Reset Fictional Demo</button></div><div class="notice">Screenshot OCR is not implemented in Demo 003. This build deliberately does not upload images, contact external servers, or simulate successful recognition.</div><div class="paneltitle">CURRENT ASSIGNMENTS</div><div id="manifestRows"></div></div><div class="panel"><div class="paneltitle">IMPORT & MERGE ROADMAP</div><p class="small">Next: package and verify genuine on-device OCR for RoutingBox screenshots, then show added / changed / missing trips for approval. Existing events and completed trips must survive any update.</p><p class="small">This foundation permits manual fictional-trip additions and JSON backups for verifying the state engine, but is not approved for real patient manifests.</p></div></div></main>
 <main id="settings" class="page hidden"><div class="grid"><div class="panel"><div class="paneltitle">DRIVER SETTINGS</div><div class="two"><div class="field"><label>Driver hourly rate ($, fictional test)</label><input type="number" id="hourlyRate" min="0" max="500" step="0.25"></div><div class="field"><label>Overtime threshold (hours/day, test estimate only)</label><input type="number" id="overtimeAfter" min="1" max="24" step="1"></div><div class="field"><label>Overtime multiplier (test assumption)</label><input type="number" id="overtimeMultiplier" min="1" max="3" step="0.25"></div><div class="field"><label>Home → garage (minutes)</label><input type="number" id="commute" min="0" max="180"></div><div class="field"><label>Garage preparation (minutes)</label><input type="number" id="garagePrep" min="0" max="180"></div><div class="field"><label>Pickup target early (minutes)</label><input type="number" id="early" min="0" max="60"></div><div class="field"><label>Garage → first pickup (simulated minutes)</label><input type="number" id="firstDrive" min="1" max="180"></div></div><button class="btn primary" id="saveSettings">Save Settings</button><div class="notice micro">Travel times are fictional/manual assumptions, not GPS estimates. Local browser storage is intended only for non-sensitive testing.</div></div><div class="panel"><div class="paneltitle">AUDIT LOG <span class="muted small">· Latest first</span></div><div id="allEvents" class="events" style="max-height:430px"></div><button class="btn" id="exportLog">Export Event Log</button></div></div></main>
@@ -67,7 +67,23 @@ let state;try{const saved=localStorage.getItem(STORE);state=saved?JSON.parse(sav
 let selectedTab='cockpit',revenueOpen=false,rosterFilter='All';const $=id=>document.getElementById(id);function persist(){try{localStorage.setItem(STORE,JSON.stringify(state))}catch(e){console.warn('Local save unavailable',e)}}
 function change(label,fn){const previous=deep(state);previous.events=previous.events.map(({restore,...e})=>e);fn();state.seq=(state.seq||0)+1;state.events.push({seq:state.seq,time:state.clock,label,restore:previous});if(state.events.length>100)state.events=state.events.slice(-100);persist();render()}
 function undo(){const ev=state.events[state.events.length-1];if(!ev||!ev.restore){toast('Nothing to undo');return}if(!confirm('Undo: '+ev.label+'?'))return;state=deep(ev.restore);persist();render();toast('Last change undone')}
-function selected(){return state.selected===null?nextActive():state.trips.find(t=>t.id===state.selected)||nextActive()}
+function selected(){
+  return state.selected===null?nextUncontested():state.trips.find(t=>t.id===state.selected)||nextUncontested();
+}
+function nextUncontested(){
+  const next=nextActive();
+  return next&&unresolvedPickups().has(next.scheduled)?null:next;
+}
+function unresolvedPickups(){
+  const groups=new Map();
+  for(const trip of state.trips){
+    if(trip.outcome||trip.status>=4)continue;
+    const trips=groups.get(trip.scheduled)??[];
+    trips.push(trip);
+    groups.set(trip.scheduled,trips);
+  }
+  return new Map([...groups].filter(([,trips])=>trips.length>1));
+}
 function nextActive(){return state.trips.find(t=>t.status<6&&!t.outcome)}
 function statusText(t){return t.outcome||(t.status===6?'Completed':stages[t.status])}
 const statusColors=['pending','to-pickup','at-pickup','on-board','to-dropoff','at-dropoff','completed'];
@@ -82,9 +98,9 @@ function filterStatus(t){return t.outcome==='Completed'||t.status===6?'Completed
 function money(v){return '$'+Number(v).toFixed(2)}
 function revenue(){const done=state.trips.filter(t=>t.outcome==='Completed'||t.status===6),paid=done.filter(t=>Number.isFinite(t.fare)&&t.fare>=0),vehicle=paid.reduce((sum,t)=>sum+t.fare,0);const mins=state.shift.start==null?null:Math.max(0,(state.shift.end??state.clock)-state.shift.start);const hours=mins==null?null:mins/60,rate=Number(state.settings.hourlyRate)||0,threshold=Number(state.settings.overtimeAfter)||8,mult=Number(state.settings.overtimeMultiplier)||1.5;const driver=hours==null?null:(Math.min(hours,threshold)*rate+Math.max(0,hours-threshold)*rate*mult);return {done:done.length,paid:paid.length,vehicle,hours,driver}}
 function routeOrder(){
-  const underway=state.trips.filter(t=>!t.outcome&&t.status>0&&t.status<6);
+  const underway=state.trips.filter(t=>!t.outcome&&t.status>=4&&t.status<6);
   const closed=state.trips.filter(t=>t.outcome||t.status===6);
-  return [...closed,...underway,...state.trips.filter(t=>!t.outcome&&t.status===0)];
+  return [...closed,...underway,...state.trips.filter(t=>!t.outcome&&t.status<4)];
 }
 function approachOrigins(){
   const origins=new Map();
@@ -114,58 +130,53 @@ function legMinutes(minutes,miles){
   if(Number.isFinite(minutes)&&minutes>=0)return minutes;
   return Number.isFinite(miles)&&miles>=0?(miles===0?0:Math.max(1,Math.round(miles*2))):null;
 }
+function forecastTime(){return state.forecastClock??state.clock}
+function lastDropOff(){
+  return state.trips.filter(t=>Number.isFinite(t.actual['Arrived at Drop-Off']))
+    .sort((a,b)=>b.actual['Arrived at Drop-Off']-a.actual['Arrived at Drop-Off'])[0];
+}
 function project(){
   const result={};
-  let cursor=state.clock;
-  let cursorRough=false;
-  let previousDeparture=null;
-  let previousDepartureRough=false;
+  const clock=forecastTime();
+  const conflicts=unresolvedPickups();
+  const origins=approachOrigins();
+  let cursor=clock, cursorRough=false, previousDeparture=null, previousDepartureRough=false;
   for(const t of routeOrder()){
     const actualPickup=t.actual['Arrived at Pickup']??null;
     const actualDrop=t.actual['Arrived at Drop-Off']??null;
     if(t.outcome||t.status===6){
+      if(actualDrop!=null)cursor=Math.max(cursor,actualDrop);
       result[t.id]={pickup:actualPickup,drop:actualDrop};
-      previousDeparture=null;
       continue;
     }
-    const approach=legMinutes(t.reposition,t.repositionMiles);
+    const savedApproach=legMinutes(t.reposition,t.repositionMiles);
+    const approach=savedApproach??(origins.get(t.id)===null?state.settings.firstDrive:null);
     const drive=legMinutes(t.drive,t.driveMiles);
-    const roughApproach=t.reposition==null&&approach!=null;
-    let pickup,drop,pickupRough=false;
+    const departure=t.actual['En Route to Drop-Off']??null;
+    const conflict=t.status<4&&conflicts.has(t.scheduled);
     const combined=t.combinedApproach!=null&&previousDeparture!=null;
-    if(t.status>=2)pickup=actualPickup??state.clock;
-    else if(t.status===1){
-      const departed=t.actual['En Route to Pickup']??state.clock;
-      pickup=approach==null?null:Math.max(state.clock,departed+approach);
-      pickupRough=pickup!=null&&roughApproach;
-    }else{
-      const arrival=combined
-        ? Math.max(state.clock,previousDeparture+t.combinedApproach)
-        : cursor==null||approach==null?null:cursor+approach;
-      pickup=arrival==null?null:Math.max(arrival,t.scheduled-state.settings.early);
-      pickupRough=pickup!=null&&(combined?previousDepartureRough:cursorRough||roughApproach);
-    }
-    if(t.status>=5)drop=actualDrop??state.clock;
-    else if(pickup==null||drive==null)drop=null;
-    else if(t.status===4)drop=Math.max(state.clock,(t.actual['En Route to Drop-Off']??state.clock)+drive);
-    else if(t.status===3)drop=Math.max(state.clock,t.actual['On Board']??pickup)+drive;
-    else if(t.status===2)drop=Math.max(state.clock,pickup+7)+drive;
-    else drop=pickup+7+drive;
-    cursor=drop==null?null:Math.max(state.clock,drop);
-    previousDeparture=t.status>=5||pickup==null?null:
-      t.status===4?(t.actual['En Route to Drop-Off']??state.clock):
-      t.status===3?Math.max(state.clock,t.actual['On Board']??pickup):
-      t.status===2?Math.max(state.clock,pickup+7):pickup+7;
-    const dropRough=drop!=null&&t.status<5&&(pickupRough||t.drive==null);
+    const arrival=combined?Math.max(clock,previousDeparture+t.combinedApproach):
+      cursor==null||approach==null?null:cursor+approach;
+    const plannedPickup=conflict||arrival==null?null:Math.max(arrival,t.scheduled-state.settings.early);
+    const plannedDeparture=plannedPickup==null?null:plannedPickup+7;
+    const anchor=departure??plannedDeparture;
+    const drop=actualDrop??(anchor==null||drive==null?null:Math.max(clock,anchor+drive));
+    const projectedPickupRough=plannedPickup!=null&&
+      (combined?previousDepartureRough:cursorRough||(t.reposition==null&&savedApproach!=null));
+    const pickup=actualPickup??(t.status>=4?null:plannedPickup);
+    const pickupRough=pickup!=null&&actualPickup==null&&projectedPickupRough;
+    const dropRough=drop!=null&&actualDrop==null&&(t.drive==null||(departure==null&&projectedPickupRough));
+    result[t.id]={pickup,drop,pickupRough,dropRough,conflict};
+    cursor=drop==null?null:Math.max(clock,drop);
     cursorRough=dropRough;
-    previousDepartureRough=pickupRough;
-    result[t.id]={pickup,drop,pickupRough,dropRough};
+    previousDeparture=actualDrop==null?anchor:null;
+    previousDepartureRough=departure==null&&projectedPickupRough;
   }
   return result;
 }
-function badge(t,p){if(t.outcome==='Completed'||t.status===6)return['Done','green'];if(t.outcome)return['Canceled','purple'];if(p?.pickup==null)return['ETA unknown',''];let delay=p.pickup-t.scheduled;if(delay<=0)return[p.pickupRough?'Rough · on time':'On time',p.pickupRough?'':'green'];return['+'+delay+'m',t.kind==='Return'?'purple':delay<=15?'yellow':'red']}
+function badge(t,p){if(t.outcome==='Completed'||t.status===6)return['Done','green'];if(t.outcome)return['Canceled','purple'];if(p?.conflict)return['Order pending','yellow'];if(p?.pickup==null)return['ETA unknown',''];let delay=p.pickup-t.scheduled;if(delay<=0)return[delay===0?'0 min':(-delay)+' min early',p.pickupRough?'':'green'];return['+'+delay+'m',t.kind==='Return'?'purple':delay<=15?'yellow':'red']}
 function selectNextRun(){
-  const next = nextActive();
+  const next = nextUncontested();
   state.selected = next?.id ?? null;
   state.handoff = next?.id ?? null;
 }
@@ -173,13 +184,18 @@ function logStep(t){
   if(!t || t.outcome || t.status>=6 || state.handoff===t.id)return;
   const next = stages[t.status+1];
   change(t.id+' '+next,()=>{
+    state.forecastClock=forecastTime();
     recordEventTime();
-    t.status++;
-    t.actual[next] = state.clock;
-    if(t.status===6){
-      t.outcome = 'Completed';
-      selectNextRun();
-    }
+    const updateTrip=()=>{
+      t.status++;
+      t.actual[next]=state.clock;
+      if(t.status===6)t.outcome='Completed';
+    };
+    if(t.status===3||t.status===4){
+      reviseSchedule(updateTrip,t.id);
+      state.forecastClock=state.clock;
+    }else updateTrip();
+    if(t.status===6)selectNextRun();
   });
 }
 function backTrip(t){if(!t||t.status<=0||state.handoff===t.id)return;const prev=t.status;change('Back one stage for '+t.id,()=>{delete t.actual[stages[prev]];t.status=prev-1;t.outcome=null});}
@@ -201,6 +217,7 @@ function overrideStatus(t,level){if(!t)return;
       t.outcome=null;
       for(const key of stages.slice(level+1))delete t.actual[key];
       t.actual[name]=mins;
+      if(level===4||level===5)state.forecastClock=mins;
       if(level===6){t.outcome='Completed';selectNextRun();}
     });
   });
@@ -253,26 +270,54 @@ function modal(title,body,buttons){$('modalRoot').hidden=false;$('modalRoot').in
   if(adjust){adjustQuickField($(adjust.dataset.quickId),adjust.dataset.step);return;}
   if(e.target.classList.contains('modalshade'))closeModal();
 })};function closeModal(){$('modalRoot').hidden=true;$('modalRoot').innerHTML=''}function toast(t){const a=document.createElement('div');a.className='pill';a.textContent=t;a.style='position:fixed;bottom:15px;left:15px;z-index:50;background:#126b72';document.body.appendChild(a);setTimeout(()=>a.remove(),2300)}
-function modifyOutcome(t,outcome){if(!t)return;if(outcome==='Canceled at Door'&&t.status<2){toast('Arrive at pickup first');return}if(!confirm('Mark '+t.id+' '+outcome+'?'))return;change(t.id+' '+outcome,()=>{recordEventTime();reviseSchedule(()=>{t.outcome=outcome;t.actual[outcome]=state.clock});selectNextRun()})}
-function render(){const proj=project(),unfinished=state.trips.filter(t=>!t.outcome&&t.status<6),finished=state.trips.filter(t=>t.outcome||t.status===6),next=unfinished[0],home=unfinished.some(t=>proj[t.id].drop==null)?null:unfinished.length?Math.max(state.clock,...unfinished.map(t=>proj[t.id].drop))+state.settings.firstDrive+state.settings.garagePrep+state.settings.commute:state.clock+state.settings.commute;
+function modifyOutcome(t,outcome){if(!t)return;if(outcome==='Canceled at Door'&&t.status<2){toast('Arrive at pickup first');return}if(!confirm('Mark '+t.id+' '+outcome+'?'))return;change(t.id+' '+outcome,()=>{state.forecastClock=forecastTime();recordEventTime();reviseSchedule(()=>{t.outcome=outcome;t.actual[outcome]=state.clock});selectNextRun()})}
+function renderBetweenRuns(next,dropTrip){
+  const panel=$('betweenRuns');
+  panel.hidden=!next||!dropTrip||next.status>0;
+  if(panel.hidden)return;
+  const drop=dropTrip.actual['Arrived at Drop-Off'];
+  const approach=approachOrigins().get(next.id)===dropTrip.id?
+    legMinutes(next.reposition,next.repositionMiles):null;
+  const conflict=unresolvedPickups().has(next.scheduled);
+  const minutes=approach==null?null:next.scheduled-drop-approach;
+  const detail=conflict?'Pickup order pending':minutes==null?'Drive estimate needed':
+    minutes<0?(-minutes)+' min short before scheduled pickup':minutes+' min before next drive';
+  panel.innerHTML='<div class="paneltitle">BETWEEN RUNS</div><strong>'+esc(detail)+'</strong>'+
+    '<div class="small muted">Actual drop-off '+fmt(drop)+' · Next pickup '+fmt(next.scheduled)+
+    (approach==null||conflict?'':' · '+approach+' min drive')+'</div>'+
+    (minutes!=null&&!conflict?'<div class="micro muted">Window includes handoff time.</div>':'');
+}
+function render(){
+const proj=project(),unfinished=state.trips.filter(t=>!t.outcome&&t.status<6),finished=state.trips.filter(t=>t.outcome||t.status===6),next=unfinished[0];
+const dropTrip=lastDropOff();
+const finalDrop=unfinished.length===0?dropTrip?.actual['Arrived at Drop-Off']:
+  unfinished.some(t=>proj[t.id].drop==null)?null:Math.max(forecastTime(),...unfinished.map(t=>proj[t.id].drop));
+const home=finalDrop==null?null:finalDrop+state.settings.firstDrive+state.settings.garagePrep+state.settings.commute;
+renderBetweenRuns(unfinished.find(t=>t.id!==dropTrip?.id),dropTrip);
+
 const deviceMode=state.clockMode==='device';
 $('clockMode').textContent=deviceMode?'Device Time On':'Use Device Time';
 $('clockMode').setAttribute('aria-pressed',String(deviceMode));
 $('modeBadge').textContent=deviceMode?'DEVICE TIME · TEST':'SIMULATION · LOCAL';
 $('clockTop').textContent=fmt(state.clock);$('mProgress').textContent=finished.length+' / '+state.trips.length;$('mRemaining').textContent=unfinished.length;$('mVariance').textContent=next&&proj[next.id].pickup!=null?((proj[next.id].pickup-next.scheduled)>0?'+':'')+(proj[next.id].pickup-next.scheduled)+' min':'—';$('mHome').textContent=fmt(home);$('mShift').textContent=state.shift.start===null?'—':duration(Math.max(0,(state.shift.end??state.clock)-state.shift.start));$('shift').textContent=state.shift.start===null?'Start Shift':state.shift.end===null?'End Shift · Hold to Correct':'Reopen Shift · Hold to Correct';
-document.querySelectorAll('[data-filter]').forEach(b=>{b.classList.toggle('active',b.dataset.filter===rosterFilter);const count=state.trips.filter(t=>filterStatus(t)===b.dataset.filter).length;b.textContent=b.dataset.filter+(b.dataset.filter==='All'?'':(' · '+count))});$('roster').innerHTML=state.trips.filter(t=>rosterFilter==='All'||filterStatus(t)===rosterFilter).map((t,i)=>{const p=proj[t.id],b=badge(t,p),variance=p.pickup==null?(t.outcome?'—':'ETA unknown'):(p.pickup-t.scheduled>0?'+':'')+(p.pickup-t.scheduled)+' min';return '<div class="trip '+(t.id===state.selected?'selected ':'')+(t.outcome||t.status===6?'done':'')+'" data-trip="'+esc(t.id)+'" tabindex="0"><div><span class="tag">'+(i+1)+'</span><div class="info">'+esc(t.id)+'</div></div><div><div class="name">'+esc(t.who)+'</div><div class="info">'+esc(t.kind)+'</div></div><div><div class="t">'+fmt(t.scheduled)+'</div><div class="info">Projected '+fmt(p.pickup)+(p.pickupRough?' · Rough':'')+'</div></div><div class="t">'+fmt(p.drop)+(p.dropRough?' · Rough':'')+'</div><div><span class="tag '+b[1]+'">'+esc(variance)+'</span></div><div>'+rideStatus(t)+'</div></div>'}).join('');
-const sel=selected(),sp=sel&&proj[sel.id],handoff=sel&&state.handoff===sel.id;$('activePanel').innerHTML=sel?'<div class="paneltitle">'+(handoff?'NEXT RUN':'ACTIVE TRIP')+' <span class="muted small">· ◇ Hold for options</span></div><div class="statusline"><div><div style="font-weight:900">'+esc(sel.id)+' · '+esc(sel.who)+'</div><div class="small muted">'+esc(sel.kind)+' · '+rideStatus(sel)+'</div></div><span class="tag '+badge(sel,sp)[1]+'">'+badge(sel,sp)[0]+'</span></div><div class="two"><div><div class="muted micro">PICKUP</div><strong>'+fmt(sel.scheduled)+'</strong><div class="micro muted">Projected '+fmt(sp.pickup)+(sp.pickupRough?' · Rough':'')+'</div></div><div><div class="muted micro">DROP-OFF</div><strong>'+fmt(sp.drop)+(sp.dropRough?' · Rough':'')+'</strong><div class="micro muted">Drive '+(sel.drive!=null?sel.drive+'m planned':sel.driveMiles!=null?legMinutes(null,sel.driveMiles)+'m rough at 30 mph':'unknown')+'</div></div></div><div class="actions" style="margin-top:13px"><button class="btn primary big" id="openActiveTrip">Open Active Trip →</button></div>':'<div class="paneltitle">No runs remaining</div>';
+document.querySelectorAll('[data-filter]').forEach(b=>{b.classList.toggle('active',b.dataset.filter===rosterFilter);const count=state.trips.filter(t=>filterStatus(t)===b.dataset.filter).length;b.textContent=b.dataset.filter+(b.dataset.filter==='All'?'':(' · '+count))});$('roster').innerHTML=state.trips.filter(t=>rosterFilter==='All'||filterStatus(t)===rosterFilter).map((t,i)=>{const p=proj[t.id],b=badge(t,p),variance=p.conflict?'Order pending':p.pickup==null?(t.outcome?'—':'ETA unknown'):(p.pickup-t.scheduled>0?'+':'')+(p.pickup-t.scheduled)+' min';return '<div class="trip '+(t.id===state.selected?'selected ':'')+(t.outcome||t.status===6?'done':'')+'" data-trip="'+esc(t.id)+'" tabindex="0"><div><span class="tag">'+(i+1)+'</span><div class="info">'+esc(t.id)+'</div></div><div><div class="name">'+esc(t.who)+'</div><div class="info">'+esc(t.kind)+'</div></div><div><div class="t">'+fmt(t.scheduled)+'</div><div class="info">'+(p.conflict?'Order pending':(t.actual['Arrived at Pickup']!=null?'Actual ':'ETA ')+fmt(p.pickup))+(p.pickupRough?' · Rough':'')+'</div></div><div class="t">'+fmt(p.drop)+(p.drop==null?'':t.actual['Arrived at Drop-Off']!=null?'<div class="info">Actual</div>':'<div class="info">ETA'+(p.dropRough?' · Rough':'')+'</div>')+'</div><div><span class="tag '+b[1]+'">'+esc(variance)+'</span></div><div>'+rideStatus(t)+'</div></div>'}).join('');
+const sel=selected(),sp=sel&&proj[sel.id],handoff=sel&&state.handoff===sel.id;$('activePanel').innerHTML=sel?'<div class="paneltitle">'+(handoff?'NEXT RUN':'ACTIVE TRIP')+' <span class="muted small">· ◇ Hold for options</span></div><div class="statusline"><div><div style="font-weight:900">'+esc(sel.id)+' · '+esc(sel.who)+'</div><div class="small muted">'+esc(sel.kind)+' · '+rideStatus(sel)+'</div></div><span class="tag '+badge(sel,sp)[1]+'">'+badge(sel,sp)[0]+'</span></div><div class="two"><div><div class="muted micro">PICKUP</div><strong>'+fmt(sel.scheduled)+'</strong><div class="micro muted">'+(sp.conflict?'Order pending':(sel.actual['Arrived at Pickup']!=null?'Actual ':'ETA ')+fmt(sp.pickup))+(sp.pickupRough?' · Rough':'')+'</div></div><div><div class="muted micro">DROP-OFF '+(sel.actual['Arrived at Drop-Off']!=null?'ACTUAL':'ETA')+'</div><strong>'+fmt(sp.drop)+(sp.dropRough?' · Rough':'')+'</strong><div class="micro muted">Drive '+(sel.drive!=null?sel.drive+'m planned':sel.driveMiles!=null?legMinutes(null,sel.driveMiles)+'m rough at 30 mph':'unknown')+'</div></div></div><div class="actions" style="margin-top:13px"><button class="btn primary big" id="openActiveTrip">Open Active Trip →</button></div>':'<div class="paneltitle">'+(unfinished.length?'Select a trip after confirming order':'No runs remaining')+'</div>';
 $('openActiveTrip')?.addEventListener('click',()=>{selectedTab='customer';render()});
-const warnings=[];for(const t of unfinished){const p=proj[t.id],v=p.pickup-t.scheduled;if(t.combinedApproach!=null)warnings.push(t.id+' · '+t.combinedApproach+' min combined drive from the previous pickup via its drop-off');if(p.pickup==null||p.drop==null)warnings.push(t.id+' · ETA incomplete · check drive times');if(p.pickup!=null&&v>0)warnings.push(t.id+' · '+(t.kind==='Return'?'Return ':'')+'pickup projected '+v+'m late'+(p.pickupRough?' · rough estimate':''));}if(!warnings.length)warnings.push('No calculated delays under current fictional assumptions.');warnings.unshift('Uses saved drive minutes or rough estimates at 30 mph when only mileage is available.');$('warnings').innerHTML=warnings.map(x=>'<div>'+esc(x)+'</div>').join('');
+const warnings=[];
+const conflicts=[...unresolvedPickups()].map(([time,trips])=>
+  'Schedule conflict · '+fmt(time)+' · '+trips.map(t=>t.id).join(', ')+' · Confirm order with dispatch');
+$('pickupConflicts').hidden=!conflicts.length;
+$('pickupConflicts').innerHTML=conflicts.map(line=>'<div>'+esc(line)+'</div>').join('');
+for(const t of unfinished){const p=proj[t.id],v=p.pickup-t.scheduled;if(t.combinedApproach!=null)warnings.push(t.id+' · '+t.combinedApproach+' min combined drive from the previous pickup via its drop-off');if(!p.conflict&&(p.pickup==null||p.drop==null))warnings.push(t.id+' · ETA incomplete · check drive times');if(p.pickup!=null&&v>0)warnings.push(t.id+' · '+(t.kind==='Return'?'Return ':'')+'pickup projected '+v+'m late'+(p.pickupRough?' · rough estimate':''));}if(!warnings.length)warnings.push('No calculated delays under current fictional assumptions.');warnings.unshift('Uses saved drive minutes or rough estimates at 30 mph when only mileage is available.');$('warnings').innerHTML=warnings.map(x=>'<div>'+esc(x)+'</div>').join('');
 const r=revenue();$('revenueBody').hidden=!revenueOpen;$('revenueToggle').textContent=revenueOpen?'Hide ▴':'Show ▾';$('revenueToggle').setAttribute('aria-expanded',String(revenueOpen));$('revenueBody').innerHTML='<div class="revenuegrid"><div><div class="small muted">DRIVER INCOME · ESTIMATE</div><div class="revenueamount">'+(r.driver==null?'—':money(r.driver))+'</div><div class="micro muted">'+(r.hours==null?'Start shift to estimate income':r.hours.toFixed(2)+' simulated hours · rate '+money(state.settings.hourlyRate||0)+'/hr')+'</div></div><div><div class="small muted">VEHICLE REVENUE · CLOSED RUNS</div><div class="revenueamount">'+(r.paid?money(r.vehicle):'—')+'</div><div class="micro muted">'+r.paid+' of '+r.done+' completed runs have test fares</div></div></div><p class="small muted">Vehicle revenue is recognized only after run completion and an entered fictional fare. Driver estimate is based on configured pay and shift time; not payroll or guaranteed overtime.</p>';
 const eventHTML=e=>'<div class="event">'+fmt(e.time)+' · '+esc(e.label)+'</div>';$('allEvents').innerHTML=state.events.slice().reverse().map(eventHTML).join('')||'<span class="muted small">No events yet.</span>';
-const checkpoints=['Wake Up','Arrive at Work','Leave Garage','Arrive Back at Garage','Arrive Home'];const first=state.trips[0]?.scheduled??480,values=[first-state.settings.early-state.settings.firstDrive-state.settings.garagePrep-state.settings.commute-45,first-state.settings.early-state.settings.firstDrive-state.settings.garagePrep,first-state.settings.early-state.settings.firstDrive,home==null?null:home-state.settings.garagePrep-state.settings.commute,home];$('checkpoints').innerHTML=checkpoints.map((x,i)=>'<div class="checkpoint"><strong>'+x+'</strong><b>'+fmt(state.checkpoints[x]??values[i])+'</b><button class="btn" data-checkpoint="'+x+'">'+(state.checkpoints[x]!=null?'Logged · Edit':'Log Now · ⋯')+'</button></div>').join('');
+const checkpoints=['Wake Up','Leave for Work','Arrive at Work','Leave Garage','Arrive Back at Garage','Arrive Home'];const first=state.trips[0]?.scheduled??480,values=[first-state.settings.early-state.settings.firstDrive-state.settings.garagePrep-state.settings.commute-45,first-state.settings.early-state.settings.firstDrive-state.settings.garagePrep-state.settings.commute,first-state.settings.early-state.settings.firstDrive-state.settings.garagePrep,first-state.settings.early-state.settings.firstDrive,home==null?null:home-state.settings.garagePrep-state.settings.commute,home];$('checkpoints').innerHTML=checkpoints.map((x,i)=>'<div class="checkpoint"><strong>'+x+'</strong><b>'+fmt(state.checkpoints[x]??values[i])+'</b><button class="btn" data-checkpoint="'+x+'">'+(state.checkpoints[x]!=null?'Logged · Edit':'Log Now · ⋯')+'</button></div>').join('');
 $('customerMain').innerHTML=handoff?
   '<div class="paneltitle" role="status">NEXT RUN · '+esc(sel.id)+' · '+esc(sel.who)+'</div>'+
   '<div class="statusline">'+rideStatus(sel,'Status: ')+'<strong>Scheduled '+fmt(sel.scheduled)+'</strong></div>'+
   '<p>'+esc(sel.pickupArea)+'</p>'+
   '<button class="btn primary big" id="openNextRun">Open Next Run</button>'
-  :sel?'<div class="paneltitle">ACTIVE TRIP · '+esc(sel.id)+' · '+esc(sel.who)+'</div><div class="statusline">'+rideStatus(sel,'Status: ')+'<strong>'+fmt(sp.pickup)+'</strong></div><div class="split"><div class="panel"><div class="micro muted">PICKUP AREA</div><b>'+esc(sel.pickupArea)+'</b></div><div class="panel"><div class="micro muted">DROP-OFF AREA</div><b>'+esc(sel.dropArea)+'</b></div></div><div class="actions"><button class="btn primary big" id="customerAdvance" '+(sel.outcome||sel.status===6?'disabled':'')+'>'+esc(sel.status===0&&!sel.outcome?'Start Pickup':stepLabels[sel.status]||'Done')+'</button><button class="btn" id="customerBack" '+(sel.status===0?'disabled':'')+'>↶ Back</button></div><div class="notice micro">These are public-landmark substitutes, not actual trip destinations. Travel estimates are manually simulated, not from Google Maps traffic.</div>':'<div class="paneltitle" role="status">No runs remaining</div>';
+  :sel?'<div class="paneltitle">ACTIVE TRIP · '+esc(sel.id)+' · '+esc(sel.who)+'</div><div class="statusline">'+rideStatus(sel,'Status: ')+'<strong>'+fmt(sp.pickup)+'</strong></div><div class="split"><div class="panel"><div class="micro muted">PICKUP AREA</div><b>'+esc(sel.pickupArea)+'</b></div><div class="panel"><div class="micro muted">DROP-OFF AREA</div><b>'+esc(sel.dropArea)+'</b></div></div><div class="actions"><button class="btn primary big" id="customerAdvance" '+(sel.outcome||sel.status===6?'disabled':'')+'>'+esc(sel.status===0&&!sel.outcome?'Start Pickup':stepLabels[sel.status]||'Done')+'</button><button class="btn" id="customerBack" '+(sel.status===0?'disabled':'')+'>↶ Back</button></div><div class="notice micro">These are public-landmark substitutes, not actual trip destinations. Travel estimates are manually simulated, not from Google Maps traffic.</div>':'<div class="paneltitle" role="status">'+(unfinished.length?'Confirm order with dispatch, then select the trip in Cockpit':'No runs remaining')+'</div>';
 $('openNextRun')?.addEventListener('click',()=>{
   state.handoff = null;
   persist();
@@ -307,7 +352,7 @@ function editCheckpoint(k){
 function shiftCorrection(){modal('Shift time correction','<p class="small muted">Edit start/end times or reopen the shift. All changes are recorded and undoable.</p><div class="two trip-entry">'+
   quickField('shiftStart','Start (blank means unset)','time',state.shift.start==null?'':minutes24(state.shift.start),{optional:true})+
   quickField('shiftEnd','End (blank means open)','time',state.shift.end==null?'':minutes24(state.shift.end),{optional:true})+'</div>','<button class="btn primary" id="saveShift">Save correction</button><button class="btn" id="closeModal">Cancel</button>');$('closeModal').onclick=closeModal;$('saveShift').onclick=()=>{let a=$('shiftStart').value.trim(),b=$('shiftEnd').value.trim(),s=a===''?null:parse24(a),e=b===''?null:parse24(b);if((a!==''&&s===null)||(b!==''&&e===null)||(e!==null&&(s===null||e<s))){alert('Check HH:MM values. End must follow start.');return}change('Correct shift time',()=>state.shift={start:s,end:e});closeModal()}}
-function setClock(newM){if(newM===null||newM<0||newM>1439){alert('Enter a valid 24-hour time');return}change('Set simulation clock '+fmt(newM),()=>{state.clockMode='simulation';state.clock=newM})}
+function setClock(newM){if(newM===null||newM<0||newM>1439){alert('Enter a valid 24-hour time');return}change('Set simulation clock '+fmt(newM),()=>{state.clockMode='simulation';state.clock=newM;state.forecastClock=newM})}
 function readMinutes(id,min){
   const value=$(id).value.trim();
   if(value==='')return null;
@@ -331,6 +376,7 @@ $('clockMode').onclick=()=>{
   change(device?'Use device time':'Use simulation time',()=>{
     state.clockMode=device?'device':'simulation';
     recordEventTime();
+    state.forecastClock=state.clock;
   });
 };
 function updateDay(){
@@ -343,7 +389,7 @@ function updateDay(){
     const time=parse24($('updateTime').value);
     if(time==null){alert('Enter a valid time.');return;}
     closeModal();
-    if(time!==state.clock)change('Update day as of '+fmt(time),()=>{state.clock=time});
+    if(time!==state.clock||time!==forecastTime())change('Update day as of '+fmt(time),()=>{state.clock=time;state.forecastClock=time});
     else render();
     toast('Remaining ETAs recalculated');
   };
@@ -368,3 +414,4 @@ document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{selectedTab=b.
 $('exportData').onclick=()=>{const out=deep(state);out.events=out.events.map(({restore,...e})=>e);download('Serenity_CloudflareDemo002_Fictional_Backup.json',JSON.stringify({format:'serenity-001',data:out},null,2),'application/json')};$('exportLog').onclick=()=>download('Serenity_CloudflareDemo002_Event_Log.json',JSON.stringify(state.events.map(({restore,...e})=>e),null,2),'application/json');$('importData').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>2e6)throw Error('File too large');const obj=JSON.parse(await file.text());if(obj.format!=='serenity-001'||!Array.isArray(obj.data?.trips)||obj.data.trips.length>100||!obj.data.settings||!Array.isArray(obj.data.events))throw Error('Unsupported backup format');if(!confirm('Replace this test day with backup? Export current data first if needed.'))return;state=obj.data;persist();render();toast('Fictional backup loaded')}catch(err){alert('Import failed: '+err.message)}finally{e.target.value=''}};$('reset').onclick=()=>{if(!confirm('Reset all fictional test data and event history? Export a backup first if needed.'))return;state=seed();persist();render()};$('saveSettings').onclick=()=>{const values={};for(const k of ['commute','garagePrep','early','firstDrive','hourlyRate','overtimeAfter','overtimeMultiplier']){values[k]=Number($(k).value);if(!Number.isFinite(values[k])||values[k]<0||values[k]>(k==='hourlyRate'?500:k==='overtimeAfter'?24:k==='overtimeMultiplier'?3:180)){alert('Check all settings');return}}change('Update timing assumptions',()=>state.settings=values)};
 render();
 </script></body></html>
+
