@@ -32,7 +32,7 @@ Reuse original CV4 town centers. Prefer saved loaded mileage. Otherwise estimate
 ## Persistent daily controls and display
 
 - Daily read-only information displays show calculated Wake Up, Leave Garage and estimated Arrive Home.
-- All three displays stay in a fixed upper-right dock on every main screen. They have no tap or hold actions, no diamond indicators and no manual logging. Values follow the manifest forecast and timing settings, ignoring legacy checkpoint logs.
+- All three displays appear together on Overview; the theme control stays available on every screen. They have no tap or hold actions, no diamond indicators and no manual logging. Values follow the manifest forecast and timing settings, ignoring legacy checkpoint logs.
 - Leave Garage means depart the garage in the work truck: first scheduled pickup minus the saved early-arrival target and garage-to-first-pickup drive estimate. It updates with the imported schedule and timing settings, and remains information-only.
 - Keep morning back-calculation and garage timing assumptions in the forecast.
 - A neighboring control cycles Day, Dusk and Night. Dusk uses a muted warm palette.
@@ -60,8 +60,18 @@ Reuse original CV4 town centers. Prefer saved loaded mileage. Otherwise estimate
 
 ## Restored weather
 
-- Keep a compact Bay Shore weather card in the upper-right header beneath daily timing displays. Show hourly forecast temperature/conditions/wind, morning/afternoon/evening outlook and NWS alerts for the town center.
+- Keep the Bay Shore weather card on the right of Overview, with daily timing displays above it. Show hourly forecast temperature/conditions/wind, morning/afternoon/evening outlook and NWS alerts for the town center.
 - Fetch from the National Weather Service points, hourly forecast and active alert endpoints, automatically on opening/resuming and every 30 minutes while visible, with manual Refresh.
 - Weather uses the actual New York date/time independently of the route simulation clock. Forecast-based driving cautions must not claim measured road or traffic conditions.
 - Cache weather separately from manifests. Label saved/stale forecasts and failed alert checks; failed weather requests must preserve trip controls, drafts, timestamps, revenue and display preferences. No passenger data or device GPS is sent.
 - Source documentation: https://www.weather.gov/documentation/services-web-api
+
+## Four-tab workspace
+
+- Exactly four tabs in this order: Overview, Dispatch, Customer, Settings. Default to Dispatch and preserve the existing local-storage key and manifest schema.
+- Overview contains daily progress, completions/cancellations, shift control, read-only checkpoints, weather, revenue (collapsed initially), selected-trip summary and schedule notes.
+- Dispatch uses full width for the original-order manifest, towns, scheduled/rolling estimates, conflicts, available-time bars, filters and colored statuses. No revenue/weather sidebar. Filtered rows keep their original run numbers.
+- Each row exposes one-step back/forward arrows and tappable/holdable status correction options. Back removes the reversed event timestamp, recalculates affected connections, can reopen completed runs, and remains undoable. Forward uses the same timing engine as Customer and intentionally starts a pending handoff. Undo restores the handoff as well as status and timestamps.
+- Tapping a rider opens Customer; row control taps do not navigate. Customer shows large aligned scheduled and live pickup/drop-off times, towns, recorded waits, status controls, messages and verified contact/notes tools.
+- Settings contains rates, timing assumptions, JSON import/export/add/edit/reset controls, audit log and simulation tools. Keep Update Day, Undo and the theme control reachable across tabs.
+- Preserve existing rolling forecast, timestamp history, cancellation outcomes, Revenue controls, fixed friendly EN/ES SMS drafts, weather cache and themes. Routing API integration is a separate task.

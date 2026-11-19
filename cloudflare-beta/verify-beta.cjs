@@ -493,7 +493,7 @@ check('project()["F-002"].earliest',603);
 check('project()["F-003"].pickup',640);
 check('state.trips[1].scheduled',595);
 assert.match(ids.activePanel.innerHTML,/<strong>10:00 AM<\/strong><div class="dropoff-detail">Live ETA · Rough · 9:48 AM/);
-assert.match(ids.customerMain.innerHTML,/<strong>10:00 AM<\/strong><div class="dropoff-detail">Live ETA · Rough · 9:48 AM/);
+assert.match(ids.customerMain.innerHTML,/scheduled-time">10:00 AM[\s\S]*live-time">9:48 AM[\s\S]*Live drop-off estimate/);
 
 run('state=loadRouteScenario(JSON.parse(localStorage.getItem(STORE)));deviceTime=()=>"09:44";render()');
 check('project()["F-002"].earliest',603);
@@ -558,7 +558,7 @@ check('state.trips[1].scheduledDrop',900);
 assert.match(ids.roster.innerHTML,/<strong>3:00 PM<\/strong><div class="earliest-pickup">If next · 12:57 PM/);
 assert.match(ids.roster.innerHTML,/Planned ETA · If first · 2:27 PM/);
 assert.match(ids.activePanel.innerHTML,/If next · 12:57 PM/);
-assert.match(ids.customerMain.innerHTML,/If next · 12:57 PM/);
+assert.match(ids.customerMain.innerHTML,/live-time">12:57 PM[\s\S]*Live drop-off estimate/);
 assert.match(ids.pickupConflicts.innerHTML,/2:00 PM · F-002, F-003/);
 run('deviceTime=()=>"12:05"');
 onInterval();
@@ -695,7 +695,7 @@ assert.equal(ids.firstDrive.value,'42');
 run('state=simulationDay();render()');
 check('displayTheme','dusk');
 check('localStorage.getItem(DISPLAY_STORE)','dusk');
-for(const tab of ['cockpit','customer','manifest','settings']){
+for(const tab of ['overview','dispatch','customer','settings']){
   run('selectedTab='+JSON.stringify(tab)+';render()');
   assert.match(ids.checkpoints.innerHTML,/Wake Up/);
   assert.match(ids.checkpoints.innerHTML,/Arrive Home/);
@@ -705,7 +705,7 @@ assert.match(ids.checkpoints.innerHTML,/Leave Garage/);
 run('change("Checkpoint display test",()=>state.checkpoints["Wake Up"]=430)');
 tap('undo');
 check('displayTheme','dusk');
-console.log('Three persistent read-only daily displays follow manifest timing and ignore legacy logs; Leave Garage counts backward from the first pickup using the early target and drive estimate. All three themes cycle and persist separately while unsaved fields and navigation are preserved.');
+console.log('Three read-only daily displays on Overview follow manifest timing and ignore legacy logs; Leave Garage counts backward from the first pickup using the early target and drive estimate. All three themes cycle and persist separately while unsaved fields and navigation are preserved.');
 
 check('cockpitTown({pickupArea:"100 Sample Road, Shirley, NY 11967"},"pickup")','Shirley');
 check('cockpitTown({dropArea:"100 Sample Road, Lake Success, NY 11042"},"drop")','Lake Success');
@@ -845,6 +845,41 @@ run('state.selected=null;state.trips.forEach(t=>t.outcome="Completed");render()'
 assert.equal(ids.messagePreview.value,'');
 assert.equal(ids.copyMessage.disabled,true);
 assert.equal(ids.openSms.attributes.href,undefined);
+// Four-tab relocation and row actions must preserve the underlying day.
+assert.deepEqual([...markup.matchAll(/data-tab="([^"]+)"/g)].map(m=>m[1]),['overview','dispatch','customer','settings']);
+const pageMarkup=id=>markup.split('<main id="'+id+'"')[1].split('</main>')[0];
+assert.match(pageMarkup('overview'),/id="weatherBody"/);
+assert.match(pageMarkup('overview'),/id="revenuePanel"/);
+assert.match(pageMarkup('overview'),/id="checkpoints"/);
+assert.doesNotMatch(pageMarkup('dispatch'),/id="weatherBody"|id="revenuePanel"|id="mProgress"/);
+assert.match(pageMarkup('settings'),/id="importData"/);
+assert.match(pageMarkup('settings'),/id="saveSettings"/);
+assert.match(pageMarkup('settings'),/SIMULATION CLOCK/);
+assert.equal(new Set([...markup.matchAll(/id="([^"]+)"/g)].map(m=>m[1])).size,[...markup.matchAll(/id="([^"]+)"/g)].length);
+run('state=simulationDay();selectedTab="dispatch";state.selected="F-003";render();dispatchStep("F-001",1)');
+check('selectedTab','dispatch');check('selected().id','F-001');check('state.trips[0].status',1);
+check('state.trips[0].actual["En Route to Pickup"]',420);
+tap('undo');check('selected().id','F-003');check('state.trips[0].status',0);
+run('dispatchStep("F-001",1);dispatchStep("F-001",1);state.clock=650;dispatchStep("F-001",1)');
+check('state.trips[0].actual["On Board"]',650);
+const lateFollowingPickup=run('project()["F-002"].pickup');
+run('dispatchStep("F-001",-1)');check('state.trips[0].status',2);
+check('state.trips[0].actual["On Board"]',undefined);
+tap('undo');check('state.trips[0].actual["On Board"]',650);check('project()["F-002"].pickup',lateFollowingPickup);
+run('dispatchStep("F-001",1);dispatchStep("F-001",1);state.clock=710;dispatchStep("F-001",1)');
+check('state.trips[0].outcome','Completed');check('state.handoff','F-002');
+run('dispatchStep("F-002",1)');check('state.trips[1].status',1);check('state.handoff',null);
+tap('undo');check('state.trips[1].status',0);check('state.handoff','F-002');
+run('dispatchStep("F-001",-1)');check('state.trips[0].status',5);check('state.trips[0].outcome',null);check('state.trips[0].actual.Finished',undefined);
+tap('undo');check('state.trips[0].outcome','Completed');check('state.trips[0].actual.Finished',710);check('state.handoff','F-002');
+assert.match(ids.roster.innerHTML,/data-trip-back="F-001"/);assert.match(ids.roster.innerHTML,/data-trip-forward="F-001"/);
+run('state=simulationDay();state.trips[0].scheduledDrop=540;render()');
+assert.match(ids.customerMain.innerHTML,/scheduled-time">9:00 AM/);
+assert.match(ids.customerMain.innerHTML,/live-time/);
+const beforeNavigation=run('JSON.stringify(state)');
+for(const tab of ['overview','dispatch','customer','settings']){run('selectedTab='+JSON.stringify(tab)+';render()');check('JSON.stringify(state)',beforeNavigation);}
+console.log('Four-tab layout relocates summaries, imports and settings without duplicates; Dispatch arrows log one stage, preserve selection/history, reverse completed runs, restore handoffs with Undo, and share the customer forecast without changing schedules.');
+
 (async()=>{
   run('state=simulationDay();Object.assign(state.trips[0],{who:"Alex",phone:"+16315550123",messageLanguage:"es"});state.selected="F-001";render();');
   tap('macroCurb');
