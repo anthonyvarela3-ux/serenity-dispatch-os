@@ -36,3 +36,9 @@ Reuse original CV4 town centers. Prefer saved loaded mileage. Otherwise estimate
 - Keep morning back-calculation and garage timing assumptions in the forecast.
 - A neighboring control cycles Day, Dusk and Night. Dusk uses a muted warm palette.
 - Store the display preference independently of the manifest so imports, reset and Undo preserve the chosen appearance.
+
+## Cockpit timing alignment
+
+- Align scheduled pickup/drop-off on one row, planned forecasts on the next, and Leave now/If next estimates on the next.
+- Wrapped labels in either timing column must expand the shared row together. Keep same-location notes below the timing rows.
+- This is a presentation change; preserve forecast values, event timestamps and trip controls.
