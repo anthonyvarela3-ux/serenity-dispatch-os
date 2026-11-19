@@ -57,3 +57,11 @@ Reuse original CV4 town centers. Prefer saved loaded mileage. Otherwise estimate
 - Show available minutes, driving minutes and leave-by time. Identify projections, rough travel assumptions and unconfirmed drop-off handoffs.
 - Refresh with the forecast, status changes, corrections, cancellation, Undo and elapsed time. Same-location returns have zero connecting drive.
 - Exclude cancellations and trips already en route/arrived; suppress uncertain-order gaps. Bars are information, never trips, revenue or editable status controls.
+
+## Restored weather
+
+- Keep a compact Bay Shore weather card in the upper-right header beneath daily timing displays. Show hourly forecast temperature/conditions/wind, morning/afternoon/evening outlook and NWS alerts for the town center.
+- Fetch from the National Weather Service points, hourly forecast and active alert endpoints, automatically on opening/resuming and every 30 minutes while visible, with manual Refresh.
+- Weather uses the actual New York date/time independently of the route simulation clock. Forecast-based driving cautions must not claim measured road or traffic conditions.
+- Cache weather separately from manifests. Label saved/stale forecasts and failed alert checks; failed weather requests must preserve trip controls, drafts, timestamps, revenue and display preferences. No passenger data or device GPS is sent.
+- Source documentation: https://www.weather.gov/documentation/services-web-api

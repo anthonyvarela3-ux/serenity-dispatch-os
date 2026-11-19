@@ -862,4 +862,55 @@ assert.equal(ids.openSms.attributes.href,undefined);
   await ids.openVoice.onclick();
   assert.match(ids.messageFeedback.textContent,/Copy the message from this preview/);
   console.log('All courtesy macros keep friendly fixed wording across trip states and clock changes. Confirmation variables, language, SMS encoding and Google Voice fallbacks pass.');
+  const weatherNow=Date.parse('2026-11-19T12:00:00Z');
+  const weatherPeriods=[
+    {startTime:'2026-11-19T07:00:00-05:00',endTime:'2026-11-19T08:00:00-05:00',temperature:40,temperatureUnit:'F',shortForecast:'Sunny',windSpeed:'3 mph',probabilityOfPrecipitation:{value:0}},
+    {startTime:'2026-11-19T13:00:00-05:00',endTime:'2026-11-19T14:00:00-05:00',temperature:50,temperatureUnit:'F',shortForecast:'Rain and Fog',windSpeed:'25 to 35 mph',probabilityOfPrecipitation:{value:70}},
+    {startTime:'2026-11-19T19:00:00-05:00',endTime:'2026-11-19T20:00:00-05:00',temperature:45,temperatureUnit:'F',shortForecast:'Cloudy',windSpeed:'5 mph',probabilityOfPrecipitation:{value:20}}
+  ];
+  context.weatherFixture=weatherPeriods;
+  context.weatherTestNow=weatherNow;
+  check('weatherParts(weatherTestNow).day','2026-11-19');
+  check('weatherParts(weatherTestNow).hour',7);
+  check('weatherF({temperature:0,temperatureUnit:"C"})',32);
+  check('weatherSummary(weatherFixture,weatherTestNow).blocks.map(b=>b.text).join(",")','40–40°F,50–50°F,45–45°F');
+  check('weatherSummary(weatherFixture,weatherTestNow).blocks[1].rain',70);
+  check('weatherSummary(weatherFixture,weatherTestNow).warnings.length',3);
+  const weatherCalls=[];
+  context.fetch=async url=>{
+    weatherCalls.push(url);
+    return {ok:true,json:async()=>url.includes('/points/')?{properties:{forecastHourly:'https://api.weather.gov/gridpoints/OKX/59,47/forecast/hourly'}}:url.includes('/alerts/')?{features:[]}:{properties:{periods:weatherPeriods}}};
+  };
+  const dayBeforeWeather=run('JSON.stringify(state)');
+  ids.notes.value='Unsaved weather test note';
+  ids.firstDrive.value='42';
+  await run('updateWeather(true)');
+  assert.equal(weatherCalls.length,3);
+  check('weatherData.periods.length',3);
+  assert.match(ids.weatherBody.innerHTML,/Morning/);
+  assert.match(ids.weatherBody.innerHTML,/Afternoon/);
+  assert.match(ids.weatherBody.innerHTML,/Evening/);
+  assert.match(ids.weatherAlerts.innerHTML,/No active NWS alerts/);
+  check('JSON.stringify(state)',dayBeforeWeather);
+  assert.equal(ids.notes.value,'Unsaved weather test note');
+  assert.equal(ids.firstDrive.value,'42');
+  check('JSON.parse(localStorage.getItem(WEATHER_STORE)).periods.length',3);
+  await run('updateWeather()');assert.equal(weatherCalls.length,3);
+  context.fetch=async()=>{throw Error('Offline');};
+  await run('updateWeather(true)');
+  check('weatherData.periods.length',3);
+  assert.match(ids.weatherUpdated.textContent,/Refresh unavailable · Saved forecast/);
+  check('JSON.stringify(state)',dayBeforeWeather);
+  context.fetch=async url=>{
+    if(url.includes('/alerts/'))throw Error('Alert service unavailable');
+    return {ok:true,json:async()=>url.includes('/points/')?{properties:{forecastHourly:'https://api.weather.gov/gridpoints/OKX/59,47/forecast/hourly'}}:{properties:{periods:weatherPeriods}}};
+  };
+  await run('updateWeather(true)');
+  check('weatherData.alerts',null);
+  assert.match(ids.weatherAlerts.innerHTML,/Weather alert check unavailable/);
+  assert.doesNotMatch(ids.weatherAlerts.innerHTML,/No active NWS alerts/);
+  run('weatherData.fetchedAt=Date.now()-2*60*60*1000;renderWeather()');
+  assert.match(ids.weatherUpdated.textContent,/Saved forecast · Stale/);
+  console.log('Weather verifies New York period grouping, temperature conversion, rain/wind/fog cautions, source refresh, throttling, separate cache, offline/stale labels, partial alert failure and preservation of trip state and unsaved notes/settings.');
+
 })().catch(error=>{console.error(error);process.exitCode=1;});
