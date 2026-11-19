@@ -265,7 +265,8 @@ run('state.trips[1].scheduled=530;render()');
 check('project()["F-001"].pickup',470);
 assert.match(ids.checkpoints.innerHTML,/Wake Up/);
 assert.match(ids.checkpoints.innerHTML,/Arrive Home/);
-assert.doesNotMatch(ids.checkpoints.innerHTML,/Leave for Work|Arrive at Work|Leave Garage|Arrive Back at Garage/);
+assert.match(ids.checkpoints.innerHTML,/Leave Garage/);
+assert.doesNotMatch(ids.checkpoints.innerHTML,/Leave for Work|Arrive at Work|Arrive Back at Garage/);
 console.log('On Board and Finish Run anchor the live forecast, which also accounts for elapsed time. Logged timestamps, waits, Undo and conflicts are preserved.');
 
 
@@ -658,8 +659,9 @@ console.log('Published livery estimates populate automatically from loaded miles
 run('state=simulationDay();state.checkpoints={"Leave Garage":440,"Wake Up":420,"Arrive Home":1020};render()');
 assert.match(ids.checkpoints.innerHTML,/Wake Up · Estimated 6:27 AM/);
 assert.doesNotMatch(ids.checkpoints.innerHTML,/<button|data-checkpoint=|Tap to log|Hold to edit|✓/);
-assert.equal([...ids.checkpoints.innerHTML.matchAll(/class="checkpoint-info"/g)].length,2);
-for(const id of ['wakeCheckpoint','homeCheckpoint']){
+assert.equal([...ids.checkpoints.innerHTML.matchAll(/class="checkpoint-info"/g)].length,3);
+assert.match(ids.checkpoints.innerHTML,/Leave Garage · Estimated 7:26 AM/);
+for(const id of ['wakeCheckpoint','garageCheckpoint','homeCheckpoint']){
   assert.equal(ids[id].onclick,undefined);
   assert.equal(ids[id].pointerdown,undefined);
   assert.equal(ids[id].dataset.holdInstalled,undefined);
@@ -667,6 +669,9 @@ for(const id of ['wakeCheckpoint','homeCheckpoint']){
 const homeBefore=ids.checkpoints.innerHTML.match(/id="homeCheckpoint"[\s\S]*$/)[0];
 run('state.trips[0].scheduled+=30;render()');
 assert.match(ids.checkpoints.innerHTML,/Wake Up · Estimated 6:57 AM/);
+assert.match(ids.checkpoints.innerHTML,/Leave Garage · Estimated 7:56 AM/);
+run('state.settings.firstDrive+=10;render()');
+assert.match(ids.checkpoints.innerHTML,/Leave Garage · Estimated 7:46 AM/);
 run('state.trips.at(-1).drive+=20;render()');
 assert.notEqual(ids.checkpoints.innerHTML.match(/id="homeCheckpoint"[\s\S]*$/)[0],homeBefore);
 check('state.checkpoints["Wake Up"]',420);
@@ -694,12 +699,13 @@ for(const tab of ['cockpit','customer','manifest','settings']){
   run('selectedTab='+JSON.stringify(tab)+';render()');
   assert.match(ids.checkpoints.innerHTML,/Wake Up/);
   assert.match(ids.checkpoints.innerHTML,/Arrive Home/);
+assert.match(ids.checkpoints.innerHTML,/Leave Garage/);
   assert.equal(ids.themeToggle.textContent,'◐ Dusk');
 }
 run('change("Checkpoint display test",()=>state.checkpoints["Wake Up"]=430)');
 tap('undo');
 check('displayTheme','dusk');
-console.log('Two persistent read-only checkpoint displays follow manifest timing and ignore legacy logs. All three themes cycle and persist separately while unsaved fields and navigation are preserved.');
+console.log('Three persistent read-only daily displays follow manifest timing and ignore legacy logs; Leave Garage counts backward from the first pickup using the early target and drive estimate. All three themes cycle and persist separately while unsaved fields and navigation are preserved.');
 
 check('cockpitTown({pickupArea:"100 Sample Road, Shirley, NY 11967"},"pickup")','Shirley');
 check('cockpitTown({dropArea:"100 Sample Road, Lake Success, NY 11042"},"drop")','Lake Success');

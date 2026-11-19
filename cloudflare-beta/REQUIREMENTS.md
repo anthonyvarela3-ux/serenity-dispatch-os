@@ -31,8 +31,9 @@ Reuse original CV4 town centers. Prefer saved loaded mileage. Otherwise estimate
 
 ## Persistent daily controls and display
 
-- Daily read-only information displays show calculated Wake Up and estimated Arrive Home.
-- Both displays stay in a fixed upper-right dock on every main screen. They have no tap or hold actions, no diamond indicators and no manual logging. Values follow the manifest forecast and timing settings, ignoring legacy checkpoint logs.
+- Daily read-only information displays show calculated Wake Up, Leave Garage and estimated Arrive Home.
+- All three displays stay in a fixed upper-right dock on every main screen. They have no tap or hold actions, no diamond indicators and no manual logging. Values follow the manifest forecast and timing settings, ignoring legacy checkpoint logs.
+- Leave Garage means depart the garage in the work truck: first scheduled pickup minus the saved early-arrival target and garage-to-first-pickup drive estimate. It updates with the imported schedule and timing settings, and remains information-only.
 - Keep morning back-calculation and garage timing assumptions in the forecast.
 - A neighboring control cycles Day, Dusk and Night. Dusk uses a muted warm palette.
 - Store the display preference independently of the manifest so imports, reset and Undo preserve the chosen appearance.

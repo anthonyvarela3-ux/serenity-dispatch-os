@@ -739,8 +739,9 @@ if(!refreshOnly){
 const eventHTML=e=>'<div class="event">'+fmt(e.time)+' · '+esc(e.label)+'</div>';$('allEvents').innerHTML=state.events.slice().reverse().map(eventHTML).join('')||'<span class="muted small">No events yet.</span>';
 }
 const first=state.trips[0]?.scheduled;
-const wake=first==null?null:first-state.settings.early-state.settings.firstDrive-state.settings.garagePrep-state.settings.commute-45;
-$('checkpoints').innerHTML=[['wakeCheckpoint','Wake Up',wake],['homeCheckpoint','Arrive Home',home]].map(([id,label,planned])=>
+const leaveGarage=first==null?null:first-state.settings.early-state.settings.firstDrive;
+const wake=leaveGarage==null?null:leaveGarage-state.settings.garagePrep-state.settings.commute-45;
+$('checkpoints').innerHTML=[['wakeCheckpoint','Wake Up',wake],['garageCheckpoint','Leave Garage',leaveGarage],['homeCheckpoint','Arrive Home',home]].map(([id,label,planned])=>
   '<div class="checkpoint-info" id="'+id+'" aria-label="'+label+' · Estimated '+fmt(planned)+'">'+
     '<span class="checkpoint-label">'+label+'</span><span class="checkpoint-time">'+fmt(planned)+'</span></div>'
 ).join('');
