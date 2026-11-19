@@ -701,6 +701,20 @@ tap('undo');
 check('displayTheme','dusk');
 console.log('Two persistent read-only checkpoint displays follow manifest timing and ignore legacy logs. All three themes cycle and persist separately while unsaved fields and navigation are preserved.');
 
+check('cockpitTown({pickupArea:"100 Sample Road, Shirley, NY 11967"},"pickup")','Shirley');
+check('cockpitTown({dropArea:"100 Sample Road, Lake Success, NY 11042"},"drop")','Lake Success');
+check('cockpitTown({pickupArea:"100 Stony Brook Road, Unit 1, Shirley, NY 11967"},"pickup")','Shirley');
+check('cockpitTown({dropArea:"100 Sample Road, Huntington Station NY 11746"},"drop")','Huntington Station');
+check('cockpitTown({pickupArea:"Public test pickup"},"pickup")','Town not set');
+check('cockpitTown({pickupTown:"Bay Shore",pickupArea:"Address not supplied"},"pickup")','Bay Shore');
+assert.equal(run('cockpitTownLabel({dropTown:"<Example>"},"drop")').includes('&lt;Example&gt;'),true);
+run('state=simulationDay();render()');
+assert.match(ids.roster.innerHTML,/Pickup town: Coram/);
+assert.match(ids.roster.innerHTML,/Drop-off town: Central Islip/);
+assert.match(ids.activePanel.innerHTML,/Pickup town: Coram/);
+assert.match(ids.activePanel.innerHTML,/Drop-off town: Central Islip/);
+console.log('Cockpit town labels use address localities or explicit town fields, escape text, and appear above pickup/drop-off times.');
+
 const copiedDrafts=[];
 const openedApps=[];
 context.navigator={

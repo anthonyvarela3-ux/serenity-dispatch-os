@@ -27,31 +27,34 @@ button[data-hold-installed="1"]::after,.trip[data-hold-installed="1"] .name::aft
 .earliest-pickup.overdue,.trip .earliest-pickup.overdue{color:#ffd17e}
 .dropoff-times .dropoff-detail{color:var(--muted);font-size:11px;margin-top:4px;font-weight:650}
 
+.cockpit-town{font-size:12px;font-weight:750;color:var(--text);overflow-wrap:anywhere;line-height:1.3}
 /* Each trip shares timing rows across pickup and drop-off, including wrapped text. */
-.trip{grid-template-rows:repeat(4,auto);row-gap:4px}
-.trip > div{grid-row:1 / span 4}
+.trip{grid-template-rows:repeat(5,auto);row-gap:4px}
+.trip > div{grid-row:1 / span 5}
 .trip > .pickup-col,.trip > .dropoff-col{
   display:grid;grid-template-rows:subgrid;min-width:0;align-items:start;
   line-height:1.35;font-variant-numeric:tabular-nums;
 }
-.trip .pickup-col > .t{grid-row:1}
-.trip .pickup-col > .info{grid-row:2;margin-top:0}
-.trip .pickup-col > .earliest-pickup{grid-row:3}
-.trip .pickup-col > .connection-detail{grid-row:4}
+.trip .cockpit-town{grid-row:1}
+.trip .pickup-col > .t{grid-row:2}
+.trip .pickup-col > .info{grid-row:3;margin-top:0}
+.trip .pickup-col > .earliest-pickup{grid-row:4}
+.trip .pickup-col > .connection-detail{grid-row:5}
 .trip .dropoff-col .dropoff-times{display:contents}
-.trip .dropoff-col strong{grid-row:1}
-.trip .dropoff-col .dropoff-detail{grid-row:2;margin-top:0}
-.trip .dropoff-col .earliest-pickup{grid-row:3;margin-top:0}
+.trip .dropoff-col strong{grid-row:2}
+.trip .dropoff-col .dropoff-detail{grid-row:3;margin-top:0}
+.trip .dropoff-col .earliest-pickup{grid-row:4;margin-top:0}
 
 /* Apply the same alignment to the cockpit's active-trip summary. */
-.cockpit-time-summary{grid-template-rows:repeat(5,auto);row-gap:4px}
-.cockpit-time-summary > div{display:grid;grid-template-rows:subgrid;grid-row:1 / span 5;min-width:0;align-items:start;font-variant-numeric:tabular-nums}
+.cockpit-time-summary{grid-template-rows:repeat(6,auto);row-gap:4px}
+.cockpit-time-summary > div{display:grid;grid-template-rows:subgrid;grid-row:1 / span 6;min-width:0;align-items:start;font-variant-numeric:tabular-nums}
 .cockpit-time-summary > div > :first-child{grid-row:1}
-.cockpit-time-summary strong{grid-row:2}
+.cockpit-time-summary .cockpit-town{grid-row:2}
+.cockpit-time-summary strong{grid-row:3}
 .cockpit-time-summary .dropoff-times{display:contents}
-.cockpit-time-summary .summary-pickup > .micro:not(:first-child),.cockpit-time-summary .dropoff-detail{grid-row:3;margin-top:0}
-.cockpit-time-summary .earliest-pickup{grid-row:4;margin-top:0}
-.cockpit-time-summary .connection-detail,.cockpit-time-summary .summary-dropoff > .micro:last-child{grid-row:5}
+.cockpit-time-summary .summary-pickup > .micro:not(:first-child),.cockpit-time-summary .dropoff-detail{grid-row:4;margin-top:0}
+.cockpit-time-summary .earliest-pickup{grid-row:5;margin-top:0}
+.cockpit-time-summary .connection-detail,.cockpit-time-summary .summary-dropoff > .micro:last-child{grid-row:6}
 @media(max-width:480px){.trip-entry{grid-template-columns:1fr}}
 
 :root{
@@ -501,6 +504,22 @@ function earliestPickupText(p){
     p.earliestRough?' · Rough':'';
   return '<div class="info earliest-pickup'+(p.earliestOverdue?' overdue':'')+'">'+label+' · '+fmt(p.earliest)+detail+'</div>';
 }
+function cockpitTown(trip,side){
+  const explicit=trip[side+'Town'];
+  if(typeof explicit==='string'&&explicit.trim())return explicit.trim();
+  const parts=String(trip[side+'Area']??'').split(',').map(x=>x.trim()).filter(Boolean);
+  if(parts.length<2)return 'Town not set';
+  const last=parts.at(-1);
+  if(/^(?:[A-Z]{2}|New York)(?:\s*\d{5}(?:-\d{4})?)?$/i.test(last))
+    return parts.length>=3?parts.at(-2):'Town not set';
+  const withState=last.match(/^(.+?)\s+(?:[A-Z]{2}|New York)\s*\d{5}(?:-\d{4})?$/i);
+  if(withState)return withState[1].trim();
+  return /\d/.test(last)?'Town not set':last;
+}
+function cockpitTownLabel(trip,side){
+  const town=cockpitTown(trip,side);
+  return '<div class="cockpit-town" aria-label="'+(side==='pickup'?'Pickup':'Drop-off')+' town: '+esc(town)+'">'+esc(town)+'</div>';
+}
 function pickupText(t,p){
   if(t.actual['Arrived at Pickup']!=null)return 'Arrived '+fmt(p.pickup);
   if(t.actual['On Board']!=null)return 'On board '+fmt(p.pickup);
@@ -667,8 +686,8 @@ $('clockMode').textContent=deviceMode?'Device Time On':'Use Device Time';
 $('clockMode').setAttribute('aria-pressed',String(deviceMode));
 $('modeBadge').textContent=deviceMode?'DEVICE TIME · AUTO':'SIMULATION · LOCAL';
 $('clockTop').textContent=fmt(now);$('mProgress').textContent=finished.length+' / '+state.trips.length;$('mRemaining').textContent=unfinished.length;$('mVariance').textContent=next&&proj[next.id].pickup!=null?((proj[next.id].pickup-next.scheduled)>0?'+':'')+(proj[next.id].pickup-next.scheduled)+' min':'—';$('mHome').textContent=fmt(home);$('mShift').textContent=state.shift.start===null?'—':duration(Math.max(0,(state.shift.end??now)-state.shift.start));$('shift').textContent=state.shift.start===null?'Start Shift':state.shift.end===null?'End Shift · Hold to Correct':'Reopen Shift · Hold to Correct';
-document.querySelectorAll('[data-filter]').forEach(b=>{b.classList.toggle('active',b.dataset.filter===rosterFilter);const count=state.trips.filter(t=>filterStatus(t)===b.dataset.filter).length;b.textContent=b.dataset.filter+(b.dataset.filter==='All'?'':(' · '+count))});$('roster').innerHTML=state.trips.filter(t=>rosterFilter==='All'||filterStatus(t)===rosterFilter).map((t,i)=>{const p=proj[t.id],b=badge(t,p),variance=p.conflict?'Order pending':p.pickup==null?(t.outcome?'—':'ETA unknown'):(p.pickup-t.scheduled>0?'+':'')+(p.pickup-t.scheduled)+' min';return '<div class="trip '+(t.id===state.selected?'selected ':'')+(t.outcome||t.status===6?'done':'')+'" data-trip="'+esc(t.id)+'" tabindex="0"><div><span class="tag">'+(i+1)+'</span><div class="info">'+esc(t.id)+'</div></div><div><div class="name">'+esc(t.who)+'</div><div class="info">'+esc(t.kind)+'</div></div><div class="pickup-col"><div class="t">'+fmt(t.scheduled)+'</div><div class="info">'+pickupText(t,p)+'</div>'+earliestPickupText(p)+connectionLabel(p)+'</div><div class="t dropoff-col">'+dropoffTimes(t,p)+'</div><div><span class="tag '+b[1]+'">'+esc(variance)+'</span></div><div>'+rideStatus(t)+'</div></div>'}).join('');
-const sel=selected(),sp=sel&&proj[sel.id],handoff=sel&&state.handoff===sel.id;$('activePanel').innerHTML=sel?'<div class="paneltitle">'+(handoff?'NEXT RUN':'ACTIVE TRIP')+' <span class="muted small">· ◇ Hold for options</span></div><div class="statusline"><div><div style="font-weight:900">'+esc(sel.id)+' · '+esc(sel.who)+'</div><div class="small muted">'+esc(sel.kind)+' · '+rideStatus(sel)+'</div></div><span class="tag '+badge(sel,sp)[1]+'">'+badge(sel,sp)[0]+'</span></div><div class="two cockpit-time-summary"><div class="summary-pickup"><div class="muted micro">PICKUP</div><strong>'+fmt(sel.scheduled)+'</strong><div class="micro muted">'+pickupText(sel,sp)+'</div>'+earliestPickupText(sp)+connectionLabel(sp)+'</div><div class="summary-dropoff"><div class="muted micro">SCHEDULED DROP-OFF</div>'+dropoffTimes(sel,sp)+'<div class="micro muted">Drive '+(sel.drive!=null?sel.drive+'m planned':sel.driveMiles!=null?legMinutes(null,sel.driveMiles)+'m rough at 30 mph':defaultRideMinutes+'m assumed')+'</div></div></div><div class="actions" style="margin-top:13px"><button class="btn primary big" id="openActiveTrip">Open Active Trip →</button></div>':'<div class="paneltitle">'+(unfinished.length?'Select a trip after confirming order':'No runs remaining')+'</div>';
+document.querySelectorAll('[data-filter]').forEach(b=>{b.classList.toggle('active',b.dataset.filter===rosterFilter);const count=state.trips.filter(t=>filterStatus(t)===b.dataset.filter).length;b.textContent=b.dataset.filter+(b.dataset.filter==='All'?'':(' · '+count))});$('roster').innerHTML=state.trips.filter(t=>rosterFilter==='All'||filterStatus(t)===rosterFilter).map((t,i)=>{const p=proj[t.id],b=badge(t,p),variance=p.conflict?'Order pending':p.pickup==null?(t.outcome?'—':'ETA unknown'):(p.pickup-t.scheduled>0?'+':'')+(p.pickup-t.scheduled)+' min';return '<div class="trip '+(t.id===state.selected?'selected ':'')+(t.outcome||t.status===6?'done':'')+'" data-trip="'+esc(t.id)+'" tabindex="0"><div><span class="tag">'+(i+1)+'</span><div class="info">'+esc(t.id)+'</div></div><div><div class="name">'+esc(t.who)+'</div><div class="info">'+esc(t.kind)+'</div></div><div class="pickup-col">'+cockpitTownLabel(t,'pickup')+'<div class="t">'+fmt(t.scheduled)+'</div><div class="info">'+pickupText(t,p)+'</div>'+earliestPickupText(p)+connectionLabel(p)+'</div><div class="t dropoff-col">'+cockpitTownLabel(t,'drop')+dropoffTimes(t,p)+'</div><div><span class="tag '+b[1]+'">'+esc(variance)+'</span></div><div>'+rideStatus(t)+'</div></div>'}).join('');
+const sel=selected(),sp=sel&&proj[sel.id],handoff=sel&&state.handoff===sel.id;$('activePanel').innerHTML=sel?'<div class="paneltitle">'+(handoff?'NEXT RUN':'ACTIVE TRIP')+' <span class="muted small">· ◇ Hold for options</span></div><div class="statusline"><div><div style="font-weight:900">'+esc(sel.id)+' · '+esc(sel.who)+'</div><div class="small muted">'+esc(sel.kind)+' · '+rideStatus(sel)+'</div></div><span class="tag '+badge(sel,sp)[1]+'">'+badge(sel,sp)[0]+'</span></div><div class="two cockpit-time-summary"><div class="summary-pickup"><div class="muted micro">PICKUP</div>'+cockpitTownLabel(sel,'pickup')+'<strong>'+fmt(sel.scheduled)+'</strong><div class="micro muted">'+pickupText(sel,sp)+'</div>'+earliestPickupText(sp)+connectionLabel(sp)+'</div><div class="summary-dropoff"><div class="muted micro">SCHEDULED DROP-OFF</div>'+cockpitTownLabel(sel,'drop')+dropoffTimes(sel,sp)+'<div class="micro muted">Drive '+(sel.drive!=null?sel.drive+'m planned':sel.driveMiles!=null?legMinutes(null,sel.driveMiles)+'m rough at 30 mph':defaultRideMinutes+'m assumed')+'</div></div></div><div class="actions" style="margin-top:13px"><button class="btn primary big" id="openActiveTrip">Open Active Trip →</button></div>':'<div class="paneltitle">'+(unfinished.length?'Select a trip after confirming order':'No runs remaining')+'</div>';
 $('openActiveTrip')?.addEventListener('click',()=>{selectedTab='customer';render()});
 const warnings=[];
 const conflicts=[...unresolvedPickups()].map(([time,trips])=>

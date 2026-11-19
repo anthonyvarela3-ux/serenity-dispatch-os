@@ -42,3 +42,9 @@ Reuse original CV4 town centers. Prefer saved loaded mileage. Otherwise estimate
 - Align scheduled pickup/drop-off on one row, planned forecasts on the next, and Leave now/If next estimates on the next.
 - Wrapped labels in either timing column must expand the shared row together. Keep same-location notes below the timing rows.
 - This is a presentation change; preserve forecast values, event timestamps and trip controls.
+
+## Cockpit towns
+
+- Show the pickup town and destination town immediately above their scheduled times in the full-day manifest and cockpit trip summary.
+- Read towns from explicit imported town fields when present, otherwise from the address locality. Do not guess from street names.
+- Keep both town rows and all timing rows aligned when a town name wraps.
