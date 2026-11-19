@@ -75,3 +75,5 @@ Reuse original CV4 town centers. Prefer saved loaded mileage. Otherwise estimate
 - Tapping a rider opens Customer; row control taps do not navigate. Customer shows large aligned scheduled and live pickup/drop-off times, towns, recorded waits, status controls, messages and verified contact/notes tools.
 - Settings contains rates, timing assumptions, JSON import/export/add/edit/reset controls, audit log and simulation tools. Keep Update Day, Undo and the theme control reachable across tabs.
 - Preserve existing rolling forecast, timestamp history, cancellation outcomes, Revenue controls, fixed friendly EN/ES SMS drafts, weather cache and themes. Routing API integration is a separate task.
+
+- Dispatch labels its live drop-off estimate “Estimated Drop-Off Time” instead of “If next”; this wording change preserves all forecast calculations.
