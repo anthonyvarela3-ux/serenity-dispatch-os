@@ -48,3 +48,11 @@ Reuse original CV4 town centers. Prefer saved loaded mileage. Otherwise estimate
 - Show the pickup town and destination town immediately above their scheduled times in the full-day manifest and cockpit trip summary.
 - Read towns from explicit imported town fields when present, otherwise from the address locality. Do not guess from street names.
 - Keep both town rows and all timing rows aligned when a town name wraps.
+
+## Available-time bars
+
+- Insert a yellow, full-width information bar before an upcoming run when usable time is strictly greater than 45 minutes.
+- Usable time ends at scheduled pickup minus the saved early-arrival buffer and travel to that pickup. It starts at the later of now and the prior stop's projected availability or recorded Finish Run.
+- Show available minutes, driving minutes and leave-by time. Identify projections, rough travel assumptions and unconfirmed drop-off handoffs.
+- Refresh with the forecast, status changes, corrections, cancellation, Undo and elapsed time. Same-location returns have zero connecting drive.
+- Exclude cancellations and trips already en route/arrived; suppress uncertain-order gaps. Bars are information, never trips, revenue or editable status controls.

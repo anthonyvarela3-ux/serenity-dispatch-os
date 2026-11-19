@@ -715,6 +715,56 @@ assert.match(ids.activePanel.innerHTML,/Pickup town: Coram/);
 assert.match(ids.activePanel.innerHTML,/Drop-off town: Central Islip/);
 console.log('Cockpit town labels use address localities or explicit town fields, escape text, and appear above pickup/drop-off times.');
 
+run(`function gapDay(){
+  state=simulationDay();state.clock=600;state.forecastClock=600;
+  state.trips=state.trips.slice(0,2);
+  state.trips[0].status=6;state.trips[0].actual={'Arrived at Drop-Off':595,Finished:600};
+  state.trips[1].scheduled=690;state.trips[1].reposition=20;
+  return state;
+}
+function testGap(){const clock=forecastTime();return availableGap(state.trips[1],project(clock),clock)}
+gapDay();render()`);
+check('testGap().minutes',60);
+check('testGap().leaveBy',660);
+check('testGap().drive',20);
+check('testGap().projected',false);
+assert.match(ids.roster.innerHTML,/Available time: 60 min/);
+assert.match(ids.roster.innerHTML,/Leave by 11:00 AM/);
+assert.ok(ids.roster.innerHTML.indexOf('class="gap-row"')<ids.roster.innerHTML.indexOf('data-trip="F-002"'));
+check('state.trips.length',2);
+check('state.events.length',0);
+const gapRevenue=run('revenue().total');
+run('render()');check('revenue().total',gapRevenue);
+run('state.clock=614;state.forecastClock=614;render()');
+check('testGap().minutes',46);
+run('state.clock=615;state.forecastClock=615;render()');
+check('testGap()',null);
+assert.doesNotMatch(ids.roster.innerHTML,/class="gap-row"/);
+run('gapDay();state.trips[1].scheduled=675');check('testGap()',null);
+run('state.trips[1].scheduled=676');check('testGap().minutes',46);
+run('gapDay();state.trips[1].status=1');check('testGap()',null);
+run('gapDay();state.trips[1].outcome="Canceled in Advance"');check('testGap()',null);
+run('gapDay();state.trips[1].pickupArea=state.trips[0].dropArea');
+check('testGap().drive',0);check('testGap().minutes',80);
+run(`gapDay();state.trips[1].scheduled=750;state.trips[0].status=4;
+state.trips[0].drive=30;state.trips[0].actual={'On Board':590,'En Route to Drop-Off':600}`);
+check('testGap().minutes',90);check('testGap().projected',true);
+run('state.trips[0].status=5;state.trips[0].actual["Arrived at Drop-Off"]=635');
+check('testGap().minutes',85);check('testGap().handoff',true);
+run('state.trips[0].status=6;state.trips[0].actual.Finished=640');
+check('testGap().minutes',80);check('testGap().projected',false);
+run(`gapDay();const third=deep(state.trips[1]);third.id='F-003';
+state.trips.push(third)`);check('testGap()',null);
+run(`state.trips[1].outcome='Canceled in Advance';
+state.trips[2].scheduled=750;const clock=forecastTime();
+var gapAfterCancel=availableGap(state.trips[2],project(clock),clock)`);
+check('gapAfterCancel.previous','F-001');check('gapAfterCancel.minutes',120);
+run('gapDay();render();change("Test later finish",()=>state.trips[0].actual.Finished=620)');
+check('testGap()',null);tap('undo');check('testGap().minutes',60);
+run('rosterFilter="Pending";render()');assert.match(ids.roster.innerHTML,/Available time: 60 min/);
+run('rosterFilter="All";state=simulationDay();render()');
+console.log('Yellow gap bars preserve the early-arrival buffer, subtract connecting drive, shrink with time, follow actual Finish Run and estimates, and handle 45-minute boundaries, same stops, cancellation, conflicts and Undo without changing trips or revenue.');
+
 const copiedDrafts=[];
 const openedApps=[];
 context.navigator={
