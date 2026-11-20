@@ -145,3 +145,14 @@ Reuse original CV4 town centers. Prefer saved loaded mileage. Otherwise estimate
 - Preserve older Google route durations for the same route and date, flag them as rough after 30 minutes (10 minutes for GPS remaining quotes), and retain the actual last-check timestamp. Changed routes use the existing fallback until manually refreshed.
 - Keep the daily 150-attempt and per-minute 20-attempt guards. Rate-limit messages direct the driver to retry manually. Pausing interrupts the rest of an in-flight refresh after its current request.
 - Regression tests prove no Google requests on clock/status/import/GPS/reload, correct manual route refresh, local Update Day, preserved chained forecasts and actual timestamps, and clear older-quote handling.
+
+
+## Pickup ETA heads-up reminder — Nov 20
+
+- A foreground banner appears once per current service-day run when exactly one uncanceled run is En Route to Pickup and its projected pickup is within ten minutes. It uses the rolling ETA, not the scheduled pickup clock.
+- Suppress future-day previews, simulation, ambiguous en-route targets, conflicts, canceled/arrived/finished runs, and any heads-up while another passenger is still on board/in handoff.
+- Review Pickup Message opens an independent friendly EN/ES draft for the correct rider without replacing the selected trip or unsaved notes. Existing SMS and Google Voice draft fallbacks remain available; no recipient is contacted automatically.
+- A nearby draft avoids claiming ten minutes when under five remain; an overdue estimate uses a neutral on-the-way draft. Missing verified phone numbers keep SMS disabled while allowing copy/Google Voice contact selection.
+- Reviewed/dismissed reminders persist in a browser-local, service-day/run ledger. Preparing the regular 10-minute macro also handles the reminder. Neither draft opening nor copying claims delivery or marks the text sent.
+- Uses existing clock/status/ETA refresh and makes zero Google traffic or messaging API calls. The page must be open; background push, unattended SMS delivery and phone-line/provider integration are not connected.
+- Regression checks cover threshold timing, wrong-run suppression, persistence, recipient/language accuracy, short/overdue wording and preservation of selection, notes and actual event timestamps.
