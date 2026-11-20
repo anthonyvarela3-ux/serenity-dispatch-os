@@ -1,7 +1,10 @@
 {
   "name": "autumn-hill-2d59",
+  "main": "./worker.mjs",
   "compatibility_date": "2026-11-17",
   "assets": {
-    "directory": "./assets"
+    "directory": "./assets",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
   }
 }

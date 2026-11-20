@@ -95,3 +95,15 @@ Reuse original CV4 town centers. Prefer saved loaded mileage. Otherwise estimate
 - Default later planned arrivals to the saved target, capped at fifteen minutes early. Preserve real lateness and recorded early arrivals; never clamp an actual timestamp. A per-trip early-arrival exception is editable in the existing trip correction form and is undoable.
 - The first pickup, morning departure/wake-up calculations, remaining trip chain and gap buffers share these targets. Keep actual device time active on the service date; late starts must still produce honest delays.
 - Refresh preview/device mode on a New York service-date transition even if the displayed minute is unchanged. Existing JSON imports remain compatible; no new manifest download is required for this fix.
+# Runtime secret foundation — November 20, 2026
+
+- [x] Preserve `autumn-hill-2d59` and the permanent workers.dev address.
+- [x] Add an ES module Worker entry point so Cloudflare runtime secrets can be configured.
+- [x] Keep the tested HTML, browser-local manifest, timing engine and status controls unchanged.
+- [x] Serve existing assets through the `ASSETS` binding; run the Worker first only for `/api/*`.
+- [x] Provide `/api/health` with configuration booleans only; never return secret values.
+- [x] Keep `/api/routes` disabled with a clear response until protected routing is implemented. Saving a key must not create a public billable proxy.
+- [x] Include runtime asset-serving, secret-leak prevention and zero-outbound-request checks in the normal Cloudflare build verification.
+- [ ] Director saves the private `GOOGLE_MAPS_API_KEY` in the Worker runtime settings.
+- [ ] Connect authenticated, usage-limited Google routing to remaining-day projections and test real Google results before labeling estimates as traffic-aware.
+
