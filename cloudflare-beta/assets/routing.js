@@ -63,14 +63,43 @@
     ROUTE_RATE_LIMIT:'Traffic requests paused briefly. Automatic checks will retry.',
     GOOGLE_NO_ROUTE:'Google could not find a route. Check the trip addresses.',
     GOOGLE_UNAVAILABLE:'Google is temporarily unavailable. Rough estimates remain available.',
+    GOOGLE_INVALID_RESPONSE:'Google returned an unreadable response. Rough estimates remain available.',
     BUDGET_NOT_CONFIGURED:'Routing usage protection is not ready.',
   }[code]||'Traffic update unavailable. Rough estimates remain available.');
+  function failureMessage(data) {
+    const detail=data.diagnostic||{},reason=detail.reason;
+    const explanations={
+      API_KEY_INVALID:'Google says the saved API key is invalid. Copy the complete key from Google Credentials into the Cloudflare runtime secret, then reconnect with that same value.',
+      API_KEY_EXPIRED:'Google says the saved API key has expired. Check the key in Google Credentials.',
+      API_KEY_NOT_FOUND:'Google cannot find the saved API key. Check the complete value in Google Credentials.',
+      BILLING_DISABLED:'Google says billing is disabled for this project. Link an active billing account to the project.',
+      SERVICE_DISABLED:'Google says Routes API is disabled for the project that owns this key. Enable Routes API in that project.',
+      API_KEY_SERVICE_BLOCKED:'This key’s API restrictions block Routes API. Allow Routes API in Google Credentials.',
+      API_KEY_HTTP_REFERRER_BLOCKED:'This key requires a website referrer. Serenity sends route requests from its Cloudflare server, so that restriction is blocking Google.',
+      API_KEY_IP_ADDRESS_BLOCKED:'This key’s IP restrictions block the Cloudflare server’s route request.',
+      API_KEY_ANDROID_APP_BLOCKED:'This key is restricted to an Android app. Serenity sends requests from its Cloudflare server.',
+      API_KEY_IOS_APP_BLOCKED:'This key is restricted to an iOS app. Serenity sends requests from its Cloudflare server.',
+      PROJECT_DELETED:'Google says the key’s project has been deleted.',
+      CONSUMER_INVALID:'Google could not validate the project associated with this key.',
+      RATE_LIMIT_EXCEEDED:'Google’s request rate limit was reached. Rough estimates remain available.',
+      QUOTA_EXCEEDED:'Google’s project quota was reached. Rough estimates remain available.',
+    };
+    let explanation=explanations[reason]||friendly(data.error);
+    const fields=['departureTime','origin','destination','routingPreference','travelMode','languageCode','regionCode','units','fieldMask'];
+    if(!explanations[reason]&&detail.status==='INVALID_ARGUMENT')
+      explanation='Google rejected the route request'+(fields.includes(detail.field)?' ('+detail.field+')':'')+'. Rough estimates remain available.';
+    const codes=[];
+    if(Number.isInteger(data.upstreamStatus)&&data.upstreamStatus>=400&&data.upstreamStatus<=599)codes.push('HTTP '+data.upstreamStatus);
+    if(explanations[reason])codes.push(reason);
+    else if(['INVALID_ARGUMENT','UNAUTHENTICATED','PERMISSION_DENIED','RESOURCE_EXHAUSTED','FAILED_PRECONDITION','NOT_FOUND','INTERNAL','UNAVAILABLE','DEADLINE_EXCEEDED'].includes(detail.status))codes.push(detail.status);
+    return explanation+(codes.length?' Diagnostic: '+codes.join(' · ')+'.':'');
+  }
   async function api(path,body) {
     const response=await fetch(path,{method:body===undefined?'GET':'POST',credentials:'same-origin',
       headers:body===undefined?{}:{'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});
     const data=await response.json();
     if(data.usage)usage=data.usage;
-    if(!response.ok){const error=new Error(friendly(data.error));error.code=data.error;throw error;}
+    if(!response.ok){const error=new Error(failureMessage(data));error.code=data.error;throw error;}
     return data;
   }
   async function requestQuote(id,from,to,depart,remaining,force=false) {

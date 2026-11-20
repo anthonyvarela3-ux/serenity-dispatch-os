@@ -15,12 +15,13 @@ if(!globalThis.crypto)globalThis.crypto=require('node:crypto').webcrypto;
  const tx={get:async k=>stored.get(k),put:async(k,v)=>stored.set(k,structuredClone(v))};
  const counter=new RoutingBudget({storage:{transaction:fn=>fn(tx)}});
  const requests=[];
- let mode='success';
+ let mode='success',providerError;
  const originalFetch=globalThis.fetch;
  globalThis.fetch=async(url,options)=>{
    requests.push({url,options});
    if(mode==='throw')throw Error('private test diagnostic');
    if(mode==='denied')return new Response('private test diagnostic',{status:403});
+   if(mode==='diagnostic')return new Response(JSON.stringify(providerError),{status:400});
    if(mode==='invalid')return new Response(JSON.stringify({routes:[]}));
    if(mode==='fallback')return new Response(JSON.stringify({routes:[{duration:'120s',distanceMeters:1000}],fallbackInfo:{reason:'SERVER_ERROR'}}));
    return new Response(JSON.stringify({routes:[{duration:'1501s',distanceMeters:16093.44}]}));
@@ -71,6 +72,21 @@ if(!globalThis.crypto)globalThis.crypto=require('node:crypto').webcrypto;
    assert.equal(probe.status,200);assert.match(requests.at(-1).options.body,/Bay Shore LIRR Station/);
    mode='denied';const denied=await worker.fetch(req('/api/routes',valid,cookie),env);
    assert.equal((await denied.json()).error,'GOOGLE_ACCESS_DENIED');
+   mode='diagnostic';
+   providerError={error:{status:'INVALID_ARGUMENT',message:env.GOOGLE_MAPS_API_KEY+' '+valid.origin,
+     details:[{'@type':'type.googleapis.com/google.rpc.ErrorInfo',reason:'API_KEY_INVALID',metadata:{key:env.GOOGLE_MAPS_API_KEY,address:valid.origin}}]}};
+   let diagnostic=await(await worker.fetch(req('/api/routes',valid,cookie),env)).json();
+   assert.deepEqual(diagnostic.diagnostic,{reason:'API_KEY_INVALID',status:'INVALID_ARGUMENT'});
+   assert.equal(diagnostic.upstreamStatus,400);
+   assert.ok(!JSON.stringify(diagnostic).includes(env.GOOGLE_MAPS_API_KEY));assert.ok(!JSON.stringify(diagnostic).includes(valid.origin));
+   providerError.error.details[0].reason='BILLING_DISABLED';
+   assert.equal((await(await worker.fetch(req('/api/routes',valid,cookie),env)).json()).diagnostic.reason,'BILLING_DISABLED');
+   providerError={error:{status:'INVALID_ARGUMENT',message:'Cannot parse field mask: '+env.GOOGLE_MAPS_API_KEY,details:[]}};
+   assert.deepEqual((await(await worker.fetch(req('/api/routes',valid,cookie),env)).json()).diagnostic,{status:'INVALID_ARGUMENT',field:'fieldMask'});
+   providerError={error:{status:env.GOOGLE_MAPS_API_KEY,message:valid.origin,details:[{'@type':'type.googleapis.com/google.rpc.ErrorInfo',reason:valid.origin}]}};
+   assert.deepEqual((await(await worker.fetch(req('/api/routes',valid,cookie),env)).json()).diagnostic,{},'Unknown provider data is never echoed');
+   providerError={error:{status:'INVALID_ARGUMENT',details:[{'@type':'type.googleapis.com/google.rpc.BadRequest',fieldViolations:[{field:'origin.address',description:valid.origin}]}]}};
+   assert.deepEqual((await(await worker.fetch(req('/api/routes',valid,cookie),env)).json()).diagnostic,{status:'INVALID_ARGUMENT',field:'origin'});
    mode='invalid';assert.equal((await worker.fetch(req('/api/routes',valid,cookie),env)).status,502);
    mode='throw';assert.equal((await worker.fetch(req('/api/routes',valid,cookie),env)).status,502);
    mode='fallback';assert.equal((await(await worker.fetch(req('/api/routes',valid,cookie),env)).json()).trafficAware,false);
@@ -88,7 +104,7 @@ if(!globalThis.crypto)globalThis.crypto=require('node:crypto').webcrypto;
    assert.deepEqual([...stored.keys()],['counts'],'Only counters are retained, not route addresses or provider content');
    assert.equal((await worker.fetch(req('/api/missing'),env)).status,404);
    assert.equal((await worker.fetch(new Request(base+'/api/health',{method:'HEAD'}),env)).status,200);
-   console.log('Protected Google routing passes session, origin, key privacy, address-only payload, future departure, provider failure/fallback, persistent daily and minute limits, secret rotation and static-asset tests.');
+   console.log('Protected Google routing passes session, origin, key privacy, address-only payload, future departure, provider failure/fallback, safe provider diagnostics, persistent daily and minute limits, secret rotation and static-asset tests.');
  }finally{globalThis.fetch=originalFetch;}
 })().catch(error=>{console.error(error);process.exitCode=1;});
 

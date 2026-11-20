@@ -1,7 +1,7 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 (async()=>{
  const html=fs.readFileSync('assets/index.html','utf8'),ids={},saved={},calls=[];
- let geoCallback,deny=false;
+ let geoCallback,deny=false,diagnostic=null;
  class Element{
    constructor(id){this.id=id;this.value='';this.dataset={};this.style={};this.attributes={};this.classList={toggle(){}};}
    addEventListener(type,fn){this[type]??=fn;}setAttribute(n,v){this.attributes[n]=v;}removeAttribute(n){delete this.attributes[n];}
@@ -21,7 +21,7 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
      const body=options.body?JSON.parse(options.body):null;calls.push({url,body});
      if(url==='/api/routing/status')return new Response(JSON.stringify({configured:true,unlocked:false}));
      if(url==='/api/routing/unlock'){assert.equal(body.key,'private-test-key');return new Response('{"unlocked":true}');}
-     if(deny)return new Response('{"error":"GOOGLE_ACCESS_DENIED"}',{status:502});
+     if(deny)return new Response(JSON.stringify({error:'GOOGLE_ACCESS_DENIED',...(diagnostic?{upstreamStatus:400,diagnostic}:{})}),{status:502});
      const minutes=url.endsWith('probe')?15:typeof body.origin==='object'?8:
        body.destination.includes('drop one')?70:body.destination.includes('drop two')?30:
        body.destination.includes('pickup two')?40:10;
@@ -61,6 +61,16 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
  assert.equal(run("state.trips[0].actual['En Route to Drop-Off']"),600);
  deny=true;await run('routingProvider.refresh()');await flush();
  assert.match(ids.routingStatus.textContent,/billing/);
+ diagnostic={reason:'API_KEY_INVALID',status:'INVALID_ARGUMENT'};
+ await run('routingProvider.refresh()');await flush();
+ assert.match(ids.routingStatus.textContent,/saved API key is invalid/);
+ assert.match(ids.routingStatus.textContent,/HTTP 400 · API_KEY_INVALID/);
+ diagnostic={status:'INVALID_ARGUMENT',field:'fieldMask'};
+ await run('routingProvider.refresh()');await flush();
+ assert.match(ids.routingStatus.textContent,/route request \(fieldMask\)/);
+ diagnostic={reason:'private-test-key',status:'private-test-key'};
+ await run('routingProvider.refresh()');await flush();
+ assert.ok(!ids.routingStatus.textContent.includes('private-test-key'));
  assert.equal(run("state.trips[0].actual['On Board']"),600);
  await ids.routingConnect.onclick();
  assert.equal(run('rideLeg(state.trips[0]).google'),undefined,'Pausing restores the saved/manual fallback');

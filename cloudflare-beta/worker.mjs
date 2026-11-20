@@ -65,6 +65,30 @@ async function budget(env, consume = false) {
   return env.ROUTING_BUDGET.getByName('single-driver-routing-budget-v1').fetch(
     new Request('https://budget.internal/' + (consume ? 'consume' : 'status'), { method: consume ? 'POST' : 'GET' }));
 }
+async function googleDiagnostic(response) {
+  // Return only known codes and field names. Provider messages and metadata can
+  // contain credentials or addresses, so they must never reach the browser.
+  let payload;
+  try { payload = await response.json(); } catch { return {}; }
+  const error = payload?.error, details = Array.isArray(error?.details) ? error.details : [];
+  const reasons = new Set(['API_KEY_INVALID', 'API_KEY_EXPIRED', 'API_KEY_NOT_FOUND',
+    'API_KEY_SERVICE_BLOCKED', 'API_KEY_HTTP_REFERRER_BLOCKED', 'API_KEY_IP_ADDRESS_BLOCKED',
+    'API_KEY_ANDROID_APP_BLOCKED', 'API_KEY_IOS_APP_BLOCKED', 'SERVICE_DISABLED',
+    'BILLING_DISABLED', 'PROJECT_DELETED', 'CONSUMER_INVALID', 'RATE_LIMIT_EXCEEDED', 'QUOTA_EXCEEDED']);
+  const statuses = new Set(['INVALID_ARGUMENT', 'UNAUTHENTICATED', 'PERMISSION_DENIED',
+    'RESOURCE_EXHAUSTED', 'FAILED_PRECONDITION', 'NOT_FOUND', 'INTERNAL', 'UNAVAILABLE', 'DEADLINE_EXCEEDED']);
+  const reason = details.find(d => d?.['@type'] === 'type.googleapis.com/google.rpc.ErrorInfo' && reasons.has(d.reason))?.reason;
+  const result = {};
+  if (reason) result.reason = reason;
+  if (statuses.has(error?.status)) result.status = error.status;
+  const fields = ['departureTime', 'origin', 'destination', 'routingPreference', 'travelMode', 'languageCode', 'regionCode', 'units'];
+  const violations = details.filter(d => d?.['@type'] === 'type.googleapis.com/google.rpc.BadRequest')
+    .flatMap(d => Array.isArray(d.fieldViolations) ? d.fieldViolations : []);
+  const field = fields.find(f => violations.some(v => v?.field === f || v?.field?.startsWith(f + '.')));
+  if (field) result.field = field;
+  else if (typeof error?.message === 'string' && /field.?mask|fields.*parameter/i.test(error.message)) result.field = 'fieldMask';
+  return result;
+}
 async function googleRoute(body, env) {
   const origin = waypoint(body.origin), destination = waypoint(body.destination);
   const depart = body.departureTime == null ? Date.now() + 2000 : Date.parse(body.departureTime);
@@ -85,7 +109,7 @@ async function googleRoute(body, env) {
   } catch { return json({ error: 'GOOGLE_UNAVAILABLE', usage }, 502); }
   if (!upstream.ok) {
     const error = upstream.status === 429 ? 'GOOGLE_QUOTA_EXCEEDED' : [401,403].includes(upstream.status) ? 'GOOGLE_ACCESS_DENIED' : 'GOOGLE_ROUTE_FAILED';
-    return json({ error, upstreamStatus: upstream.status, usage }, 502);
+    return json({ error, upstreamStatus: upstream.status, diagnostic: await googleDiagnostic(upstream), usage }, 502);
   }
   let data;
   try { data = await upstream.json(); } catch { return json({ error: 'GOOGLE_INVALID_RESPONSE', usage }, 502); }
