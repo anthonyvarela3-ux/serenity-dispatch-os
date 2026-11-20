@@ -2,6 +2,8 @@
   "name": "autumn-hill-2d59",
   "main": "./worker.mjs",
   "compatibility_date": "2026-11-17",
+  "durable_objects": { "bindings": [{ "name": "ROUTING_BUDGET", "class_name": "RoutingBudget" }] },
+  "migrations": [{ "tag": "routing-budget-v1", "new_sqlite_classes": ["RoutingBudget"] }],
   "assets": {
     "directory": "./assets",
     "binding": "ASSETS",

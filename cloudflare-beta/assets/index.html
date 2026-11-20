@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><title>Serenity 2.0 | Cloudflare Demo 003 · Pickup-anchored planning</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><title>Serenity 2.0 | Cloudflare Demo 003 · Google routing beta</title><style>
 :root{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;color:var(--text);background:var(--page);font-synthesis:none}*{box-sizing:border-box}body{margin:0}button,input,select,textarea{font:inherit}button{cursor:pointer;touch-action:manipulation}button:disabled{opacity:.35;cursor:not-allowed}.shell{max-width:1530px;margin:auto;padding:16px 18px 50px}.top{display:flex;gap:16px;align-items:center;justify-content:space-between;padding:15px 20px;background:var(--surface);border:1px solid var(--border);border-radius:17px}.brand{font-size:21px;letter-spacing:.08em;font-weight:900;color:var(--accent)}.sub{font-size:12px;color:var(--muted);margin-top:3px}.pill{background:var(--selection);color:var(--accent);border:1px solid #277f82;border-radius:30px;padding:7px 11px;font-size:12px;font-weight:800}.mainnav,.toolbar,.flex{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.mainnav{margin-top:13px}.btn{background:var(--button);color:var(--text);border:1px solid var(--border);padding:10px 14px;border-radius:10px;font-weight:700;font-size:13px}.btn:hover{background:var(--hover)}.btn.active{color:#eaf2ff;background:#126b72;border-color:#47dace}.btn.primary{background:#00a9a0;color:#03242b;border-color:#39d6c4}.btn.danger{color:#eaf2ff;background:#552c36;border-color:#a34b58}.btn.warn{color:#eaf2ff;background:#523b24;border-color:#a57a38}.btn.big{font-size:17px;padding:15px 20px}.toolbar{margin:14px 0}.metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:14px 0}.metric,.panel{background:var(--surface);border:1px solid var(--border);border-radius:15px;padding:15px}.metric .m-title{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.09em;font-weight:800}.metric .m-value{font-size:22px;font-weight:850;margin-top:6px}.panel{margin-bottom:13px}.grid{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(300px,.85fr);gap:13px}.paneltitle{font-size:14px;font-weight:850;letter-spacing:.03em;margin-bottom:10px}.muted{color:var(--muted)}.small{font-size:12px}.micro{font-size:11px}.notice{background:var(--notice);border:1px solid var(--notice-border);border-radius:10px;padding:10px 12px;color:var(--notice-text);margin:10px 0}.good{color:#6ee5b3}.warntext{color:#ffd077}.bad{color:#ff8e91}.purple{color:#d5a4ff}.rosthead,.trip{display:grid;grid-template-columns:64px minmax(95px,1.1fr) minmax(134px,1.35fr) minmax(98px,1fr) minmax(93px,1fr) minmax(95px,1fr);gap:8px;align-items:center}.rosthead{font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase;padding:8px 10px}.trip{border:1px solid var(--border);padding:11px 10px;margin:5px 0;border-radius:10px;background:var(--inset);cursor:pointer;min-height:66px}.trip.selected{border-color:#2bdbcf;background:var(--selection);box-shadow:inset 4px 0 #30ddca}.trip.done{border-color:var(--border)}.trip.done > :not(:last-child){opacity:.48}.trip .name{font-weight:800}.trip .t{font-size:13px;font-weight:750}.trip .info{font-size:10px;color:var(--muted);margin-top:4px}.tag{display:inline-block;font-size:10px;border-radius:5px;padding:5px 6px;background:var(--button);color:var(--text);font-weight:800}.tag.green{background:#074f45;color:#71edbf}.tag.yellow{background:#51411c;color:#ffe085}.tag.red{background:#622a37;color:#ff9ca4}.tag.purple{background:#47305f;color:#e1bcff}.statusline{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:11px 12px;border:1px solid var(--border);border-radius:10px;background:var(--inset);margin-bottom:10px}.actions{display:flex;gap:8px;flex-wrap:wrap}.context{position:absolute;z-index:9;background:var(--button);border:1px solid #59b5b8;border-radius:12px;box-shadow:0 12px 30px #0008;padding:8px;width:270px;max-height:360px;overflow:auto}.context button{display:block;width:100%;margin:3px 0;text-align:left}.field{display:flex;flex-direction:column;gap:5px;margin:6px 0}.field label{color:var(--muted);font-size:11px;font-weight:700}.field input,.field textarea,.field select{background:var(--input);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px;min-width:0}.field textarea{min-height:60px}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.events{max-height:215px;overflow:auto}.event{padding:6px 0;border-bottom:1px solid var(--border);font-size:11px;color:var(--text)}.hidden,[hidden]{display:none!important}.modalshade{position:fixed;inset:0;background:#000b;z-index:20;display:flex;align-items:center;justify-content:center;padding:16px}.modal{max-height:90vh;overflow:auto;width:min(540px,100%);background:var(--surface);border:1px solid var(--border);padding:20px;border-radius:16px}.modal h3{margin:0 0 12px}.split{display:grid;grid-template-columns:1fr 1fr;gap:8px}.foot{font-size:11px;color:var(--muted);padding:9px}.checkpoints{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}.warninglist{font-size:12px;max-height:120px;overflow:auto}.warninglist div{padding:6px 0;border-bottom:1px solid var(--border)}@media(max-width:1000px){.metrics{grid-template-columns:repeat(3,1fr)}.grid{grid-template-columns:1fr}.rosthead,.trip{grid-template-columns:54px 1.1fr 1.4fr 1fr 1fr 1fr}}@media(max-width:640px){.shell{padding:8px}.brand{font-size:15px}.metrics{grid-template-columns:repeat(2,1fr)}.rosthead,.trip{grid-template-columns:38px 1fr 1fr 1fr;gap:5px}.rosthead>*:nth-child(5),.rosthead>*:nth-child(6),.trip>*:nth-child(5),.trip>*:nth-child(6){display:none}.checkpoints{grid-template-columns:repeat(2,1fr)}}
 
 .filterbar{display:flex;gap:7px;flex-wrap:wrap;margin:5px 0 12px}.filterbar .btn{padding:8px 11px;min-height:39px}.revenuehead{display:flex;justify-content:space-between;align-items:center;gap:12px}.revenuegrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:13px}.revenuegrid>div{padding:13px;border-radius:12px;background:var(--inset);border:1px solid var(--border)}.revenueamount{font-size:25px;font-weight:850;margin:7px 0;color:var(--accent)}.mainnav{position:sticky;top:0;z-index:8;background:var(--nav);padding:10px 0;border-bottom:1px solid var(--border);backdrop-filter:blur(8px)}.mainnav .btn{min-height:44px}.revenuehead .btn{min-width:90px}@media(max-width:620px){.revenuegrid{grid-template-columns:1fr}}
@@ -170,8 +170,8 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-off
 <div class="actions"><a class="btn primary" id="openSms" aria-disabled="true">Open SMS Draft</a><button class="btn" id="copyMessage">Copy Message</button><button class="btn" id="openVoice">Copy &amp; Open Google Voice</button><button class="btn" id="copyRecipient">Copy Number</button></div>
 <p id="messageFeedback" class="small muted" role="status"></p>
 <p class="micro muted">Review the draft in your messaging app. For Google Voice, paste the copied message and select the recipient.</p></div></div></main>
-<main id="settings" class="page hidden"><div class="section-heading"><h1>Settings</h1><button class="btn" id="clockMode" aria-pressed="false">Use Device Time</button></div><div class="grid"><div class="panel"><div class="paneltitle">DRIVER SETTINGS</div><div class="two"><div class="field"><label>Driver hourly rate ($, fictional test)</label><input type="number" id="hourlyRate" min="0" max="500" step="0.25"></div><div class="field"><label>Overtime threshold (hours/day, test estimate only)</label><input type="number" id="overtimeAfter" min="1" max="24" step="1"></div><div class="field"><label>Overtime multiplier (test assumption)</label><input type="number" id="overtimeMultiplier" min="1" max="3" step="0.25"></div><div class="field"><label>Home → garage (minutes)</label><input type="number" id="commute" min="0" max="180"></div><div class="field"><label>Garage preparation (minutes)</label><input type="number" id="garagePrep" min="0" max="180"></div><div class="field"><label>Later pickup target (0–15 minutes)</label><input type="number" id="early" min="0" max="15"></div><div class="field"><label>Garage → first pickup (simulated minutes)</label><input type="number" id="firstDrive" min="1" max="180"></div></div><button class="btn primary" id="saveSettings">Save Settings</button><div class="notice micro">Travel times are fictional/manual assumptions, not GPS estimates. Local browser storage is intended only for non-sensitive testing.</div></div><div class="panel"><div class="paneltitle">AUDIT LOG <span class="muted small">· Latest first</span></div><div id="allEvents" class="events" style="max-height:430px"></div><button class="btn" id="exportLog">Export Event Log</button></div></div><section class="manifest-tools"><div class="grid"><div class="panel"><div class="paneltitle">MANIFEST TOOLS</div><p class="small muted">Manifest files stay in this browser. The published demo contains fictional examples. Import only information you are authorized to use; no manifest data is sent to the weather service.</p><div class="actions"><button class="btn primary" id="addTrip">＋ Add Test Trip</button><button class="btn" id="exportData">Export JSON Backup</button><label class="btn">Import Manifest JSON<input type="file" id="importData" accept="application/json,.json" hidden></label><button class="btn danger" id="reset">Reset Fictional Demo</button></div><div class="notice">Screenshot OCR is not implemented in Demo 003. This build does not upload images or simulate successful recognition. Weather requests use only the Bay Shore town center.</div><div class="paneltitle">CURRENT ASSIGNMENTS</div><div id="manifestRows"></div></div></div></section><details class="panel" style="padding:10px 14px"><summary style="cursor:pointer;font-weight:800;color:var(--accent)">SIMULATION CLOCK · Tap to expand test controls</summary><div class="toolbar" style="margin-bottom:0"><button class="btn primary" id="nextTime">⏭ Next Event</button><button class="btn" id="plus5">+5 min</button><button class="btn" id="plus15">+15 min</button><button class="btn" id="minus5">−5 min</button><button class="btn" id="setTime">Set Time</button></div><p class="small muted">Changing the simulation clock switches event logging back to simulation time.</p></details></main>
-<div class="foot">TEST BUILD 003 · PICKUP-ANCHORED PLAN · Weather needs a connection; trip controls work independently · Browser-local save may be cleared by iPad/browser settings · Do not enter real patient details · To open via iPad Chrome, use an interactive browser view rather than Files Quick Look.</div></div>
+<main id="settings" class="page hidden"><div class="section-heading"><h1>Settings</h1><button class="btn" id="clockMode" aria-pressed="false">Use Device Time</button></div><section class="panel" style="margin-bottom:18px" aria-label="Google travel estimates"><div class="paneltitle">GOOGLE TRAVEL ESTIMATES</div><p id="routingStatus" role="status">Checking connection…</p><div class="actions"><button class="btn primary" id="routingConnect">Connect Google Routing</button><button class="btn" id="routingRefresh" hidden>Refresh Traffic</button><button class="btn" id="routingLocation" hidden>Use iPad Location</button></div><p class="micro muted" id="routingUsage"></p><div class="field" style="margin-top:12px"><label for="routingGarage">Garage starting address (optional)</label><input id="routingGarage" autocomplete="off" placeholder="Enter the garage address for morning travel estimates"></div><button class="btn" id="routingSaveGarage">Save Garage Address</button><p class="micro muted">When connected, route addresses and an enabled device location are sent to Google for travel estimates. Passenger names, phone numbers and notes are excluded. Traffic refreshes while this page is open. Scheduled times stay unchanged.</p></section><div class="grid"><div class="panel"><div class="paneltitle">DRIVER SETTINGS</div><div class="two"><div class="field"><label>Driver hourly rate ($, fictional test)</label><input type="number" id="hourlyRate" min="0" max="500" step="0.25"></div><div class="field"><label>Overtime threshold (hours/day, test estimate only)</label><input type="number" id="overtimeAfter" min="1" max="24" step="1"></div><div class="field"><label>Overtime multiplier (test assumption)</label><input type="number" id="overtimeMultiplier" min="1" max="3" step="0.25"></div><div class="field"><label>Home → garage (minutes)</label><input type="number" id="commute" min="0" max="180"></div><div class="field"><label>Garage preparation (minutes)</label><input type="number" id="garagePrep" min="0" max="180"></div><div class="field"><label>Later pickup target (0–15 minutes)</label><input type="number" id="early" min="0" max="15"></div><div class="field"><label>Garage → first pickup (simulated minutes)</label><input type="number" id="firstDrive" min="1" max="180"></div></div><button class="btn primary" id="saveSettings">Save Settings</button><div class="notice micro">Saved values are fallback assumptions. Google travel estimates appear only after connection and successful route checks. Local browser storage remains intended for authorized beta testing.</div></div><div class="panel"><div class="paneltitle">AUDIT LOG <span class="muted small">· Latest first</span></div><div id="allEvents" class="events" style="max-height:430px"></div><button class="btn" id="exportLog">Export Event Log</button></div></div><section class="manifest-tools"><div class="grid"><div class="panel"><div class="paneltitle">MANIFEST TOOLS</div><p class="small muted">Manifest files stay in this browser. The published demo contains fictional examples. Import only information you are authorized to use; no manifest data is sent to the weather service.</p><div class="actions"><button class="btn primary" id="addTrip">＋ Add Test Trip</button><button class="btn" id="exportData">Export JSON Backup</button><label class="btn">Import Manifest JSON<input type="file" id="importData" accept="application/json,.json" hidden></label><button class="btn danger" id="reset">Reset Fictional Demo</button></div><div class="notice">Screenshot OCR is not implemented in Demo 003. This build does not upload images or simulate successful recognition. Weather requests use only the Bay Shore town center.</div><div class="paneltitle">CURRENT ASSIGNMENTS</div><div id="manifestRows"></div></div></div></section><details class="panel" style="padding:10px 14px"><summary style="cursor:pointer;font-weight:800;color:var(--accent)">SIMULATION CLOCK · Tap to expand test controls</summary><div class="toolbar" style="margin-bottom:0"><button class="btn primary" id="nextTime">⏭ Next Event</button><button class="btn" id="plus5">+5 min</button><button class="btn" id="plus15">+15 min</button><button class="btn" id="minus5">−5 min</button><button class="btn" id="setTime">Set Time</button></div><p class="small muted">Changing the simulation clock switches event logging back to simulation time.</p></details></main>
+<div class="foot">TEST BUILD 003 · GOOGLE ROUTING BETA · Weather needs a connection; trip controls work independently · Browser-local save may be cleared by iPad/browser settings · Do not enter real patient details · To open via iPad Chrome, use an interactive browser view rather than Files Quick Look.</div></div>
 <div id="modalRoot" hidden></div><div id="contextMenu" class="context hidden"></div>
 <script>
 'use strict';
@@ -220,6 +220,7 @@ function applyDisplayTheme(){
   $('themeToggle').textContent=labels[displayTheme];
   $('themeToggle').setAttribute('aria-label','Display '+displayTheme+'. Switch to '+next+'.');
 }
+let routingProvider=null;
 let selectedTab='dispatch',revenueOpen=false,rosterFilter='All',lastRenderedTime=null,selectedMessageType='10',lastRenderedDate=null;const $=id=>document.getElementById(id);function persist(){try{localStorage.setItem(STORE,JSON.stringify(state))}catch(e){console.warn('Local save unavailable',e)}}
 function change(label,fn){const previous=deep(state);previous.events=previous.events.map(({restore,...e})=>e);state.clock=currentTime();fn();state.seq=(state.seq||0)+1;state.events.push({seq:state.seq,time:state.clock,label,restore:previous});if(state.events.length>100)state.events=state.events.slice(-100);persist();render()}
 function undo(){const ev=state.events[state.events.length-1];if(!ev||!ev.restore){toast('Nothing to undo');return}if(!confirm('Undo: '+ev.label+'?'))return;state=loadRouteScenario(deep(ev.restore));persist();render();toast('Last change undone')}
@@ -373,6 +374,10 @@ function reviseSchedule(edit,updatedId){
     }
   }
 }
+function rideLeg(trip){
+  const google=routingProvider?.ride(trip);
+  return google??{minutes:legMinutes(trip.drive,trip.driveMiles)??defaultRideMinutes,rough:trip.drive==null||!!trip.driveMilesEstimated};
+}
 function legMinutes(minutes,miles){
   if(Number.isFinite(minutes)&&minutes>=0)return minutes;
   return Number.isFinite(miles)&&miles>=0?(miles===0?0:Math.max(1,Math.round(miles*2))):null;
@@ -405,6 +410,8 @@ function connectionTo(trip,origin,useSaved=true){
     minutes:0,rough:false,sameStop:true,
     roundTrip:!fromPickup&&previous.who===trip.who&&sameLocation(previous.pickupArea,trip.dropArea)
   };
+  const google=routingProvider?.connection(trip,origin);
+  if(google)return {...google,sameStop:false,roundTrip:false};
   const saved=useSaved?legMinutes(trip.reposition,trip.repositionMiles):null;
   const town=state.settings.planningModel==='town-estimate-v1'&&previous?
     townPlanningLeg(fromPickup?previous.pickupArea:previous.dropArea,trip.pickupArea):null;
@@ -434,7 +441,8 @@ function pickupLeadMinutes(t){
 function planningDeparture(){
   const first=firstDayTrip();
   if(!first||!Number.isFinite(first.scheduled))return state.clock;
-  const drive=Math.max(0,state.settings.firstDrive??0,connectionTo(first,null).minutes);
+  const approach=connectionTo(first,null);
+  const drive=approach.google?approach.minutes:Math.max(0,state.settings.firstDrive??0,approach.minutes);
   return Math.max(0,first.scheduled-pickupLeadMinutes(first)-drive);
 }
 function project(clock=forecastTime()){
@@ -462,7 +470,7 @@ function project(clock=forecastTime()){
     const drivingToPickup=live&&t.status===1&&Number.isFinite(pickupDeparture);
     const earliestDeparture=result[origin]?.activeRide?cursor:clock;
     const arrival=atPickup?Math.max(cursor,actualPickup):
-      drivingToPickup?Math.max(cursor,pickupDeparture+connection.minutes):
+      drivingToPickup?Math.max(cursor,connection.remaining?connection.asOfMinute+connection.minutes:pickupDeparture+connection.minutes):
       combined?Math.max(earliestDeparture,previousDeparture+t.combinedApproach):cursor+connection.minutes;
     const target=t.scheduled-pickupLeadMinutes(t);
     const group=t.status<3?conflicts.get(t.scheduled):null;
@@ -473,7 +481,7 @@ function project(clock=forecastTime()){
         // Other options have a different origin if they go first.
         const leg=option.id===t.id?connection:connectionTo(option,origin,origins.get(option.id)===origin);
         const pickup=Math.max(target,option.id===t.id?arrival:cursor+leg.minutes);
-        const drive=legMinutes(option.drive,option.driveMiles)??defaultRideMinutes;
+        const drive=rideLeg(option).minutes;
         latestFirstPickup=Math.max(latestFirstPickup,pickup);
         totalRides+=boardingMinutes+drive;
         const actual=option.actual['Arrived at Pickup'];
@@ -487,7 +495,7 @@ function project(clock=forecastTime()){
       orderPending=true;
       continue;
     }
-    const drive=legMinutes(t.drive,t.driveMiles)??defaultRideMinutes;
+    const ride=rideLeg(t),drive=ride.minutes;
     const boarded=t.actual['On Board']??null;
     const driveStarted=t.actual['En Route to Drop-Off']??null;
     const activeRide=t.status>=3;
@@ -495,14 +503,15 @@ function project(clock=forecastTime()){
     // Until departure is logged, assume the passenger could leave at the current time.
     const anchor=activeRide?(driveStarted??(t.status===3?clock:boarded??clock)):
       plannedPickup+boardingMinutes;
-    const dropEta=anchor+drive;
+    const dropEta=activeRide&&ride.remaining?ride.asOfMinute+drive:anchor+drive;
     const ready=Math.max(clock,actualDrop??dropEta);
     const overdue=t===riding&&actualDrop==null&&clock>=dropEta;
     const projectedPickupRough=combined?previousDepartureRough:cursorRough||connection.rough;
     const pickup=actualPickup??(activeRide?boarded:plannedPickup);
     const pickupRough=pickup!=null&&actualPickup==null&&boarded==null&&projectedPickupRough;
-    const projectedDropRough=actualDrop==null&&(t.drive==null||(!activeRide&&projectedPickupRough));
+    const projectedDropRough=actualDrop==null&&(ride.rough||(!activeRide&&projectedPickupRough));
     result[t.id]={pickup,drop:actualDrop??ready,pickupRough,dropRough:projectedDropRough,
+      pickupGoogle:!!connection.google&&!pickupRough,dropGoogle:!!ride.google&&!projectedDropRough,
       orderPending,connection,activeRide,ready,readyRough:projectedDropRough,
       overdueSince:overdue?dropEta:null,handoff:actualDrop!=null&&activeRide};
     cursor=ready;
@@ -539,19 +548,19 @@ function addEarliestPickups(projected,trips,origins,clock,riding){
     const departed=trip.actual['En Route to Pickup'];
     if(!alreadyThere&&useSaved&&riding&&Number.isFinite(trip.combinedApproach)&&
       legMinutes(trip.reposition,trip.repositionMiles)==null){
-      const rideMinutes=legMinutes(riding.drive,riding.driveMiles)??defaultRideMinutes;
+      const rideMinutes=rideLeg(riding).minutes;
       eta=ready+Math.max(0,trip.combinedApproach-rideMinutes);
       rough=true;
     }else if(!riding&&!alreadyThere&&trip.status===1&&Number.isFinite(departed)&&departed>=lastStop.time){
       eta=Math.max(ready,departed+leg.minutes);
     }
     const projection=projected[trip.id];
-    const rideMinutes=legMinutes(trip.drive,trip.driveMiles)??defaultRideMinutes;
+    const rideMinutes=rideLeg(trip).minutes;
     projection.earliest=eta;
     projection.earliestDrop=eta+boardingMinutes+rideMinutes;
     projection.afterRide=!!riding;
     projection.earliestRough=rough||!!release?.readyRough;
-    projection.earliestDropRough=projection.earliestRough||trip.drive==null;
+    projection.earliestDropRough=projection.earliestRough||rideLeg(trip).rough;
     projection.earliestOverdue=release?.overdueSince!=null;
     projection.afterHandoff=!!release?.handoff;
   }
@@ -567,7 +576,7 @@ function earliestPickupText(p){
 function chainedPickupText(t,p){
   if(!p||!Number.isFinite(p.pickup)||t.outcome||t.status===6)return '';
   const label=t.actual['Arrived at Pickup']!=null?'Arrived at Pickup':t.actual['On Board']!=null?'On Board':'Estimated Pickup Time';
-  const detail=p.conflict?' · If first':p.orderPending?' · Order pending':p.pickupRough?' · Rough':'';
+  const detail=p.conflict?' · If first':p.orderPending?' · Order pending':p.pickupRough?' · Rough':p.pickupGoogle?' · Google traffic':'';
   return '<div class="info earliest-pickup">'+label+' · '+fmt(p.pickup)+detail+'</div>';
 }
 function cockpitTown(trip,side){
@@ -605,7 +614,7 @@ function dropoffTimes(t,p,estimateLabel='Estimated Drop-Off Time'){
   if(actual!=null)return '<div class="dropoff-times"><strong>'+scheduled+'</strong><div class="dropoff-detail">'+(t.actual['Arrived at Drop-Off']!=null?'Actual arrival':'Actual finish')+' · '+fmt(actual)+'</div></div>';
   if(t.outcome)return '<div class="dropoff-times"><strong>'+scheduled+'</strong></div>';
   const time=p.drop;
-  const detail=p.conflict?' · If first':p.orderPending?' · Order pending':p.dropRough?' · Rough':'';
+  const detail=p.conflict?' · If first':p.orderPending?' · Order pending':p.dropRough?' · Rough':p.dropGoogle?' · Google traffic':'';
   const warning=p.overdueSince!=null?'Drop-off overdue since '+fmt(p.overdueSince)+' · Confirm status':
     p.handoff?'Handoff in progress · Assumes ready now':'After preceding runs';
   return '<div class="dropoff-times"><strong>'+scheduled+'</strong><div class="dropoff-detail">'+warning+'</div>'+
@@ -911,7 +920,7 @@ $('modeBadge').textContent=previewingServiceDay()?'DAY PREVIEW · '+state.servic
 $('clockTop').textContent=fmt(now);renderWeather();$('mProgress').textContent=finished.length+' / '+state.trips.length;$('mRemaining').textContent=unfinished.length;$('mVariance').textContent=next&&proj[next.id].pickup!=null?((proj[next.id].pickup-next.scheduled)>0?'+':'')+(proj[next.id].pickup-next.scheduled)+' min':'—';$('mHome').textContent=fmt(home);$('mShift').textContent=state.shift.start===null?'—':duration(Math.max(0,(state.shift.end??now)-state.shift.start));$('shift').textContent=state.shift.start===null?'Start Shift':state.shift.end===null?'End Shift · Hold to Correct':'Reopen Shift · Hold to Correct';
 const gapOrigins=approachOrigins();
 document.querySelectorAll('[data-filter]').forEach(b=>{b.classList.toggle('active',b.dataset.filter===rosterFilter);const count=state.trips.filter(t=>filterStatus(t)===b.dataset.filter).length;b.textContent=b.dataset.filter+(b.dataset.filter==='All'?'':(' · '+count))});$('roster').innerHTML=state.trips.filter(t=>rosterFilter==='All'||filterStatus(t)===rosterFilter).map((t,i)=>{const p=proj[t.id],b=badge(t,p),variance=p.conflict?'Order pending':p.pickup==null?(t.outcome?'—':'ETA unknown'):(p.pickup-t.scheduled>0?'+':'')+(p.pickup-t.scheduled)+' min';return gapBar(availableGap(t,proj,clock,gapOrigins))+'<div class="trip '+(t.id===state.selected?'selected ':'')+(t.outcome||t.status===6?'done':'')+'" data-trip="'+esc(t.id)+'" tabindex="0"><div><span class="tag">'+(state.trips.indexOf(t)+1)+'</span><div class="info">'+esc(t.id)+'</div></div><div><div class="name">'+esc(t.who)+'</div><div class="info">'+esc(t.kind)+'</div></div><div class="pickup-col">'+cockpitTownLabel(t,'pickup')+'<div class="t">'+fmt(t.scheduled)+'</div><div class="info">'+pickupText(t,p)+'</div>'+chainedPickupText(t,p)+connectionLabel(p)+'</div><div class="t dropoff-col">'+cockpitTownLabel(t,'drop')+dropoffTimes(t,p,'Estimated Drop-Off Time')+'</div><div><span class="tag '+b[1]+'">'+esc(variance)+'</span></div><div>'+dispatchStatus(t)+'</div></div>'}).join('');
-const sel=selected(),sp=sel&&proj[sel.id],handoff=sel&&state.handoff===sel.id;$('activePanel').innerHTML=sel?'<div class="paneltitle">'+(handoff?'NEXT RUN':'ACTIVE TRIP')+' <span class="muted small">· ◇ Hold for options</span></div><div class="statusline"><div><div style="font-weight:900">'+esc(sel.id)+' · '+esc(sel.who)+'</div><div class="small muted">'+esc(sel.kind)+' · '+rideStatus(sel)+'</div></div><span class="tag '+badge(sel,sp)[1]+'">'+badge(sel,sp)[0]+'</span></div><div class="two cockpit-time-summary"><div class="summary-pickup"><div class="muted micro">PICKUP</div>'+cockpitTownLabel(sel,'pickup')+'<strong>'+fmt(sel.scheduled)+'</strong><div class="micro muted">'+pickupText(sel,sp)+'</div>'+chainedPickupText(sel,sp)+connectionLabel(sp)+'</div><div class="summary-dropoff"><div class="muted micro">SCHEDULED DROP-OFF</div>'+cockpitTownLabel(sel,'drop')+dropoffTimes(sel,sp)+'<div class="micro muted">Drive '+(sel.drive!=null?sel.drive+'m planned':sel.driveMiles!=null?legMinutes(null,sel.driveMiles)+'m rough at 30 mph':defaultRideMinutes+'m assumed')+'</div></div></div><div class="actions" style="margin-top:13px"><button class="btn primary big" id="openActiveTrip">Open Active Trip →</button></div>':'<div class="paneltitle">'+(unfinished.length?'Select a trip after confirming order':'No runs remaining')+'</div>';
+const sel=selected(),sp=sel&&proj[sel.id],handoff=sel&&state.handoff===sel.id;$('activePanel').innerHTML=sel?'<div class="paneltitle">'+(handoff?'NEXT RUN':'ACTIVE TRIP')+' <span class="muted small">· ◇ Hold for options</span></div><div class="statusline"><div><div style="font-weight:900">'+esc(sel.id)+' · '+esc(sel.who)+'</div><div class="small muted">'+esc(sel.kind)+' · '+rideStatus(sel)+'</div></div><span class="tag '+badge(sel,sp)[1]+'">'+badge(sel,sp)[0]+'</span></div><div class="two cockpit-time-summary"><div class="summary-pickup"><div class="muted micro">PICKUP</div>'+cockpitTownLabel(sel,'pickup')+'<strong>'+fmt(sel.scheduled)+'</strong><div class="micro muted">'+pickupText(sel,sp)+'</div>'+chainedPickupText(sel,sp)+connectionLabel(sp)+'</div><div class="summary-dropoff"><div class="muted micro">SCHEDULED DROP-OFF</div>'+cockpitTownLabel(sel,'drop')+dropoffTimes(sel,sp)+'<div class="micro muted">Drive '+(rideLeg(sel).google?rideLeg(sel).minutes+'m · Google traffic':sel.drive!=null?sel.drive+'m planned':sel.driveMiles!=null?legMinutes(null,sel.driveMiles)+'m rough at 30 mph':defaultRideMinutes+'m assumed')+'</div></div></div><div class="actions" style="margin-top:13px"><button class="btn primary big" id="openActiveTrip">Open Active Trip →</button></div>':'<div class="paneltitle">'+(unfinished.length?'Select a trip after confirming order':'No runs remaining')+'</div>';
 $('openActiveTrip')?.addEventListener('click',()=>{selectedTab='customer';render()});
 const warnings=[];
 const conflicts=[...unresolvedPickups()].map(([time,trips])=>
@@ -924,7 +933,7 @@ for(const t of unfinished){
   if(!p.conflict&&(p.pickup==null||p.drop==null))warnings.push(t.id+' · ETA incomplete · check drive times');
   if(p.pickup!=null&&v>0)warnings.push(t.id+' · '+(t.kind==='Return'?'Return ':'')+'pickup '+v+'m late'+
     (p.conflict?' if first':'')+(p.pickupRough?' · rough estimate':''));
-}if(!warnings.length)warnings.push('No calculated delays under current travel assumptions.');warnings.unshift('Day plan starts at the first scheduled pickup minus 10 minutes. Later planned arrivals are capped at 15 minutes early unless an exception is saved. Estimates follow every preceding uncanceled ride. Saved drive minutes take priority, then mileage at 30 mph. Town estimates are approximate; unknown legs still use 35 min per ride or 15 min between stops. No live traffic is connected.');$('warnings').innerHTML=warnings.map(x=>'<div>'+esc(x)+'</div>').join('');
+}if(!warnings.length)warnings.push('No calculated delays under current travel assumptions.');warnings.unshift('Day plan starts at the first scheduled pickup minus 10 minutes. Later planned arrivals are capped at 15 minutes early unless an exception is saved. Estimates follow every preceding uncanceled ride. Connected Google routes take priority; otherwise saved drive minutes and mileage at 30 mph are used. Town estimates are approximate; unknown legs still use 35 min per ride or 15 min between stops. Google traffic is used after connection; unavailable legs keep clearly marked rough estimates.');$('warnings').innerHTML=warnings.map(x=>'<div>'+esc(x)+'</div>').join('');
 renderRevenue(revenue(now));
 $('dayCounts').innerHTML=['Pending','Active','Completed','Canceled'].map(label=>'<span class="tag">'+label+' · '+state.trips.filter(t=>filterStatus(t)===label).length+'</span>').join('');
 if(!refreshOnly){
@@ -958,6 +967,7 @@ document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b
 }
 wireDynamic();
 renderMessages();
+routingProvider?.tick();
 if(focus&&!focus.isConnected){
   const replacement=focus.id?$(focus.id):focus.dataset.trip?document.querySelector('[data-trip="'+CSS.escape(focus.dataset.trip)+'"]'):null;
   replacement?.focus({preventScroll:true});
@@ -1170,6 +1180,7 @@ function updateDay(){
   if(usesDeviceTime()){
     render(true);
     toast('Remaining ETAs recalculated');
+    routingProvider?.refresh();
     return;
   }
   const now=minutes24(state.clock);
@@ -1244,6 +1255,6 @@ document.addEventListener('visibilitychange',()=>{
   refreshLiveClock();
 });
 setInterval(refreshLiveClock,15000);
-</script></body></html>
+</script><script src="/routing.js"></script></body></html>
 
 

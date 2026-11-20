@@ -102,8 +102,24 @@ Reuse original CV4 town centers. Prefer saved loaded mileage. Otherwise estimate
 - [x] Keep the tested HTML, browser-local manifest, timing engine and status controls unchanged.
 - [x] Serve existing assets through the `ASSETS` binding; run the Worker first only for `/api/*`.
 - [x] Provide `/api/health` with configuration booleans only; never return secret values.
-- [x] Keep `/api/routes` disabled with a clear response until protected routing is implemented. Saving a key must not create a public billable proxy.
+- [x] Initial foundation kept `/api/routes` disabled. The Google beta now requires an owner session, same-origin request and global usage allowance before any paid provider call.
 - [x] Include runtime asset-serving, secret-leak prevention and zero-outbound-request checks in the normal Cloudflare build verification.
-- [ ] Director saves the private `GOOGLE_MAPS_API_KEY` in the Worker runtime settings.
-- [ ] Connect authenticated, usage-limited Google routing to remaining-day projections and test real Google results before labeling estimates as traffic-aware.
+- [x] Director saved the private `GOOGLE_MAPS_API_KEY` in Worker runtime settings; live health check detected it.
+- [x] Authenticated, usage-limited routing is connected to the forecast adapter; live Google results remain gated on the private browser probe listed below.
 
+
+## Google routing beta — November 20, 2026
+
+- [x] Runtime Google key detected on the permanent Worker; no key is copied into source, notes, application assets or exported manifests.
+- [x] Owner unlock exchanges the matching runtime key for a signed, Secure, HttpOnly, SameSite session. Key input clears immediately; rotation invalidates sessions. This is an interim single-driver beta unlock, not a multi-user authentication system.
+- [x] No unauthenticated or cross-origin billable routing. Fixed Google endpoint and restricted request/response fields prevent arbitrary proxy use; passenger names, phones and notes are omitted.
+- [x] A SQLite-backed Durable Object atomically limits Google request attempts across Worker instances to 150 per New York day and 20 per minute. It stores only counters. Google usage elsewhere in the account is outside this application's limit.
+- [x] Full ride and connecting-drive durations override manual assumptions only while provider quotes are current. Quotes remain in memory, not backups or durable route history.
+- [x] Future legs use the projected departure time in New York. Pending arrivals retain first-minus-ten and normal maximum-fifteen-minute-early planning.
+- [x] Live GPS is opt-in. An active route from GPS uses remaining duration from the observation time; actual stage timestamps remain unchanged. Location uncertainty or provider failure keeps the manual fallback.
+- [x] Active traffic polls every five minutes; the full remaining plan refreshes every thirty minutes and after status/route changes. Clock calculations continue between requests. Browser background/suspension can pause network and location updates.
+- [x] Settings provides Connect, Refresh Traffic, optional iPad location and garage starting address. Update Day requests traffic updates when connected.
+- [x] Existing status, Back, Undo, cancellation, handoff, scheduled drop-off, revenue, theme, SMS and weather regression checks pass with routing disconnected.
+- [x] Mocked provider integration verifies sequential future ETAs, actual events, GPS remaining duration, future departure timezone conversion, private unlock, key privacy, provider errors and persistent request limits.
+- [ ] Director unlocks routing in the iPad browser; one public-landmark probe must pass before requesting manifest addresses. Google billing and key validity remain unverified until that probe succeeds.
+- [ ] Compare real Google trip and connecting-leg results with RoutingBox/Google Maps during the beta day. Existing vehicle revenue calculations have not been converted to Google billing mileage.

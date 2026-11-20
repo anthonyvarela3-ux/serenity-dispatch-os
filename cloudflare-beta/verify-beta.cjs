@@ -1003,4 +1003,5 @@ console.log('Four-tab layout relocates summaries, imports and settings without d
   console.log('Weather verifies New York period grouping, temperature conversion, rain/wind/fog cautions, source refresh, throttling, separate cache, offline/stale labels, partial alert failure and preservation of trip state and unsaved notes/settings.');
 
   require('node:child_process').execFileSync(process.execPath, ['verify-runtime.cjs'], { stdio: 'inherit' });
+  require('node:child_process').execFileSync(process.execPath, ['verify-routing.cjs'], { stdio: 'inherit' });
 })().catch(error=>{console.error(error);process.exitCode=1;});
