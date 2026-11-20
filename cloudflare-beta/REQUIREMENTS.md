@@ -88,3 +88,10 @@ Reuse original CV4 town centers. Prefer saved loaded mileage. Otherwise estimate
 - Tomorrow's screenshot is transcribed into a private JSON file with first names and the exact shown schedule. No OCR/upload integration or external API is added.
 
 - Deferred until the timing foundation is reliable: a question-only Ask Serenity assistant, future shared dispatcher Q&A, and the previously requested graded daily review. These are requirements, not connected features in this release.
+
+## Pickup-anchored start and early-arrival limits
+
+- Anchor a future service-day preview to the first scheduled, non-advance-canceled pickup minus ten minutes, back-calculating garage departure from the saved approach time. Do not use tonight's clock or a stale imported clock as tomorrow's forecast baseline.
+- Default later planned arrivals to the saved target, capped at fifteen minutes early. Preserve real lateness and recorded early arrivals; never clamp an actual timestamp. A per-trip early-arrival exception is editable in the existing trip correction form and is undoable.
+- The first pickup, morning departure/wake-up calculations, remaining trip chain and gap buffers share these targets. Keep actual device time active on the service date; late starts must still produce honest delays.
+- Refresh preview/device mode on a New York service-date transition even if the displayed minute is unchanged. Existing JSON imports remain compatible; no new manifest download is required for this fix.

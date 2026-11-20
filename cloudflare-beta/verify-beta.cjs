@@ -863,11 +863,41 @@ tap('undo');check('state.trips[1].outcome',null);check('project()["F-002"].picku
 run('state=simulationDay();state.settings.planningModel="town-estimate-v1";state.trips[0].driveMiles=10;state.trips[0].driveMilesEstimated=true;render()');
 check('tripRevenue(state.trips[0]).source','Town-based loaded mileage estimate');
 run('state=simulationDay();state.clockMode="device";state.serviceDate="2999-01-01";deviceTime=()=>"22:14";state.clock=420;render()');
-check('previewingServiceDay()',true);check('currentTime()',420);
+check('previewingServiceDay()',true);check('currentTime()',446);
 assert.match(ids.modeBadge.textContent,/DAY PREVIEW · 2999-01-01/);
 run('state.serviceDate=localServiceDate();render()');check('previewingServiceDay()',false);check('currentTime()',1334);
 run('state=simulationDay();render()');
 console.log('Main ETAs now include the en-route/at-pickup predecessor, loaded drive, handoff and next connection; propagate through same-location returns, tick with the clock, update on On Board/Finish, skip canceled runs and restore with Undo. Future service dates preview separately from tonight.');
+
+// Future-day planning is anchored to the first pickup, even with a stale late-night saved clock.
+run(`{
+ state=simulationDay();state.clockMode='device';state.serviceDate='2999-01-01';state.clock=1350;
+ state.settings.early=90;state.settings.firstDrive=24;
+ state.trips=state.trips.slice(0,3);state.trips.forEach((t,i)=>Object.assign(t,{scheduled:[495,720,900][i],drive:10,reposition:0,combinedApproach:null,status:0,outcome:null,actual:{}}));
+ deviceTime=()=>'22:30';render();
+}`);
+check('planningDeparture()',461);check('currentTime()',461);
+check('project()["F-001"].pickup',485);check('project()["F-002"].pickup',705);check('project()["F-003"].pickup',885);
+check('state.trips.every(t=>project()[t.id].pickup>=t.scheduled-15)',true);
+assert.equal(ids.mVariance.textContent,'-10 min');
+assert.match(ids.roster.innerHTML,/Estimated Pickup Time · 8:05 AM/);
+assert.doesNotMatch(ids.roster.innerHTML,/Leave now|\+886 min|11:01 PM/);
+run('state.selected="F-002";editTrip(selected())');
+ids.eWho.value='R.T.';ids.eTime.value='12:00';ids.eEarly.value='30';
+tap('saveTrip');check('state.trips[1].earlyArrivalOverride',30);check('project()["F-002"].pickup',690);
+tap('undo');check('state.trips[1].earlyArrivalOverride',undefined);check('project()["F-002"].pickup',705);
+run('Object.assign(state.trips[0],{status:2,actual:{"Arrived at Pickup":450}});render()');
+check('project()["F-001"].pickup',450); // Actual early arrival is never rewritten by a planning limit.
+run('state.trips[0].outcome="Canceled in Advance";state.trips[0].status=0;state.trips[0].actual={};render()');
+check('firstDayTrip().id','F-002');check('pickupLeadMinutes(state.trips[1])',10);
+run('state=simulationDay();state.clockMode="device";state.serviceDate=localServiceDate();deviceTime=()=>"10:00";render()');
+check('project()["F-001"].pickup>state.trips[0].scheduled',true); // A genuine late start stays late.
+run('const savedServiceDateFunction=localServiceDate;let testServiceDate="2998-12-31";localServiceDate=()=>testServiceDate;state.serviceDate="2999-01-01";state.clock=1350;deviceTime=()=>"07:26";render()');
+check('currentTime()',446);assert.match(ids.modeBadge.textContent,/DAY PREVIEW/);
+run('testServiceDate="2999-01-01"');onInterval();
+assert.match(ids.modeBadge.textContent,/DEVICE TIME · AUTO/);
+run('localServiceDate=savedServiceDateFunction;state=simulationDay();render()');
+console.log('A stale 10:30 PM clock cannot move a future service day into tonight: the first 8:15 pickup plans 8:05, later pickups cap at 15 minutes early, explicit trip exceptions and actuals are preserved, genuine late starts remain late, and date rollover refreshes the mode even at the same minute.');
 
 // Four-tab relocation and row actions must preserve the underlying day.
 assert.deepEqual([...markup.matchAll(/data-tab="([^"]+)"/g)].map(m=>m[1]),['overview','dispatch','customer','settings']);
