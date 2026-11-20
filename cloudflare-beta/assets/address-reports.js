@@ -16,12 +16,18 @@
         r[key]=clean(raw[key],max);if(r[key]===null)throw Error('Invalid address-report '+key+'.');
       }
       r.recordedMinute=raw.recordedMinute;r.scheduledPickup=raw.scheduledPickup;
+      if(raw.gps!==undefined){
+        const g=raw.gps;
+        if(!g||!Number.isFinite(g.latitude)||Math.abs(g.latitude)>90||!Number.isFinite(g.longitude)||Math.abs(g.longitude)>180||
+          !Number.isFinite(g.accuracy)||g.accuracy<0||g.accuracy>250||typeof g.capturedAt!=='string'||!Number.isFinite(Date.parse(g.capturedAt)))throw Error('Invalid address-report GPS location.');
+        r.gps={latitude:g.latitude,longitude:g.longitude,accuracy:g.accuracy,capturedAt:g.capturedAt};
+      }
       if(!r.id||ids.has(r.id)||!/^\d{4}-\d{2}-\d{2}$/.test(r.serviceDate)||!r.tripId||!r.rider||
         !['pickup','dropoff'].includes(r.endpoint)||!issues.includes(r.issue)||!bases.includes(r.basis)||
         !['device','simulation'].includes(r.clockMode)||!Number.isFinite(Date.parse(r.createdAt))||
         !Number.isInteger(r.recordedMinute)||r.recordedMinute<0||r.recordedMinute>2880||
         !(r.scheduledPickup===null||Number.isInteger(r.scheduledPickup)&&r.scheduledPickup>=0&&r.scheduledPickup<1440)||
-        (!r.proposedAddress&&!r.notes))throw Error('Incomplete address-report entry.');
+        (!r.proposedAddress&&!r.notes&&!r.gps))throw Error('Incomplete address-report entry.');
       ids.add(r.id);return r;
     });
   }
@@ -50,6 +56,8 @@
   const endpoint=r=>r.endpoint==='pickup'?'Pickup':'Drop-off';
   const stamp=r=>new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',dateStyle:'medium',timeStyle:'short'}).format(new Date(r.createdAt))+' (New York)';
   const ordered=rows=>rows.slice().sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+  const mapLink=g=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(g.latitude+','+g.longitude);
+  const gpsText=g=>g?g.latitude.toFixed(6)+', '+g.longitude.toFixed(6)+' · accuracy ±'+Math.ceil(g.accuracy)+' m · captured '+new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',dateStyle:'medium',timeStyle:'short'}).format(new Date(g.capturedAt))+' (New York)':'';
   function report(rows){
     return 'Serenity Dispatch — Address Issue Report\n'+rows.length+' recorded issue'+(rows.length===1?'':'s')+'\nFor office review. Proposed corrections are driver reports, not MAS-approved changes.\n\n'+ordered(rows).map((r,i)=>
       (i+1)+'. '+r.serviceDate+' · '+r.tripId+' · '+r.rider+'\n'+
@@ -59,7 +67,8 @@
       'Location: '+endpoint(r)+'\nIssue: '+r.issue+'\n'+
       'Manifest address: '+(r.originalAddress||'Not provided')+'\n'+
       'Proposed correct address: '+(r.proposedAddress||'Not yet known')+'\n'+
-      'Basis: '+r.basis+'\nNotes: '+(r.notes||'None')
+      'Basis: '+r.basis+'\nNotes: '+(r.notes||'None')+
+      (r.gps?'\nRecorded GPS: '+gpsText(r.gps)+'\nGPS map: '+mapLink(r.gps)+'\nStreet address requires confirmation.':'')
     ).join('\n\n');
   }
   function csv(rows){
@@ -68,8 +77,8 @@
       if(/^[\s]*[=+\-@]/.test(text))text="'"+text;
       return '"'+text.replace(/"/g,'""')+'"';
     };
-    const headings=['Service date','Trip','Rider','Scheduled pickup','Invoice/reference','Location','Issue','Manifest address','Proposed correct address','Basis','Notes','Recorded at (New York)','Mode','Report ID'];
-    return '\uFEFF'+[headings,...ordered(rows).map(r=>[r.serviceDate,r.tripId,r.rider,fmt(r.scheduledPickup),r.invoiceReference,endpoint(r),r.issue,r.originalAddress,r.proposedAddress,r.basis,r.notes,stamp(r),r.clockMode,r.id])].map(row=>row.map(cell).join(',')).join('\r\n');
+    const headings=['Service date','Trip','Rider','Scheduled pickup','Invoice/reference','Location','Issue','Manifest address','Proposed correct address','Basis','Notes','Recorded at (New York)','Mode','Report ID','GPS latitude','GPS longitude','GPS accuracy (m)','GPS captured at','GPS map'];
+    return '\uFEFF'+[headings,...ordered(rows).map(r=>[r.serviceDate,r.tripId,r.rider,fmt(r.scheduledPickup),r.invoiceReference,endpoint(r),r.issue,r.originalAddress,r.proposedAddress,r.basis,r.notes,stamp(r),r.clockMode,r.id,r.gps?.latitude,r.gps?.longitude,r.gps?.accuracy,r.gps?.capturedAt,r.gps?mapLink(r.gps):''])].map(row=>row.map(cell).join(',')).join('\r\n');
   }
   function renderControls(){
     const t=selected(),button=$('reportAddress'),count=$('addressReportLog');
@@ -84,12 +93,15 @@
     const t=selected();if(!t)return;
     const serviceDate=state.serviceDate||localServiceDate();
     const addresses={pickup:String(t.pickupArea||''),dropoff:String(t.dropArea||'')};
+    let gps=null,gpsBusy=false,captureSerial=0;
     modal('Report Wrong Address · '+t.id,
       '<p>'+esc(t.who)+' · '+esc(serviceDate)+'</p>'+
       '<div class="two"><div class="field"><label for="addressSide">Location</label><select id="addressSide"><option value="pickup">Pickup</option><option value="dropoff">Drop-off</option></select></div>'+
       '<div class="field"><label for="addressIssue">Issue</label><select id="addressIssue">'+issues.map(v=>'<option>'+esc(v)+'</option>').join('')+'</select></div></div>'+
       '<div class="field"><label for="addressOriginal">Address on this manifest</label><textarea id="addressOriginal" readonly></textarea></div>'+
       '<div class="field"><label for="addressProposed">Correct address or entrance, if known</label><input id="addressProposed" maxlength="350" autocomplete="off" placeholder="Leave blank if still unknown"></div>'+
+      '<button class="btn" type="button" id="addressUseGps">Use Current GPS Location</button><p id="addressGpsStatus" class="small" role="status"></p>'+
+      '<p class="small muted">Capture this location while you are at the pickup or drop-off. GPS records the map pin, accuracy and time; confirm the street address separately. No Google request is made.</p>'+
       '<div class="two"><div class="field"><label for="addressBasis">How do you know?</label><select id="addressBasis">'+bases.map(v=>'<option>'+esc(v)+'</option>').join('')+'</select></div>'+
       '<div class="field"><label for="addressInvoice">Invoice / dispatch reference (optional)</label><input id="addressInvoice" maxlength="80" autocomplete="off"></div></div>'+
       '<div class="field"><label for="addressNotes">What needs correcting?</label><textarea id="addressNotes" maxlength="1000" placeholder="What you found, door or entrance details, who confirmed it…"></textarea></div>'+
@@ -97,17 +109,38 @@
       '<button class="btn primary" id="saveAddressReport">Save Address Report</button><button class="btn" id="closeModal">Cancel</button>');
     $('addressSide').value='pickup';$('addressIssue').value=issues[0];$('addressBasis').value=bases[0];
     $('addressOriginal').value=addresses.pickup;$('addressInvoice').value=String(t.invoiceNumber||t.invoiceReference||'').slice(0,80);
-    $('addressSide').onchange=()=>{$('addressOriginal').value=addresses[$('addressSide').value]||'';};
+    $('addressSide').onchange=()=>{captureSerial++;gps=null;gpsBusy=false;$('saveAddressReport').disabled=false;$('addressUseGps').disabled=false;$('addressSide').disabled=false;$('addressGpsStatus').textContent='';$('addressOriginal').value=addresses[$('addressSide').value]||'';};
+    $('addressUseGps').onclick=()=>{
+      if(gpsBusy)return;
+      const feedback=$('addressGpsStatus'),button=$('addressUseGps'),saveButton=$('saveAddressReport'),side=$('addressSide'),token=++captureSerial;
+      if(!navigator.geolocation?.getCurrentPosition){feedback.textContent='GPS location is unavailable in this browser. Enter the address or issue details manually.';return;}
+      gpsBusy=true;button.disabled=true;saveButton.disabled=true;side.disabled=true;
+      feedback.textContent='Getting your current location… Allow location access if prompted.';
+      const current=()=>token===captureSerial&&$('addressGpsStatus')===feedback&&!$('modalRoot').hidden;
+      const finish=()=>{gpsBusy=false;button.disabled=false;saveButton.disabled=false;side.disabled=false;};
+      const failure=message=>{if(!current())return;finish();feedback.textContent=message+(gps?' Earlier GPS pin remains: '+gpsText(gps):'');};
+      try{navigator.geolocation.getCurrentPosition(position=>{
+        if(!current())return;
+        const c=position.coords,at=position.timestamp,age=Date.now()-at;
+        if(!Number.isFinite(c?.latitude)||Math.abs(c.latitude)>90||!Number.isFinite(c?.longitude)||Math.abs(c.longitude)>180||
+          !Number.isFinite(c?.accuracy)||c.accuracy<0||!Number.isFinite(at)||age>60000||age< -5000){failure('A fresh GPS position was not available. Try again.');return;}
+        if(c.accuracy>250){failure('GPS accuracy is ±'+Math.ceil(c.accuracy)+' m, too uncertain to record this stop. Move to a clearer location and try again.');return;}
+        gps={latitude:c.latitude,longitude:c.longitude,accuracy:c.accuracy,capturedAt:new Date(at).toISOString()};finish();
+        feedback.textContent='GPS recorded: '+gpsText(gps)+'. Review and save the report. The street address has not been inferred.';
+      },error=>failure(error.code===1?'Location access was denied. Allow location for Serenity in your browser settings, or enter the details manually.':error.code===3?'GPS timed out. Try again or enter the details manually.':'GPS location could not be determined. Try again or enter the details manually.'),
+      {enableHighAccuracy:true,maximumAge:0,timeout:15000});}catch{failure('GPS location is unavailable. Enter the details manually.');}
+    };
     $('saveAddressReport').onclick=()=>{
-      const button=$('saveAddressReport');if(button.disabled)return;button.disabled=true;
+      const button=$('saveAddressReport');if(button.disabled||gpsBusy)return;button.disabled=true;
       try{
         const side=$('addressSide').value;
         const draft={version:1,serviceDate,tripId:t.id,rider:t.riderName||t.who,
           endpoint:side,originalAddress:addresses[side],proposedAddress:$('addressProposed').value.trim(),issue:$('addressIssue').value,
           basis:$('addressBasis').value,notes:$('addressNotes').value.trim(),invoiceReference:$('addressInvoice').value.trim(),
           clockMode:usesDeviceTime()?'device':'simulation',recordedMinute:currentTime(),scheduledPickup:t.scheduled??null};
-        if(!draft.proposedAddress&&!draft.notes)throw Error('Enter a correction or a note describing the problem.');
-        const same=records.some(r=>Object.keys(draft).filter(k=>k!=='recordedMinute').every(k=>r[k]===draft[k]));
+        if(gps)draft.gps={...gps};
+        if(!draft.proposedAddress&&!draft.notes&&!gps)throw Error('Enter a correction or a note describing the problem, or capture the GPS location.');
+        const same=records.some(r=>Object.keys(draft).filter(k=>k!=='recordedMinute').every(k=>JSON.stringify(r[k])===JSON.stringify(draft[k])));
         if(same){closeModal();toast('This address issue is already logged');return;}
         const id=globalThis.crypto?.randomUUID?.()||'address-'+Date.now()+'-'+Math.random().toString(36).slice(2);
         const entry=validateBackup([{...draft,id,createdAt:new Date().toISOString()}])[0];
@@ -126,7 +159,7 @@
     const visible=()=>ordered(records.filter(r=>!$('addressDateFilter').value||r.serviceDate===$('addressDateFilter').value));
     const update=()=>{
       const rows=visible();$('addressLogCount').textContent=loadError||rows.length+' of '+records.length+' saved reports';
-      $('addressLogRows').innerHTML=rows.map(r=>'<div class="event"><strong>'+esc(r.serviceDate+' · '+r.tripId+' · '+r.rider)+'</strong><br>'+esc(endpoint(r)+' · '+r.issue)+'<br><span class="small muted">Manifest: '+esc(r.originalAddress||'Not provided')+'<br>Proposed: '+esc(r.proposedAddress||'Not yet known')+'</span></div>').join('')||'<p class="muted">No address issues for this selection.</p>';
+      $('addressLogRows').innerHTML=rows.map(r=>'<div class="event"><strong>'+esc(r.serviceDate+' · '+r.tripId+' · '+r.rider)+'</strong><br>'+esc(endpoint(r)+' · '+r.issue)+'<br><span class="small muted">Manifest: '+esc(r.originalAddress||'Not provided')+'<br>Proposed: '+esc(r.proposedAddress||'Not yet known')+'</span>'+(r.gps?'<br><span class="small">GPS: '+esc(gpsText(r.gps))+'</span><br><a href="'+esc(mapLink(r.gps))+'" target="_blank" rel="noopener noreferrer">View recorded location</a>':'')+'</div>').join('')||'<p class="muted">No address issues for this selection.</p>';
       $('addressReportText').value=report(rows);
       for(const id of ['shareAddressReport','copyAddressReport','csvAddressReport','txtAddressReport'])$(id).disabled=!rows.length||!!loadError;
     };
