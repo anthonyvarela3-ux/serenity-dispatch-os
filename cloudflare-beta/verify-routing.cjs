@@ -1,7 +1,9 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 (async()=>{
  const html=fs.readFileSync('assets/index.html','utf8'),ids={},saved={},calls=[];
- let geoCallback,deny=false,diagnostic=null,serverUnlocked=false;
+ let geoCallback,deny=false,diagnostic=null,serverUnlocked=false,holdRoute=null;
+ const fixedNow=Date.parse('2026-11-20T12:00:00Z');
+ class TestDate extends Date {constructor(...args){super(...(args.length?args:[fixedNow]));}static now(){return fixedNow;}}
  const timers=[];
  class Element{
    constructor(id){this.id=id;this.value='';this.dataset={};this.style={};this.attributes={};this.classList={toggle(){}};}
@@ -12,7 +14,7 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
  }
  for(const m of html.split('<script>')[0].matchAll(/id="([^"]+)"/g))ids[m[1]]=new Element(m[1]);
  ids.modalRoot.hidden=true;
- const context=vm.createContext({console,confirm:()=>true,setTimeout(fn,delay){timers.push({fn,delay});},clearTimeout(){},setInterval(){},Response,URL,
+ const context=vm.createContext({console,Date:TestDate,confirm:()=>true,setTimeout(fn,delay){timers.push({fn,delay});},clearTimeout(){},setInterval(){},Response,URL,
    document:{visibilityState:'visible',documentElement:new Element('html'),getElementById:id=>ids[id]??null,
      querySelectorAll:()=>[],addEventListener(){},createElement:()=>new Element(),body:{appendChild(){}}},
    localStorage:{getItem:k=>saved[k]??null,setItem:(k,v)=>saved[k]=v},
@@ -22,11 +24,12 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
      const body=options.body?JSON.parse(options.body):null;calls.push({url,body});
      if(url==='/api/routing/status')return new Response(JSON.stringify({configured:true,unlocked:serverUnlocked}));
      if(url==='/api/routing/unlock'){assert.equal(body.key,'private-test-key');serverUnlocked=true;return new Response('{"unlocked":true}');}
+     if(url==='/api/routes'&&holdRoute){const wait=holdRoute;holdRoute=null;await wait;}
      if(deny)return new Response(JSON.stringify({error:'GOOGLE_ACCESS_DENIED',...(diagnostic?{upstreamStatus:400,diagnostic}:{})}),{status:502});
      const minutes=url.endsWith('probe')?15:typeof body.origin==='object'?8:
        body.destination.includes('drop one')?70:body.destination.includes('drop two')?30:
        body.destination.includes('pickup two')?40:10;
-     return new Response(JSON.stringify({minutes,miles:12,fetchedAt:Date.now(),trafficAware:true,usage:{used:calls.length,limit:150}}));
+     return new Response(JSON.stringify({minutes,miles:12,fetchedAt:run('Date.now()'),trafficAware:true,usage:{used:calls.length,limit:150}}));
    },
  });
  const run=s=>vm.runInContext(s,context),flush=async()=>{for(let i=0;i<100;i++)await Promise.resolve();};
@@ -97,7 +100,66 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
  run(fs.readFileSync('assets/routing.js','utf8'));await flush();
  assert.equal(calls.length,requestCount+1,'An already unlocked page reload only checks free session status');
  assert.equal(calls.at(-1).url,'/api/routing/status');
- assert.match(ids.routingUsage.textContent,/Manual traffic checks only/);
- console.log('Browser routing integration passes manual-only Google calls, no polling on clock/status/import/GPS/reload, unchanged check timestamps, retained older quotes, private unlock, future departure conversion, chained next pickup, actual events, GPS remaining duration, provider failure and pause fallback checks.');
+ assert.match(ids.routingUsage.textContent,/Arrived at Pickup, Arrived at Drop-Off and Finish Run check up to 2/);
+ // Exercise the real Customer/Dispatch step handler for a complete six-run day.
+ deny=false;diagnostic=null;
+ run(`let testMinute=480,testMs=Date.now();
+   Date=class extends realTestDate{constructor(...args){super(...(args.length?args:[testMs]));}static now(){return testMs;}};
+   deviceTime=()=>minutes24(testMinute);
+   function resetStatusDay(){state=seed();state.trips=state.trips.slice(0,6);state.clockMode='device';state.serviceDate=localServiceDate();state.forecastClock=state.clock=testMinute;
+     state.settings.garageAddress='Public garage station, NY';state.handoff=null;state.selected=state.trips[0].id;
+     state.trips.forEach((t,i)=>{t.status=0;t.outcome=null;t.actual={};t.scheduled=495+i*60;t.scheduledDrop=t.scheduled+35;
+       t.pickupArea='Public pickup '+i+', NY';t.dropArea='Public drop '+i+', NY';t.drive=20;t.reposition=15;t.combinedApproach=null;});render();}
+   resetStatusDay();`);
+ const paid=()=>calls.filter(c=>c.url==='/api/routes'||c.url==='/api/routing/probe').length;
+ let start=paid();await ids.routingRefresh.onclick();await flush();
+ assert.equal(paid()-start,13,'Initial six-run refresh: 12 legs plus one session probe');
+ const dailyStart=start;
+ for(let i=0;i<6;i++)for(let stage=1;stage<=6;stage++){
+   run('testMs+=60000;testMinute++;');
+   start=paid();run(`dispatchStep(state.trips[${i}].id,1);`);await flush();
+   const spent=paid()-start;
+   assert.ok(spent<=2,`Run ${i+1}, stage ${stage}: at most two Google routes`);
+   if(![2,5,6].includes(stage))assert.equal(spent,0,'En Route and On Board only recalculate locally');
+   if([2,5,6].includes(stage)&&!(i===5&&stage>=5))assert.ok(spent>0,'Arrival and finish steps fetch relevant routes');
+   assert.equal(run(`state.trips[${i}].actual[stages[${stage}]]`),run('testMinute'),'Status timestamp is unchanged by traffic response');
+ }
+ assert.ok(paid()-dailyStart<=49,'Six-run day fits within 49 attempts including initial refresh');
+ assert.equal(run('state.trips.filter(t=>t.status===6).length'),6);
+ assert.deepEqual(JSON.parse(run('JSON.stringify(state.trips.map(t=>t.scheduled))')),[495,555,615,675,735,795]);
+ // Back, Undo, simulation, a future date, hidden page and pause never spend.
+ start=paid();run('backTrip(state.trips[5]);undo();render();routingProvider.tick();');await flush();assert.equal(paid(),start);
+ run("resetStatusDay();state.clockMode='simulation';logStep(state.trips[0],true);logStep(state.trips[0],true);");await flush();assert.equal(paid(),start);
+ run("resetStatusDay();state.serviceDate='2026-11-21';logStep(state.trips[0],true);logStep(state.trips[0],true);");await flush();assert.equal(paid(),start);
+ run("resetStatusDay();document.visibilityState='hidden';logStep(state.trips[0],true);logStep(state.trips[0],true);");await flush();assert.equal(paid(),start);
+ run("document.visibilityState='visible';resetStatusDay();");
+ // A single arrival changes later projections, not future route traffic snapshots.
+ run('state.trips[0].status=1;state.trips[0].actual={"En Route to Pickup":testMinute};');
+ start=paid();run('logStep(state.trips[0],true);');await flush();
+ const eventCalls=calls.filter(c=>c.url==='/api/routes').slice(-2);
+ assert.ok(eventCalls.some(c=>c.body.destination===run('state.trips[0].dropArea')));
+ assert.ok(eventCalls.some(c=>c.body.destination===run('state.trips[1].pickupArea')));
+ assert.ok(run('project()[state.trips[1].id].pickup>=project()[state.trips[0].id].drop+connectionTo(state.trips[1],state.trips[0].id).minutes'));
+ assert.equal(paid()-start,2);
+ // The immediate Arrived-at-Drop-Off / Finished pair reuses identical fresh routes.
+ run('testMs+=60000;testMinute++;logStep(state.trips[0],true);logStep(state.trips[0],true);logStep(state.trips[0],true);');await flush();
+ start=paid();run('logStep(state.trips[0],true);');await flush();assert.equal(paid(),start,'Adjacent Finish reuses routes checked seconds ago');
+ // Coalesce rapid presses during an arrival request into only the latest event.
+ run('resetStatusDay();testMs+=60000;testMinute++;logStep(state.trips[0],true);');
+ let release;holdRoute=new Promise(resolve=>release=resolve);start=paid();
+ run('logStep(state.trips[0],true);');await flush();
+ assert.equal(paid()-start,1,'One arrival request is in flight');
+ run('logStep(state.trips[0],true);logStep(state.trips[0],true);logStep(state.trips[0],true);logStep(state.trips[0],true);');
+ release();await flush();assert.ok(paid()-start<=3,'Only in-flight route plus latest Finish event, without queued old events');
+ assert.equal(run('state.trips[0].status'),6);
+ // Corrections invalidate in-flight work without fetching or retrying anything.
+ run('resetStatusDay();testMs+=60000;testMinute++;logStep(state.trips[0],true);');
+ holdRoute=new Promise(resolve=>release=resolve);start=paid();run('logStep(state.trips[0],true);');await flush();
+ run('backTrip(state.trips[0]);');release();await flush();assert.equal(paid()-start,1);
+ deny=true;run('testMs+=60000;testMinute++;logStep(state.trips[0],true);');await flush();
+ assert.match(ids.routingStatus.textContent,/billing/);start=paid();run('routingProvider.tick();render();');await flush();assert.equal(paid(),start,'Failures do not auto-retry');
+ await ids.routingConnect.onclick();run('backTrip(state.trips[0]);logStep(state.trips[0],true);');await flush();assert.equal(paid(),start,'Paused routing stays paused on arrival');
+ console.log('Arrival/finish checks pass all six stages across six runs, <=49 attempts, at most two routes per event, future ETA propagation, fresh-route reuse, latest-event coalescing, preserved timestamps, pause/preview/Undo guards and no error retry.');
+ console.log('Browser routing integration passes explicit Google refresh, no polling on clock/import/GPS/reload, unchanged check timestamps, retained older quotes, private unlock, future departure conversion, chained next pickup, actual events, GPS remaining duration, provider failure and pause fallback checks.');
 })().catch(e=>{console.error(e);process.exitCode=1;});
 

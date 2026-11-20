@@ -2,21 +2,21 @@
   const quotes = new Map(), FLAG = STORE + '_routing_enabled';
   let unlocked=false, enabled=false, configured=false, verified=false, busy=false;
   let message='Checking Google routing connection…',usage=null;
-  let gps=null,gpsWatch=null,errors=0,lastChecked='',lastCheckedAt=0,manifestVersion=0,needsRefresh=false;
+  let gps=null,gpsWatch=null,errors=0,lastChecked='',lastCheckedAt=0,manifestVersion=0,needsRefresh=false,pendingStatus=null;
   const status = () => {
     const snapshot=enabled&&verified&&lastCheckedAt>0;
-    const older=snapshot&&Date.now()-lastCheckedAt>30*60000;
+    const older=snapshot&&[...quotes.values()].some(q=>Date.now()-q.fetchedAt>(q.remaining?10:30)*60000);
     const location=locationNow()?'Device location ready.':gpsWatch==null?'Location off; active rides use logged departure times.':'Waiting for a usable device location.';
-    $('routingStatus').textContent=message||(snapshot?'Google Routes connected · Last traffic check '+lastChecked+'. Manual refresh only. '+location+(older?' Saved Google times are older than 30 minutes; refresh for current traffic.':''):
-      enabled?'Manual mode ready. Tap Refresh Traffic when you want Google estimates. '+location:'Google routing paused. Saved travel assumptions remain available.');
-    $('routingBrief').textContent=busy?'Refreshing Google travel estimates…':errors?'Traffic check failed · Manual retry available':snapshot?'Manual Google traffic · Checked '+lastChecked+(needsRefresh?' · Manifest changed':older?' · Older saved estimates':'')+(locationNow()?' · GPS ready':' · Logged locations'):'Manual traffic mode · '+(unlocked?'Tap Refresh Traffic for Google estimates':'Connect Google Routing when ready');
+    $('routingStatus').textContent=message||(snapshot?'Google Routes connected · Last traffic check '+lastChecked+'. Arrival and Finish Run buttons refresh the current and next legs. '+location+(older?' Some saved Google times are older than 30 minutes; refresh for current traffic.':''):
+      enabled?'Arrival and finish traffic checks are ready. Refresh Traffic checks the full remaining schedule. '+location:'Google routing paused. Saved travel assumptions remain available.');
+    $('routingBrief').textContent=busy?'Refreshing Google travel estimates…':errors?'Traffic check failed · Manual retry available':snapshot?'Google traffic on arrival/finish · Checked '+lastChecked+(needsRefresh?' · Manifest changed':older?' · Older saved estimates':'')+(locationNow()?' · GPS ready':' · Logged locations'):'Traffic on arrival/finish · '+(unlocked?'Ready when routing is enabled':'Connect Google Routing when ready');
     $('routingConnect').textContent=enabled?'Pause Google Routing':unlocked?'Start Google Routing':'Connect Google Routing';
     $('routingRefresh').hidden=!unlocked;
     $('routingRefresh').disabled=busy;
     $('routingLocation').hidden=!unlocked;
     $('routingLocation').textContent=gpsWatch==null?'Use iPad Location':'Stop Location';
     $('routingUsage').textContent=(usage?usage.used+' / '+usage.limit+' Google route requests today. ':'')+
-      'Manual traffic checks only. One refresh can request several remaining trip and connecting-drive routes. Clock and status changes recalculate ETAs without contacting Google.';
+      'Arrived at Pickup, Arrived at Drop-Off and Finish Run check up to 2 relevant routes, then recalculate all later ETAs. An unverified session also needs 1 connection test. Refresh Traffic checks the full remaining schedule. Other status steps, timers, GPS, Back and Undo make no traffic requests.';
   };
   const date = () => state.serviceDate||localServiceDate();
   function departureISO(minutes) {
@@ -55,7 +55,7 @@
     const q=quotes.get(id),sig=signatureFor(from,to);
     if(!q||q.remaining!==remaining)return null;
     if(remaining?(q.destination!==to||q.serviceDate!==date()):q.signature!==sig)return null;
-    // Keep measured travel durations between manual checks; old quotes are
+    // Keep measured travel durations between explicit checks; old quotes are
     // estimates, rather than silently reverting to generic driving minutes.
     const stale=Date.now()-q.fetchedAt>(remaining?10:30)*60000;
     return {...q,stale,rough:stale||!q.trafficAware,google:!stale&&!!q.trafficAware};
@@ -111,6 +111,9 @@
   async function requestQuote(id,from,to,depart,remaining,force=false) {
     if(!from||!to||typeof to!=='string'||/^(Public test pickup|Public test destination)$/.test(to))return;
     const signature=signatureFor(from,to),existing=quotes.get(id);
+    // Adjacent Arrived / Finished taps often describe
+    // the same journey. Reuse its just-fetched quote instead of paying twice.
+    if(force==='status'&&existing?.signature===signature&&existing.remaining===remaining&&Date.now()-existing.fetchedAt<5000&&Math.abs(existing.departMinute-depart)<1)return;
     if(!force&&existing?.signature===signature&&existing.remaining===remaining&&Date.now()-existing.fetchedAt<20*60000&&Math.abs(existing.departMinute-depart)<15)return;
     const version=manifestVersion;
     const data=await api('/api/routes',{origin:from,destination:to,departureTime:departureISO(depart)});
@@ -121,13 +124,30 @@
     const data=await api('/api/routing/probe',{});
     verified=true;usage=data.usage;errors=0;
   }
-  async function cycle() {
+  function statusRoutes(id,trips) {
+    const order=routeOrder(),event=order.find(t=>t.id===id);
+    if(!event)return new Set();
+    const after=order.slice(order.indexOf(event)+1);
+    const focus=!event.outcome&&event.status<5?event:after.find(t=>!t.outcome&&t.status<5);
+    if(!focus)return new Set();
+    const selected=new Set(),p=project()[focus.id],origin=approachOrigins().get(focus.id);
+    if(focus.status<2&&!p.connection?.sameStop&&originFor(focus,origin).from)selected.add('connection:'+focus.id);
+    selected.add('ride:'+focus.id);
+    if(selected.size<2){
+      const next=trips[trips.indexOf(focus)+1];
+      if(next&&next.status<2&&!project()[next.id].connection?.sameStop&&originFor(next,approachOrigins().get(next.id)).from)selected.add('connection:'+next.id);
+    }
+    return selected;
+  }
+  async function cycle(eventId=null) {
     if(busy||!enabled||!unlocked||document.visibilityState==='hidden')return;
     if(!/^\d{4}-\d{2}-\d{2}$/.test(date())||date()<localServiceDate()) {
       message='This manifest is for an earlier date. Google routing is paused.';status();return;
     }
     const trips=routeOrder().filter(t=>!t.outcome&&t.status!==6);
     if(!trips.length){errors=0;message='All runs are closed. No Google requests were needed.';status();return;}
+    const selected=eventId?statusRoutes(eventId,trips):null;
+    if(selected&&!selected.size)return;
     const version=manifestVersion;
     busy=true;status();
     try {
@@ -137,15 +157,15 @@
         if(version!==manifestVersion)return;
         if(t.outcome||t.status===6)continue;
         let p=project()[t.id],origin=origins.get(t.id),approach=originFor(t,origin);
-        if(t.status<2&&!p.connection?.sameStop&&approach.from){
+        if((!selected||selected.has('connection:'+t.id))&&t.status<2&&!p.connection?.sameStop&&approach.from){
           const departure=t.status===1?currentTime():Math.max(currentTime(),(p.pickup??t.scheduled)-p.connection.minutes);
-          await requestQuote('connection:'+t.id,approach.from,t.pickupArea,departure,approach.remaining,true);
+          await requestQuote('connection:'+t.id,approach.from,t.pickupArea,departure,approach.remaining,eventId?'status':true);
         }
         if(version!==manifestVersion)return;
         p=project()[t.id];
-        if(t.status<5){
+        if((!selected||selected.has('ride:'+t.id))&&t.status<5){
           const ride=rideFrom(t),departure=t.status>=3?currentTime():(p.pickup??t.scheduled)+boardingMinutes;
-          await requestQuote('ride:'+t.id,ride.from,t.dropArea,departure,ride.remaining,true);
+          await requestQuote('ride:'+t.id,ride.from,t.dropArea,departure,ride.remaining,eventId?'status':true);
         }
       }
       if(version!==manifestVersion)return;
@@ -160,14 +180,27 @@
     }finally{
       busy=false;status();
       if(document.visibilityState!=='hidden'&&$('modalRoot').hidden&&!activePointers.size)render(true);
+      // A deliberate new step during an in-flight check replaces its remainder.
+      // Drain only that latest step, never a timer retry or a queue of old taps.
+      const next=pendingStatus;pendingStatus=null;
+      if(next)await cycle(next);
     }
   }
   routingProvider={
     ride:t=>{const from=rideFrom(t);return quote('ride:'+t.id,from.from,t.dropArea,from.remaining);},
     connection:(t,origin)=>{const from=originFor(t,origin);return quote('connection:'+t.id,from.from,t.pickupArea,from.remaining);},
     tick(){status();},
+    invalidate(){manifestVersion++;pendingStatus=null;},
+    statusChanged(id){
+      const trip=state.trips.find(t=>t.id===id);
+      if(!trip||![2,5,6].includes(trip.status))return;
+      if(!enabled||!unlocked||!usesDeviceTime()||date()!==localServiceDate()||document.visibilityState==='hidden')return;
+      manifestVersion++;
+      if(busy){pendingStatus=id;return;}
+      return cycle(id);
+    },
     refresh:()=>{enabled=true;try{localStorage.setItem(FLAG,'true');}catch{}return cycle();},
-    manifestChanged(){manifestVersion++;needsRefresh=true;message='Manifest changed. ETAs have recalculated; tap Refresh Traffic when you want updated Google travel times.';status();},
+    manifestChanged(){manifestVersion++;pendingStatus=null;needsRefresh=true;message='Manifest changed. ETAs have recalculated; tap Refresh Traffic when you want updated Google travel times.';status();},
   };
   $('routingConnect').onclick=async()=>{
     if(enabled){manifestVersion++;enabled=false;verified=false;lastCheckedAt=0;quotes.clear();try{localStorage.setItem(FLAG,'false');}catch{}message='Google routing paused. Saved travel assumptions are in use.';status();render(true);return;}
@@ -212,7 +245,7 @@
     configured=data.configured;unlocked=data.unlocked;usage=data.usage;
     try{enabled=unlocked&&localStorage.getItem(FLAG)==='true';}catch{}
     message=!configured?'The private Google routing setup is incomplete.':
-      unlocked?'Manual traffic mode is ready. Tap Refresh Traffic to request Google estimates.':'Private key saved on server. Connect Google Routing to unlock this browser.';
+      unlocked?'Arrival and Finish Run buttons refresh relevant travel estimates when routing is enabled. Refresh Traffic checks the full remaining schedule.':'Private key saved on server. Connect Google Routing to unlock this browser.';
     status();
   }).catch(()=>{message='Google routing connection unavailable. Saved estimates remain in use.';status();});
 })();

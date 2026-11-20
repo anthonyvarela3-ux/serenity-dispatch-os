@@ -114,11 +114,11 @@ Reuse original CV4 town centers. Prefer saved loaded mileage. Otherwise estimate
 - [x] Owner unlock exchanges the matching runtime key for a signed, Secure, HttpOnly, SameSite session. Key input clears immediately; rotation invalidates sessions. This is an interim single-driver beta unlock, not a multi-user authentication system.
 - [x] No unauthenticated or cross-origin billable routing. Fixed Google endpoint and restricted request/response fields prevent arbitrary proxy use; passenger names, phones and notes are omitted.
 - [x] A SQLite-backed Durable Object atomically limits Google request attempts across Worker instances to 150 per New York day and 20 per minute. It stores only counters. Google usage elsewhere in the account is outside this application's limit.
-- [x] Full ride and connecting-drive quotes are labeled Google traffic while current. Older same-route quotes remain available as rough saved estimates between manual checks. Quotes remain in memory, not backups or durable route history.
+- [x] Full ride and connecting-drive quotes are labeled Google traffic while current. Older same-route quotes remain available as rough saved estimates between explicit checks. Quotes remain in memory, not backups or durable route history.
 - [x] Future legs use the projected departure time in New York. Pending arrivals retain first-minus-ten and normal maximum-fifteen-minute-early planning.
 - [x] Live GPS is opt-in. An active route from GPS uses remaining duration from the observation time; actual stage timestamps remain unchanged. Location uncertainty or provider failure keeps the manual fallback.
-- [x] Google traffic checks are manual only. Refresh Traffic and Unlock and Test Connection are the only actions that request routes. Clock, status, location, page resume/reload and manifest changes make no automatic Google route calls. Weather refresh remains independent.
-- [x] Settings provides Connect, Refresh Traffic, optional iPad location and garage starting address. Update Day requests traffic updates when connected.
+- [x] Google traffic checks follow explicit Refresh Traffic / Unlock or forward Arrived at Pickup, Arrived at Drop-Off and Finished events. Arrival/finish events check at most two relevant legs. Other statuses, clock, location, page resume/reload and manifest changes make no Google route calls. Weather refresh remains independent.
+- [x] Settings provides Connect, Refresh Traffic, optional iPad location and garage starting address. Update Day recalculates locally without requesting Google traffic.
 - [x] Existing status, Back, Undo, cancellation, handoff, scheduled drop-off, revenue, theme, SMS and weather regression checks pass with routing disconnected.
 - [x] Mocked provider integration verifies sequential future ETAs, actual events, GPS remaining duration, future departure timezone conversion, private unlock, key privacy, provider errors and persistent request limits.
 - [x] Driver unlocked routing on iPad; Google Routes probe and full refresh confirmed connected on Nov 20 at 5:46 AM. Runtime credentials remain private.
@@ -137,14 +137,18 @@ Reuse original CV4 town centers. Prefer saved loaded mileage. Otherwise estimate
 - Tested real OCR on a fictional browser screenshot and the supplied Nov 20 RoutingBox screenshot locally, plus matching/duplicate/history regressions. Never publish private manifests or test screenshots in source.
 
 
-## Manual Google request budget control — Nov 20
+## Arrival / finish Google request budget control — Nov 20
 
 - Refresh Traffic is available globally beside Update Day after browser unlock. Update Day only recalculates locally. A requested traffic refresh checks the remaining ride and connecting legs; one click may consume multiple Google requests.
-- Opening or resuming the page only reads free session status. Enabling location, changing status, saving a garage address and merging a manifest never trigger billable Google routes. No timer polling or automatic retry is scheduled.
+- Opening or resuming the page only reads free session status. Enabling location, En Route/On Board statuses, Back/Undo, saving a garage address and merging a manifest never trigger billable Google routes. No timer polling or automatic retry is scheduled.
 - Unlock and Test Connection remains an explicit request for a public-route test followed by the remaining plan. Resuming a paused connection alone does not request traffic.
 - Preserve older Google route durations for the same route and date, flag them as rough after 30 minutes (10 minutes for GPS remaining quotes), and retain the actual last-check timestamp. Changed routes use the existing fallback until manually refreshed.
 - Keep the daily 150-attempt and per-minute 20-attempt guards. Rate-limit messages direct the driver to retry manually. Pausing interrupts the rest of an in-flight refresh after its current request.
-- Regression tests prove no Google requests on clock/status/import/GPS/reload, correct manual route refresh, local Update Day, preserved chained forecasts and actual timestamps, and clear older-quote handling.
+- Forward Arrived at Pickup checks the loaded leg and next connecting drive. Forward Arrived at Drop-Off / Finished checks the next pickup connection and its loaded leg. At most two routes per event (plus one probe if the session has not been verified). Recalculate the entire remaining chain from those results and saved later-leg estimates. Later legs are not all newly traffic-checked on each event.
+- Status-triggered calls require routing enabled/unlocked, a visible page, device time and the current service date. Simulation and tomorrow previews remain local. No periodic or failed-request retry. New presses during an in-flight request coalesce to the latest eligible status; corrections and imports invalidate its remainder.
+- Identical routes checked less than five seconds ago may be reused across the immediate arrival/finish pair.
+- Planning upper bound for N runs: 3 eligible events × 2 routes × N, plus up to 2N initial legs and 1 probe = 8N+1 (49 for 6 runs, 65 for 8, 81 for 10). This assumes one initial full refresh/session, known initial origin, and excludes additional manual refreshes, reconnections, extra runs, repeat status advances and usage already consumed that day. Server limits remain authoritative across all tabs/devices.
+- Regression tests prove all six stages across six runs stay within the 49-attempt planning bound, arrival/finish events use at most two route calls, other status/clock/import/GPS/reload actions make none, rapid duplicate routes reuse quotes, pending presses coalesce, actual timestamps and chained forecasts remain intact, and failures do not auto-retry.
 
 
 ## Pickup ETA heads-up reminder — Nov 20
