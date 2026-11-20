@@ -72,7 +72,7 @@
   $('pickupReminderReview').onclick=review;
   $('pickupReminderDismiss').onclick=()=>{handle('dismissed');notice=null;};
   pickupReminderController={tick,prepared(trip,type){
-    if(!trip||type!=='10')return;
+    if(!trip||type!=='10'||trip.status!==1||trip.outcome||previewingServiceDay()||(state.serviceDate&&state.serviceDate!==localServiceDate()))return;
     const key=keyFor(trip);
     ledger[key]={status:'reviewed',tripId:trip.id,recordedAt:Date.now(),handledAt:Date.now()};save();
     if(notice?.key===key){notice=null;$('pickupReminder').hidden=true;}

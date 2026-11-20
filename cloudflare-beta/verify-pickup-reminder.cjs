@@ -52,6 +52,9 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
  assert.match(ids.modalRoot.innerHTML,/Hola, soy Anthony de Serenity/);assert.match(ids.modalRoot.innerHTML,/solo unos minutos/);
  run("closeModal();deviceTime=()=> '09:29';state.trips[1].who='ETA reached';pickupReminderController.tick();");ids.pickupReminderReview.onclick();
  assert.doesNotMatch(ids.modalRoot.innerHTML,/ten minutes|diez minutos|solo unos minutos/,'An overdue estimate does not pretend the driver is ten minutes away');
+ run("closeModal();deviceTime=()=> '09:15';state.trips[1].who='Predeparture test';state.trips[1].status=0;state.selected=state.trips[1].id;selectedMessageType='10';render();");
+ await ids.copyMessage.onclick();run('state.trips[1].status=1;pickupReminderController.tick();');
+ assert.equal(ids.pickupReminder.hidden,false,'Testing a draft before departure does not suppress the later driving reminder');
  run("closeModal();deviceTime=()=> '09:15';state.trips[1].who='Manual draft';state.selected=state.trips[1].id;selectedMessageType='10';render();");
  await ids.copyMessage.onclick();run('pickupReminderController.tick();');
  assert.equal(ids.pickupReminder.hidden,true,'Preparing the regular 10-minute macro also handles its automatic reminder');
