@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><title>Serenity 2.0 | Cloudflare Demo 003 · Four-tab workspace</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><title>Serenity 2.0 | Cloudflare Demo 003 · Rolling day forecast</title><style>
 :root{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;color:var(--text);background:var(--page);font-synthesis:none}*{box-sizing:border-box}body{margin:0}button,input,select,textarea{font:inherit}button{cursor:pointer;touch-action:manipulation}button:disabled{opacity:.35;cursor:not-allowed}.shell{max-width:1530px;margin:auto;padding:16px 18px 50px}.top{display:flex;gap:16px;align-items:center;justify-content:space-between;padding:15px 20px;background:var(--surface);border:1px solid var(--border);border-radius:17px}.brand{font-size:21px;letter-spacing:.08em;font-weight:900;color:var(--accent)}.sub{font-size:12px;color:var(--muted);margin-top:3px}.pill{background:var(--selection);color:var(--accent);border:1px solid #277f82;border-radius:30px;padding:7px 11px;font-size:12px;font-weight:800}.mainnav,.toolbar,.flex{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.mainnav{margin-top:13px}.btn{background:var(--button);color:var(--text);border:1px solid var(--border);padding:10px 14px;border-radius:10px;font-weight:700;font-size:13px}.btn:hover{background:var(--hover)}.btn.active{color:#eaf2ff;background:#126b72;border-color:#47dace}.btn.primary{background:#00a9a0;color:#03242b;border-color:#39d6c4}.btn.danger{color:#eaf2ff;background:#552c36;border-color:#a34b58}.btn.warn{color:#eaf2ff;background:#523b24;border-color:#a57a38}.btn.big{font-size:17px;padding:15px 20px}.toolbar{margin:14px 0}.metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:14px 0}.metric,.panel{background:var(--surface);border:1px solid var(--border);border-radius:15px;padding:15px}.metric .m-title{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.09em;font-weight:800}.metric .m-value{font-size:22px;font-weight:850;margin-top:6px}.panel{margin-bottom:13px}.grid{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(300px,.85fr);gap:13px}.paneltitle{font-size:14px;font-weight:850;letter-spacing:.03em;margin-bottom:10px}.muted{color:var(--muted)}.small{font-size:12px}.micro{font-size:11px}.notice{background:var(--notice);border:1px solid var(--notice-border);border-radius:10px;padding:10px 12px;color:var(--notice-text);margin:10px 0}.good{color:#6ee5b3}.warntext{color:#ffd077}.bad{color:#ff8e91}.purple{color:#d5a4ff}.rosthead,.trip{display:grid;grid-template-columns:64px minmax(95px,1.1fr) minmax(134px,1.35fr) minmax(98px,1fr) minmax(93px,1fr) minmax(95px,1fr);gap:8px;align-items:center}.rosthead{font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase;padding:8px 10px}.trip{border:1px solid var(--border);padding:11px 10px;margin:5px 0;border-radius:10px;background:var(--inset);cursor:pointer;min-height:66px}.trip.selected{border-color:#2bdbcf;background:var(--selection);box-shadow:inset 4px 0 #30ddca}.trip.done{border-color:var(--border)}.trip.done > :not(:last-child){opacity:.48}.trip .name{font-weight:800}.trip .t{font-size:13px;font-weight:750}.trip .info{font-size:10px;color:var(--muted);margin-top:4px}.tag{display:inline-block;font-size:10px;border-radius:5px;padding:5px 6px;background:var(--button);color:var(--text);font-weight:800}.tag.green{background:#074f45;color:#71edbf}.tag.yellow{background:#51411c;color:#ffe085}.tag.red{background:#622a37;color:#ff9ca4}.tag.purple{background:#47305f;color:#e1bcff}.statusline{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:11px 12px;border:1px solid var(--border);border-radius:10px;background:var(--inset);margin-bottom:10px}.actions{display:flex;gap:8px;flex-wrap:wrap}.context{position:absolute;z-index:9;background:var(--button);border:1px solid #59b5b8;border-radius:12px;box-shadow:0 12px 30px #0008;padding:8px;width:270px;max-height:360px;overflow:auto}.context button{display:block;width:100%;margin:3px 0;text-align:left}.field{display:flex;flex-direction:column;gap:5px;margin:6px 0}.field label{color:var(--muted);font-size:11px;font-weight:700}.field input,.field textarea,.field select{background:var(--input);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px;min-width:0}.field textarea{min-height:60px}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.events{max-height:215px;overflow:auto}.event{padding:6px 0;border-bottom:1px solid var(--border);font-size:11px;color:var(--text)}.hidden,[hidden]{display:none!important}.modalshade{position:fixed;inset:0;background:#000b;z-index:20;display:flex;align-items:center;justify-content:center;padding:16px}.modal{max-height:90vh;overflow:auto;width:min(540px,100%);background:var(--surface);border:1px solid var(--border);padding:20px;border-radius:16px}.modal h3{margin:0 0 12px}.split{display:grid;grid-template-columns:1fr 1fr;gap:8px}.foot{font-size:11px;color:var(--muted);padding:9px}.checkpoints{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}.warninglist{font-size:12px;max-height:120px;overflow:auto}.warninglist div{padding:6px 0;border-bottom:1px solid var(--border)}@media(max-width:1000px){.metrics{grid-template-columns:repeat(3,1fr)}.grid{grid-template-columns:1fr}.rosthead,.trip{grid-template-columns:54px 1.1fr 1.4fr 1fr 1fr 1fr}}@media(max-width:640px){.shell{padding:8px}.brand{font-size:15px}.metrics{grid-template-columns:repeat(2,1fr)}.rosthead,.trip{grid-template-columns:38px 1fr 1fr 1fr;gap:5px}.rosthead>*:nth-child(5),.rosthead>*:nth-child(6),.trip>*:nth-child(5),.trip>*:nth-child(6){display:none}.checkpoints{grid-template-columns:repeat(2,1fr)}}
 
 .filterbar{display:flex;gap:7px;flex-wrap:wrap;margin:5px 0 12px}.filterbar .btn{padding:8px 11px;min-height:39px}.revenuehead{display:flex;justify-content:space-between;align-items:center;gap:12px}.revenuegrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:13px}.revenuegrid>div{padding:13px;border-radius:12px;background:var(--inset);border:1px solid var(--border)}.revenueamount{font-size:25px;font-weight:850;margin:7px 0;color:var(--accent)}.mainnav{position:sticky;top:0;z-index:8;background:var(--nav);padding:10px 0;border-bottom:1px solid var(--border);backdrop-filter:blur(8px)}.mainnav .btn{min-height:44px}.revenuehead .btn{min-width:90px}@media(max-width:620px){.revenuegrid{grid-template-columns:1fr}}
@@ -153,7 +153,7 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-off
 </style></head><body><div class="quickdock" role="group" aria-label="Display theme">
 
 <button class="btn" id="themeToggle" type="button">☾ Night</button>
-</div><div class="shell"><header class="top"><div><div class="brand">SERENITY <span class="brand-name">DISPATCH OS</span></div><div class="sub">Cloudflare Demo 003 · Four-tab workspace · Public-landmark simulation · NO REAL PATIENT DATA</div></div><div class="header-info"><div class="flex"><span class="pill" id="modeBadge">DEVICE TIME · AUTO</span><strong id="clockTop">—</strong></div></div></header>
+</div><div class="shell"><header class="top"><div><div class="brand">SERENITY <span class="brand-name">DISPATCH OS</span></div><div class="sub">Cloudflare Demo 003 · Rolling day forecast · Public-landmark simulation · NO REAL PATIENT DATA</div></div><div class="header-info"><div class="flex"><span class="pill" id="modeBadge">DEVICE TIME · AUTO</span><strong id="clockTop">—</strong></div></div></header>
 <nav class="mainnav"><button class="btn" data-tab="overview">Overview</button><button class="btn active" data-tab="dispatch">Dispatch</button><button class="btn" data-tab="customer">Customer</button><button class="btn" data-tab="settings">Settings</button></nav>
 <div class="toolbar workspace-actions"><button class="btn" id="refresh">Update Day</button><button class="btn" id="undo">Undo Last</button></div>
 <main id="overview" class="page"><div class="section-heading"><div><h1>Day overview</h1><p class="small muted">Your daily totals, forecast and progress.</p></div><button class="btn warn" id="shift">Start Shift</button></div>
@@ -170,8 +170,8 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-off
 <div class="actions"><a class="btn primary" id="openSms" aria-disabled="true">Open SMS Draft</a><button class="btn" id="copyMessage">Copy Message</button><button class="btn" id="openVoice">Copy &amp; Open Google Voice</button><button class="btn" id="copyRecipient">Copy Number</button></div>
 <p id="messageFeedback" class="small muted" role="status"></p>
 <p class="micro muted">Review the draft in your messaging app. For Google Voice, paste the copied message and select the recipient.</p></div></div></main>
-<main id="settings" class="page hidden"><div class="section-heading"><h1>Settings</h1><button class="btn" id="clockMode" aria-pressed="false">Use Device Time</button></div><div class="grid"><div class="panel"><div class="paneltitle">DRIVER SETTINGS</div><div class="two"><div class="field"><label>Driver hourly rate ($, fictional test)</label><input type="number" id="hourlyRate" min="0" max="500" step="0.25"></div><div class="field"><label>Overtime threshold (hours/day, test estimate only)</label><input type="number" id="overtimeAfter" min="1" max="24" step="1"></div><div class="field"><label>Overtime multiplier (test assumption)</label><input type="number" id="overtimeMultiplier" min="1" max="3" step="0.25"></div><div class="field"><label>Home → garage (minutes)</label><input type="number" id="commute" min="0" max="180"></div><div class="field"><label>Garage preparation (minutes)</label><input type="number" id="garagePrep" min="0" max="180"></div><div class="field"><label>Pickup target early (minutes)</label><input type="number" id="early" min="0" max="60"></div><div class="field"><label>Garage → first pickup (simulated minutes)</label><input type="number" id="firstDrive" min="1" max="180"></div></div><button class="btn primary" id="saveSettings">Save Settings</button><div class="notice micro">Travel times are fictional/manual assumptions, not GPS estimates. Local browser storage is intended only for non-sensitive testing.</div></div><div class="panel"><div class="paneltitle">AUDIT LOG <span class="muted small">· Latest first</span></div><div id="allEvents" class="events" style="max-height:430px"></div><button class="btn" id="exportLog">Export Event Log</button></div></div><section class="manifest-tools"><div class="grid"><div class="panel"><div class="paneltitle">MANIFEST TOOLS</div><p class="small muted">PUBLIC DEMO ONLY: Eight fictional riders, using a realistic pickup schedule and public landmark areas. No actual patient names, home addresses, phone numbers, or run IDs. Do not enter actual patient information into this publicly hosted demo.</p><div class="actions"><button class="btn primary" id="addTrip">＋ Add Test Trip</button><button class="btn" id="exportData">Export JSON Backup</button><label class="btn">Import Demo JSON Backup<input type="file" id="importData" accept="application/json,.json" hidden></label><button class="btn danger" id="reset">Reset Fictional Demo</button></div><div class="notice">Screenshot OCR is not implemented in Demo 003. This build does not upload images or simulate successful recognition. Weather requests use only the Bay Shore town center.</div><div class="paneltitle">CURRENT ASSIGNMENTS</div><div id="manifestRows"></div></div></div></section><details class="panel" style="padding:10px 14px"><summary style="cursor:pointer;font-weight:800;color:var(--accent)">SIMULATION CLOCK · Tap to expand test controls</summary><div class="toolbar" style="margin-bottom:0"><button class="btn primary" id="nextTime">⏭ Next Event</button><button class="btn" id="plus5">+5 min</button><button class="btn" id="plus15">+15 min</button><button class="btn" id="minus5">−5 min</button><button class="btn" id="setTime">Set Time</button></div><p class="small muted">Changing the simulation clock switches event logging back to simulation time.</p></details></main>
-<div class="foot">TEST BUILD 003 · FOUR-TAB WORKSPACE · Weather needs a connection; trip controls work independently · Browser-local save may be cleared by iPad/browser settings · Do not enter real patient details · To open via iPad Chrome, use an interactive browser view rather than Files Quick Look.</div></div>
+<main id="settings" class="page hidden"><div class="section-heading"><h1>Settings</h1><button class="btn" id="clockMode" aria-pressed="false">Use Device Time</button></div><div class="grid"><div class="panel"><div class="paneltitle">DRIVER SETTINGS</div><div class="two"><div class="field"><label>Driver hourly rate ($, fictional test)</label><input type="number" id="hourlyRate" min="0" max="500" step="0.25"></div><div class="field"><label>Overtime threshold (hours/day, test estimate only)</label><input type="number" id="overtimeAfter" min="1" max="24" step="1"></div><div class="field"><label>Overtime multiplier (test assumption)</label><input type="number" id="overtimeMultiplier" min="1" max="3" step="0.25"></div><div class="field"><label>Home → garage (minutes)</label><input type="number" id="commute" min="0" max="180"></div><div class="field"><label>Garage preparation (minutes)</label><input type="number" id="garagePrep" min="0" max="180"></div><div class="field"><label>Pickup target early (minutes)</label><input type="number" id="early" min="0" max="60"></div><div class="field"><label>Garage → first pickup (simulated minutes)</label><input type="number" id="firstDrive" min="1" max="180"></div></div><button class="btn primary" id="saveSettings">Save Settings</button><div class="notice micro">Travel times are fictional/manual assumptions, not GPS estimates. Local browser storage is intended only for non-sensitive testing.</div></div><div class="panel"><div class="paneltitle">AUDIT LOG <span class="muted small">· Latest first</span></div><div id="allEvents" class="events" style="max-height:430px"></div><button class="btn" id="exportLog">Export Event Log</button></div></div><section class="manifest-tools"><div class="grid"><div class="panel"><div class="paneltitle">MANIFEST TOOLS</div><p class="small muted">Manifest files stay in this browser. The published demo contains fictional examples. Import only information you are authorized to use; no manifest data is sent to the weather service.</p><div class="actions"><button class="btn primary" id="addTrip">＋ Add Test Trip</button><button class="btn" id="exportData">Export JSON Backup</button><label class="btn">Import Manifest JSON<input type="file" id="importData" accept="application/json,.json" hidden></label><button class="btn danger" id="reset">Reset Fictional Demo</button></div><div class="notice">Screenshot OCR is not implemented in Demo 003. This build does not upload images or simulate successful recognition. Weather requests use only the Bay Shore town center.</div><div class="paneltitle">CURRENT ASSIGNMENTS</div><div id="manifestRows"></div></div></div></section><details class="panel" style="padding:10px 14px"><summary style="cursor:pointer;font-weight:800;color:var(--accent)">SIMULATION CLOCK · Tap to expand test controls</summary><div class="toolbar" style="margin-bottom:0"><button class="btn primary" id="nextTime">⏭ Next Event</button><button class="btn" id="plus5">+5 min</button><button class="btn" id="plus15">+15 min</button><button class="btn" id="minus5">−5 min</button><button class="btn" id="setTime">Set Time</button></div><p class="small muted">Changing the simulation clock switches event logging back to simulation time.</p></details></main>
+<div class="foot">TEST BUILD 003 · ROLLING DAY FORECAST · Weather needs a connection; trip controls work independently · Browser-local save may be cleared by iPad/browser settings · Do not enter real patient details · To open via iPad Chrome, use an interactive browser view rather than Files Quick Look.</div></div>
 <div id="modalRoot" hidden></div><div id="contextMenu" class="context hidden"></div>
 <script>
 'use strict';
@@ -276,7 +276,7 @@ function revenueTown(area){
 }
 function revenueMiles(trip){
   if(typeof trip.driveMiles==='number'&&Number.isFinite(trip.driveMiles)&&trip.driveMiles>=0)
-    return {miles:Math.round(trip.driveMiles*10)/10,source:'Saved loaded mileage'};
+    return {miles:Math.round(trip.driveMiles*10)/10,source:trip.driveMilesEstimated?'Town-based loaded mileage estimate':'Saved loaded mileage'};
   const pickup=revenueTown(trip.pickupArea),drop=revenueTown(trip.dropArea);
   if(pickup&&drop&&pickup[0]!==drop[0]){
     const rad=value=>value*Math.PI/180;
@@ -406,8 +406,16 @@ function connectionTo(trip,origin,useSaved=true){
     roundTrip:!fromPickup&&previous.who===trip.who&&sameLocation(previous.pickupArea,trip.dropArea)
   };
   const saved=useSaved?legMinutes(trip.reposition,trip.repositionMiles):null;
-  return {minutes:saved??(origin===null?state.settings.firstDrive:defaultConnectionMinutes),
-    rough:!useSaved||(trip.reposition==null&&(saved!=null||origin!==null)),sameStop:false,roundTrip:false};
+  const town=state.settings.planningModel==='town-estimate-v1'&&previous?
+    townPlanningLeg(fromPickup?previous.pickupArea:previous.dropArea,trip.pickupArea):null;
+  return {minutes:saved??town?.minutes??(origin===null?state.settings.firstDrive:defaultConnectionMinutes),
+    rough:!!town||!!trip.repositionMilesEstimated||!useSaved||(trip.reposition==null&&(saved!=null||origin!==null)),sameStop:false,roundTrip:false};
+}
+function townPlanningLeg(from,to){
+  if(!from||!to)return null;
+  if(sameLocation(from,to))return {minutes:0,miles:0};
+  const distance=revenueMiles({pickupArea:from,dropArea:to});
+  return distance?{minutes:legMinutes(null,distance.miles),miles:distance.miles}:null;
 }
 function currentRide(){
   return state.trips.filter(t=>!t.outcome&&t.status>=3&&t.status<6)
@@ -540,6 +548,12 @@ function earliestPickupText(p){
     p.earliestRough?' · Rough':'';
   return '<div class="info earliest-pickup'+(p.earliestOverdue?' overdue':'')+'">'+label+' · '+fmt(p.earliest)+detail+'</div>';
 }
+function chainedPickupText(t,p){
+  if(!p||!Number.isFinite(p.pickup)||t.outcome||t.status===6)return '';
+  const label=t.actual['Arrived at Pickup']!=null?'Arrived at Pickup':t.actual['On Board']!=null?'On Board':'Estimated Pickup Time';
+  const detail=p.conflict?' · If first':p.orderPending?' · Order pending':p.pickupRough?' · Rough':'';
+  return '<div class="info earliest-pickup">'+label+' · '+fmt(p.pickup)+detail+'</div>';
+}
 function cockpitTown(trip,side){
   const explicit=trip[side+'Town'];
   if(typeof explicit==='string'&&explicit.trim())return explicit.trim();
@@ -559,7 +573,7 @@ function cockpitTownLabel(trip,side){
 function pickupText(t,p){
   if(t.actual['Arrived at Pickup']!=null)return 'Arrived '+fmt(p.pickup);
   if(t.actual['On Board']!=null)return 'On board '+fmt(p.pickup);
-  return 'Planned ETA '+fmt(p.pickup)+(p.conflict?' · If first':p.orderPending?' · Order pending':p.pickupRough?' · Rough':'');
+  return 'After preceding runs'+(p.conflict?' · If first':p.orderPending?' · Order pending':p.pickupRough?' · Rough':'');
 }
 function dropLabel(t,p){
   if(t.actual['Arrived at Drop-Off']!=null)return 'Actual arrival';
@@ -569,16 +583,17 @@ function dropLabel(t,p){
   const label=p.earliestDrop==null?'Live ETA':'Planned ETA';
   return label+(p.conflict?' · If first':p.orderPending?' · Order pending':p.dropRough?' · Rough':'');
 }
-function dropoffTimes(t,p,estimateLabel='If next'){
-  const scheduled=Number.isInteger(t.scheduledDrop)&&t.scheduledDrop>=0&&t.scheduledDrop<1440?
-    fmt(t.scheduledDrop):'—';
-  const time=p.overdueSince??p.drop;
-  const planned=p.earliestDrop===time?'':'<div class="dropoff-detail">'+dropLabel(t,p)+
-    (time==null?'':' · '+fmt(time))+'</div>';
-  const conditional=p.earliestOverdue||p.afterHandoff;
-  const next=p.earliestDrop==null?'':'<div class="earliest-pickup'+(conditional?' overdue':'')+'">'+
-    esc(estimateLabel)+' · '+fmt(p.earliestDrop)+(conditional?' · Earliest possible':p.earliestDropRough?' · Rough':'')+'</div>';
-  return '<div class="dropoff-times"><strong>'+scheduled+'</strong>'+next+planned+'</div>';
+function dropoffTimes(t,p,estimateLabel='Estimated Drop-Off Time'){
+  const scheduled=Number.isInteger(t.scheduledDrop)&&t.scheduledDrop>=0&&t.scheduledDrop<1440?fmt(t.scheduledDrop):'—';
+  const actual=t.actual['Arrived at Drop-Off']??t.actual.Finished;
+  if(actual!=null)return '<div class="dropoff-times"><strong>'+scheduled+'</strong><div class="dropoff-detail">'+(t.actual['Arrived at Drop-Off']!=null?'Actual arrival':'Actual finish')+' · '+fmt(actual)+'</div></div>';
+  if(t.outcome)return '<div class="dropoff-times"><strong>'+scheduled+'</strong></div>';
+  const time=p.drop;
+  const detail=p.conflict?' · If first':p.orderPending?' · Order pending':p.dropRough?' · Rough':'';
+  const warning=p.overdueSince!=null?'Drop-off overdue since '+fmt(p.overdueSince)+' · Confirm status':
+    p.handoff?'Handoff in progress · Assumes ready now':'After preceding runs';
+  return '<div class="dropoff-times"><strong>'+scheduled+'</strong><div class="dropoff-detail">'+warning+'</div>'+
+    '<div class="earliest-pickup">'+esc(estimateLabel)+' · '+fmt(time)+detail+'</div></div>';
 }
 function badge(t,p){if(t.outcome==='Completed'||t.status===6)return['Done','green'];if(t.outcome)return['Canceled','purple'];if(p?.conflict)return['Order pending','yellow'];if(p?.pickup==null)return['ETA unknown',''];let delay=p.pickup-t.scheduled;if(delay<=0)return[delay===0?'0 min':(-delay)+' min early',p.pickupRough?'':'green'];return['+'+delay+'m',t.kind==='Return'?'purple':delay<=15?'yellow':'red']}
 function selectNextRun(){
@@ -628,10 +643,10 @@ function dispatchStatus(t){
 }
 function customerTimes(t,p){
   const pickupLabel=t.actual['On Board']!=null?'Passenger on board':t.actual['Arrived at Pickup']!=null?'Arrived at pickup':'Live arrival estimate';
-  const pickup=t.actual['On Board']??t.actual['Arrived at Pickup']??p.earliest??p.pickup;
-  const drop=t.actual['Arrived at Drop-Off']??t.actual.Finished??p.overdueSince??p.earliestDrop??p.drop;
+  const pickup=t.actual['On Board']??t.actual['Arrived at Pickup']??p.pickup;
+  const drop=t.actual['Arrived at Drop-Off']??t.actual.Finished??p.drop;
   return '<div class="customer-time-grid"><section class="customer-time"><h2>Pickup</h2><div class="customer-town">'+esc(cockpitTown(t,'pickup'))+'</div><div class="scheduled-time">'+fmt(t.scheduled)+'</div><div class="small muted">Scheduled pickup</div><div class="live-time">'+fmt(pickup)+'</div><div class="small">'+pickupLabel+'</div><div class="trip-detail small muted">'+pickupText(t,p)+'</div>'+connectionLabel(p)+'</section>'+
-    '<section class="customer-time"><h2>Drop-off</h2><div class="customer-town">'+esc(cockpitTown(t,'drop'))+'</div><div class="scheduled-time">'+fmt(t.scheduledDrop)+'</div><div class="small muted">Scheduled drop-off</div><div class="live-time">'+fmt(drop)+'</div><div class="small">'+(t.actual['Arrived at Drop-Off']!=null?'Actual arrival':t.actual.Finished!=null?'Run finished':p.overdueSince!=null?'Drop-off overdue · confirm status':'Live drop-off estimate')+'</div><div class="trip-detail small muted">'+(p.earliestDropRough||p.dropRough?'Rough driving estimate':'Saved driving estimate')+'</div></section></div>'+
+    '<section class="customer-time"><h2>Drop-off</h2><div class="customer-town">'+esc(cockpitTown(t,'drop'))+'</div><div class="scheduled-time">'+fmt(t.scheduledDrop)+'</div><div class="small muted">Scheduled drop-off</div><div class="live-time">'+fmt(drop)+'</div><div class="small">'+(t.actual['Arrived at Drop-Off']!=null?'Actual arrival':t.actual.Finished!=null?'Run finished':p.overdueSince!=null?'Drop-off overdue · confirm status':'Live drop-off estimate')+'</div><div class="trip-detail small muted">'+(p.dropRough?'Rough driving estimate':'Saved driving estimate')+'</div></section></div>'+
     '<details class="trip-detail"><summary class="small muted">Pickup and drop-off locations</summary><p>'+esc(t.pickupArea)+'</p><p>'+esc(t.dropArea)+'</p></details>';
 }
 function overrideStatus(t,level){if(!t)return;
@@ -867,17 +882,20 @@ const proj=project(clock),unfinished=state.trips.filter(t=>!t.outcome&&t.status<
 const dropTrip=lastFinishedRun();
 const finalDrop=unfinished.length===0?dropTrip?.actual.Finished:
   unfinished.some(t=>proj[t.id].drop==null)?null:Math.max(clock,...unfinished.map(t=>proj[t.id].drop));
-const home=finalDrop==null?null:finalDrop+state.settings.firstDrive+state.settings.garagePrep+state.settings.commute;
+const returnTrip=unfinished.length?routeOrder().filter(t=>!t.outcome&&t.status<6).at(-1):dropTrip;
+const returnDrive=state.settings.planningModel==='town-estimate-v1'?
+  townPlanningLeg(returnTrip?.dropArea,state.settings.garageTown??'Bay Shore')?.minutes??state.settings.firstDrive:state.settings.firstDrive;
+const home=finalDrop==null?null:finalDrop+returnDrive+state.settings.garagePrep+state.settings.commute;
 renderBetweenRuns(unfinished.find(t=>t.id!==dropTrip?.id),dropTrip,clock);
 
 const deviceMode=usesDeviceTime();
-$('clockMode').textContent=deviceMode?'Device Time On':'Use Device Time';
+$('clockMode').textContent=previewingServiceDay()?'Device Time · Preview':deviceMode?'Device Time On':'Use Device Time';
 $('clockMode').setAttribute('aria-pressed',String(deviceMode));
-$('modeBadge').textContent=deviceMode?'DEVICE TIME · AUTO':'SIMULATION · LOCAL';
+$('modeBadge').textContent=previewingServiceDay()?'DAY PREVIEW · '+state.serviceDate:deviceMode?'DEVICE TIME · AUTO':'SIMULATION · LOCAL';
 $('clockTop').textContent=fmt(now);renderWeather();$('mProgress').textContent=finished.length+' / '+state.trips.length;$('mRemaining').textContent=unfinished.length;$('mVariance').textContent=next&&proj[next.id].pickup!=null?((proj[next.id].pickup-next.scheduled)>0?'+':'')+(proj[next.id].pickup-next.scheduled)+' min':'—';$('mHome').textContent=fmt(home);$('mShift').textContent=state.shift.start===null?'—':duration(Math.max(0,(state.shift.end??now)-state.shift.start));$('shift').textContent=state.shift.start===null?'Start Shift':state.shift.end===null?'End Shift · Hold to Correct':'Reopen Shift · Hold to Correct';
 const gapOrigins=approachOrigins();
-document.querySelectorAll('[data-filter]').forEach(b=>{b.classList.toggle('active',b.dataset.filter===rosterFilter);const count=state.trips.filter(t=>filterStatus(t)===b.dataset.filter).length;b.textContent=b.dataset.filter+(b.dataset.filter==='All'?'':(' · '+count))});$('roster').innerHTML=state.trips.filter(t=>rosterFilter==='All'||filterStatus(t)===rosterFilter).map((t,i)=>{const p=proj[t.id],b=badge(t,p),variance=p.conflict?'Order pending':p.pickup==null?(t.outcome?'—':'ETA unknown'):(p.pickup-t.scheduled>0?'+':'')+(p.pickup-t.scheduled)+' min';return gapBar(availableGap(t,proj,clock,gapOrigins))+'<div class="trip '+(t.id===state.selected?'selected ':'')+(t.outcome||t.status===6?'done':'')+'" data-trip="'+esc(t.id)+'" tabindex="0"><div><span class="tag">'+(state.trips.indexOf(t)+1)+'</span><div class="info">'+esc(t.id)+'</div></div><div><div class="name">'+esc(t.who)+'</div><div class="info">'+esc(t.kind)+'</div></div><div class="pickup-col">'+cockpitTownLabel(t,'pickup')+'<div class="t">'+fmt(t.scheduled)+'</div><div class="info">'+pickupText(t,p)+'</div>'+earliestPickupText(p)+connectionLabel(p)+'</div><div class="t dropoff-col">'+cockpitTownLabel(t,'drop')+dropoffTimes(t,p,'Estimated Drop-Off Time')+'</div><div><span class="tag '+b[1]+'">'+esc(variance)+'</span></div><div>'+dispatchStatus(t)+'</div></div>'}).join('');
-const sel=selected(),sp=sel&&proj[sel.id],handoff=sel&&state.handoff===sel.id;$('activePanel').innerHTML=sel?'<div class="paneltitle">'+(handoff?'NEXT RUN':'ACTIVE TRIP')+' <span class="muted small">· ◇ Hold for options</span></div><div class="statusline"><div><div style="font-weight:900">'+esc(sel.id)+' · '+esc(sel.who)+'</div><div class="small muted">'+esc(sel.kind)+' · '+rideStatus(sel)+'</div></div><span class="tag '+badge(sel,sp)[1]+'">'+badge(sel,sp)[0]+'</span></div><div class="two cockpit-time-summary"><div class="summary-pickup"><div class="muted micro">PICKUP</div>'+cockpitTownLabel(sel,'pickup')+'<strong>'+fmt(sel.scheduled)+'</strong><div class="micro muted">'+pickupText(sel,sp)+'</div>'+earliestPickupText(sp)+connectionLabel(sp)+'</div><div class="summary-dropoff"><div class="muted micro">SCHEDULED DROP-OFF</div>'+cockpitTownLabel(sel,'drop')+dropoffTimes(sel,sp)+'<div class="micro muted">Drive '+(sel.drive!=null?sel.drive+'m planned':sel.driveMiles!=null?legMinutes(null,sel.driveMiles)+'m rough at 30 mph':defaultRideMinutes+'m assumed')+'</div></div></div><div class="actions" style="margin-top:13px"><button class="btn primary big" id="openActiveTrip">Open Active Trip →</button></div>':'<div class="paneltitle">'+(unfinished.length?'Select a trip after confirming order':'No runs remaining')+'</div>';
+document.querySelectorAll('[data-filter]').forEach(b=>{b.classList.toggle('active',b.dataset.filter===rosterFilter);const count=state.trips.filter(t=>filterStatus(t)===b.dataset.filter).length;b.textContent=b.dataset.filter+(b.dataset.filter==='All'?'':(' · '+count))});$('roster').innerHTML=state.trips.filter(t=>rosterFilter==='All'||filterStatus(t)===rosterFilter).map((t,i)=>{const p=proj[t.id],b=badge(t,p),variance=p.conflict?'Order pending':p.pickup==null?(t.outcome?'—':'ETA unknown'):(p.pickup-t.scheduled>0?'+':'')+(p.pickup-t.scheduled)+' min';return gapBar(availableGap(t,proj,clock,gapOrigins))+'<div class="trip '+(t.id===state.selected?'selected ':'')+(t.outcome||t.status===6?'done':'')+'" data-trip="'+esc(t.id)+'" tabindex="0"><div><span class="tag">'+(state.trips.indexOf(t)+1)+'</span><div class="info">'+esc(t.id)+'</div></div><div><div class="name">'+esc(t.who)+'</div><div class="info">'+esc(t.kind)+'</div></div><div class="pickup-col">'+cockpitTownLabel(t,'pickup')+'<div class="t">'+fmt(t.scheduled)+'</div><div class="info">'+pickupText(t,p)+'</div>'+chainedPickupText(t,p)+connectionLabel(p)+'</div><div class="t dropoff-col">'+cockpitTownLabel(t,'drop')+dropoffTimes(t,p,'Estimated Drop-Off Time')+'</div><div><span class="tag '+b[1]+'">'+esc(variance)+'</span></div><div>'+dispatchStatus(t)+'</div></div>'}).join('');
+const sel=selected(),sp=sel&&proj[sel.id],handoff=sel&&state.handoff===sel.id;$('activePanel').innerHTML=sel?'<div class="paneltitle">'+(handoff?'NEXT RUN':'ACTIVE TRIP')+' <span class="muted small">· ◇ Hold for options</span></div><div class="statusline"><div><div style="font-weight:900">'+esc(sel.id)+' · '+esc(sel.who)+'</div><div class="small muted">'+esc(sel.kind)+' · '+rideStatus(sel)+'</div></div><span class="tag '+badge(sel,sp)[1]+'">'+badge(sel,sp)[0]+'</span></div><div class="two cockpit-time-summary"><div class="summary-pickup"><div class="muted micro">PICKUP</div>'+cockpitTownLabel(sel,'pickup')+'<strong>'+fmt(sel.scheduled)+'</strong><div class="micro muted">'+pickupText(sel,sp)+'</div>'+chainedPickupText(sel,sp)+connectionLabel(sp)+'</div><div class="summary-dropoff"><div class="muted micro">SCHEDULED DROP-OFF</div>'+cockpitTownLabel(sel,'drop')+dropoffTimes(sel,sp)+'<div class="micro muted">Drive '+(sel.drive!=null?sel.drive+'m planned':sel.driveMiles!=null?legMinutes(null,sel.driveMiles)+'m rough at 30 mph':defaultRideMinutes+'m assumed')+'</div></div></div><div class="actions" style="margin-top:13px"><button class="btn primary big" id="openActiveTrip">Open Active Trip →</button></div>':'<div class="paneltitle">'+(unfinished.length?'Select a trip after confirming order':'No runs remaining')+'</div>';
 $('openActiveTrip')?.addEventListener('click',()=>{selectedTab='customer';render()});
 const warnings=[];
 const conflicts=[...unresolvedPickups()].map(([time,trips])=>
@@ -890,7 +908,7 @@ for(const t of unfinished){
   if(!p.conflict&&(p.pickup==null||p.drop==null))warnings.push(t.id+' · ETA incomplete · check drive times');
   if(p.pickup!=null&&v>0)warnings.push(t.id+' · '+(t.kind==='Return'?'Return ':'')+'pickup '+v+'m late'+
     (p.conflict?' if first':'')+(p.pickupRough?' · rough estimate':''));
-}if(!warnings.length)warnings.push('No calculated delays under current fictional assumptions.');warnings.unshift('Earliest pickups use the last logged stop or the active ride’s estimated drop-off. Rough ETAs use mileage at 30 mph or assume 35 min per ride and 15 min between stops.');$('warnings').innerHTML=warnings.map(x=>'<div>'+esc(x)+'</div>').join('');
+}if(!warnings.length)warnings.push('No calculated delays under current travel assumptions.');warnings.unshift('Estimates follow every preceding uncanceled ride. Saved drive minutes take priority, then mileage at 30 mph. Town estimates are approximate; unknown legs still use 35 min per ride or 15 min between stops. No live traffic is connected.');$('warnings').innerHTML=warnings.map(x=>'<div>'+esc(x)+'</div>').join('');
 renderRevenue(revenue(now));
 $('dayCounts').innerHTML=['Pending','Active','Completed','Canceled'].map(label=>'<span class="tag">'+label+' · '+state.trips.filter(t=>filterStatus(t)===label).length+'</span>').join('');
 if(!refreshOnly){
@@ -907,7 +925,7 @@ $('checkpoints').innerHTML=[['wakeCheckpoint','Wake Up',wake],['garageCheckpoint
 $('customerMain').innerHTML=handoff?
   '<div class="paneltitle" role="status">NEXT RUN · '+esc(sel.id)+' · '+esc(sel.who)+'</div>'+
   '<div class="statusline">'+rideStatus(sel,'Status: ')+'<strong>Scheduled '+fmt(sel.scheduled)+'</strong></div>'+
-  '<p>'+esc(sel.pickupArea)+'</p>'+earliestPickupText(sp)+connectionLabel(sp)+
+  '<p>'+esc(sel.pickupArea)+'</p>'+chainedPickupText(sel,sp)+connectionLabel(sp)+
   '<button class="btn primary big" id="openNextRun">Open Next Run</button>'
   :sel?'<div class="customer-heading">'+esc(sel.id)+' · '+esc(sel.who)+'</div><div class="statusline">'+rideStatus(sel,'Status: ')+'<span class="small muted">'+esc(sel.kind)+'</span></div>'+customerTimes(sel,sp)+tripWaits(sel)+'<div class="actions"><button class="btn primary big" id="customerAdvance" '+(sel.outcome||sel.status===6?'disabled':'')+'>'+esc(sel.status===0&&!sel.outcome?'Start Pickup':stepLabels[sel.status]||'Done')+'</button><button class="btn" id="customerBack" '+(sel.status===0?'disabled':'')+'>↶ Back</button></div>':'<div class="paneltitle" role="status">'+(unfinished.length?'Confirm order with dispatch, then select the trip in Dispatch':'No runs remaining')+'</div>';
 $('openNextRun')?.addEventListener('click',()=>{
@@ -1109,8 +1127,14 @@ const deviceClockFormatter=new Intl.DateTimeFormat('en-GB',{
 });
 function deviceTime(){return deviceClockFormatter.format(new Date())}
 function usesDeviceTime(){return state.clockMode!=='simulation'}
+function localServiceDate(){
+  return new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+}
+function previewingServiceDay(){
+  return usesDeviceTime()&&/^\d{4}-\d{2}-\d{2}$/.test(state.serviceDate??'')&&state.serviceDate>localServiceDate();
+}
 function currentTime(){
-  return usesDeviceTime()?(parse24(deviceTime())??state.clock):state.clock;
+  return previewingServiceDay()?state.clock:usesDeviceTime()?(parse24(deviceTime())??state.clock):state.clock;
 }
 const activePointers=new Set();
 function refreshLiveClock(){
@@ -1134,7 +1158,7 @@ function updateDay(){
   const now=minutes24(state.clock);
   modal('Update Day',
     quickField('updateTime','Recalculate as of (simulation time)','time',now,{expanded:true})+
-    '<p class="small muted">Uses saved drive times and mileage estimates. Add or edit assignments in the Manifest when dispatch changes.</p>',
+    '<p class="small muted">Uses saved drive times and mileage estimates. Add or edit assignments in Settings when dispatch changes.</p>',
     '<button class="btn primary" id="applyDay">Recalculate</button><button class="btn" id="editDay">Edit Manifest</button><button class="btn" id="closeModal">Cancel</button>');
   $('applyDay').onclick=()=>{
     const time=parse24($('updateTime').value);
@@ -1144,7 +1168,7 @@ function updateDay(){
     else render();
     toast('Remaining ETAs recalculated');
   };
-  $('editDay').onclick=()=>{closeModal();selectedTab='manifest';render()};
+  $('editDay').onclick=()=>{closeModal();selectedTab='settings';render()};
 }
 function addTrip(){
   const now=currentTime();
@@ -1185,7 +1209,7 @@ document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{selectedTab=b.
   if(input&&!phone){alert('Enter a 10-digit US number or an international number beginning with +.');return;}
   change('Update verified phone for '+trip.id,()=>trip.phone=phone??'');
 };$('addTrip').onclick=addTrip;
-$('exportData').onclick=()=>{const out=deep(state);out.events=out.events.map(({restore,...e})=>e);download('Serenity_CloudflareDemo002_Fictional_Backup.json',JSON.stringify({format:'serenity-001',data:out},null,2),'application/json')};$('exportLog').onclick=()=>download('Serenity_CloudflareDemo002_Event_Log.json',JSON.stringify(state.events.map(({restore,...e})=>e),null,2),'application/json');$('importData').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>2e6)throw Error('File too large');const obj=JSON.parse(await file.text());if(obj.format!=='serenity-001'||!Array.isArray(obj.data?.trips)||obj.data.trips.length>100||!obj.data.settings||!Array.isArray(obj.data.events))throw Error('Unsupported backup format');if(!confirm('Replace this test day with backup? Export current data first if needed.'))return;state=loadRouteScenario(obj.data);persist();render();toast('Fictional backup loaded')}catch(err){alert('Import failed: '+err.message)}finally{e.target.value=''}};$('reset').onclick=()=>{if(!confirm('Reset all fictional test data and event history? Export a backup first if needed.'))return;state=seed();persist();render()};$('saveSettings').onclick=()=>{const values={};for(const k of ['commute','garagePrep','early','firstDrive','hourlyRate','overtimeAfter','overtimeMultiplier']){values[k]=Number($(k).value);if(!Number.isFinite(values[k])||values[k]<0||values[k]>(k==='hourlyRate'?500:k==='overtimeAfter'?24:k==='overtimeMultiplier'?3:180)){alert('Check all settings');return}}change('Update timing assumptions',()=>state.settings=values)};
+$('exportData').onclick=()=>{const out=deep(state);out.events=out.events.map(({restore,...e})=>e);download('Serenity_'+(state.serviceDate??'Day')+'_Backup.json',JSON.stringify({format:'serenity-001',data:out},null,2),'application/json')};$('exportLog').onclick=()=>download('Serenity_CloudflareDemo002_Event_Log.json',JSON.stringify(state.events.map(({restore,...e})=>e),null,2),'application/json');$('importData').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>2e6)throw Error('File too large');const obj=JSON.parse(await file.text());if(obj.format!=='serenity-001'||!Array.isArray(obj.data?.trips)||obj.data.trips.length>100||!obj.data.settings||!Array.isArray(obj.data.events))throw Error('Unsupported backup format');if(!confirm('Replace this test day with backup? Export current data first if needed.'))return;change('Import manifest '+(obj.data.serviceDate??''),()=>state=loadRouteScenario(deep(obj.data)));selectedTab='dispatch';render();toast('Manifest loaded · Undo restores previous day')}catch(err){alert('Import failed: '+err.message)}finally{e.target.value=''}};$('reset').onclick=()=>{if(!confirm('Reset all fictional test data and event history? Export a backup first if needed.'))return;state=seed();persist();render()};$('saveSettings').onclick=()=>{const values={};for(const k of ['commute','garagePrep','early','firstDrive','hourlyRate','overtimeAfter','overtimeMultiplier']){values[k]=Number($(k).value);if(!Number.isFinite(values[k])||values[k]<0||values[k]>(k==='hourlyRate'?500:k==='overtimeAfter'?24:k==='overtimeMultiplier'?3:180)){alert('Check all settings');return}}change('Update timing assumptions',()=>state.settings={...state.settings,...values})};
 $('themeToggle').onclick=()=>{
   displayTheme=displayThemes[(displayThemes.indexOf(displayTheme)+1)%displayThemes.length];
   try{localStorage.setItem(DISPLAY_STORE,displayTheme)}catch{}

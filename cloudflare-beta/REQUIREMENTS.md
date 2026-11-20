@@ -40,7 +40,7 @@ Reuse original CV4 town centers. Prefer saved loaded mileage. Otherwise estimate
 
 ## Cockpit timing alignment
 
-- Align scheduled pickup/drop-off on one row, planned forecasts on the next, and Leave now/If next estimates on the next.
+- Align scheduled pickup/drop-off on one row, planned forecasts on the next, and sequential live pickup/drop-off estimates on the next.
 - Wrapped labels in either timing column must expand the shared row together. Keep same-location notes below the timing rows.
 - This is a presentation change; preserve forecast values, event timestamps and trip controls.
 
@@ -77,3 +77,14 @@ Reuse original CV4 town centers. Prefer saved loaded mileage. Otherwise estimate
 - Preserve existing rolling forecast, timestamp history, cancellation outcomes, Revenue controls, fixed friendly EN/ES SMS drafts, weather cache and themes. Routing API integration is a separate task.
 
 - Dispatch labels its live drop-off estimate “Estimated Drop-Off Time” instead of “If next”; this wording change preserves all forecast calculations.
+
+## Sequential remaining-day estimates
+
+- Dispatch, Overview and Customer main estimates use the same sequential pickup/drop-off forecast through every preceding uncanceled trip. Do not expose direct-to-any-run “Leave now”/“If next” alternatives as the operational ETA.
+- Include a preceding trip even while it is only En Route to Pickup or Arrived at Pickup. Preserve office pickup/drop-off times and recorded actuals; live estimates refresh with elapsed time and status changes. On Board and Finish Run anchor the remaining chain.
+- Same-location connecting travel remains zero; canceling/adding runs invalidates stale connection assumptions. Keep conflict alternatives clearly labeled when dispatch order is undecided.
+- Imported town-estimate-v1 manifests may provide estimated loaded/connecting miles, using town centers, a 1.25 road allowance and 30 mph. Explicit drive minutes have priority; unknown legs retain clearly disclosed generic fallback assumptions. These values are never represented as live traffic, measured road mileage or confirmed billing.
+- A future service-date import previews at its planning clock until that New York date arrives, then uses device time automatically. Import is undoable and can restore the replaced day. Published source must never contain a passenger manifest.
+- Tomorrow's screenshot is transcribed into a private JSON file with first names and the exact shown schedule. No OCR/upload integration or external API is added.
+
+- Deferred until the timing foundation is reliable: a question-only Ask Serenity assistant, future shared dispatcher Q&A, and the previously requested graded daily review. These are requirements, not connected features in this release.
