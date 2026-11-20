@@ -121,5 +121,17 @@ Reuse original CV4 town centers. Prefer saved loaded mileage. Otherwise estimate
 - [x] Settings provides Connect, Refresh Traffic, optional iPad location and garage starting address. Update Day requests traffic updates when connected.
 - [x] Existing status, Back, Undo, cancellation, handoff, scheduled drop-off, revenue, theme, SMS and weather regression checks pass with routing disconnected.
 - [x] Mocked provider integration verifies sequential future ETAs, actual events, GPS remaining duration, future departure timezone conversion, private unlock, key privacy, provider errors and persistent request limits.
-- [ ] Director unlocks routing in the iPad browser; one public-landmark probe must pass before requesting manifest addresses. Google billing and key validity remain unverified until that probe succeeds.
+- [x] Driver unlocked routing on iPad; Google Routes probe and full refresh confirmed connected on Nov 20 at 5:46 AM. Runtime credentials remain private.
 - [ ] Compare real Google trip and connecting-leg results with RoutingBox/Google Maps during the beta day. Existing vehicle revenue calculations have not been converted to Google billing mileage.
+
+
+## Screenshot import and intraday merge — Nov 20
+
+- Upload New Manifest and Change Existing Manifest remain available beside Update Day and Undo. Existing JSON backup restore remains available in Settings.
+- Tesseract.js 6.0.1 runs image OCR in the browser with a single sequential worker; pinned CDN engine/core downloads require a connection on first use. Images are not uploaded to an OCR service. No additional API key is required.
+- Supports up to four PNG/JPEG/WebP screenshots or one Serenity JSON manifest; overlapping screenshots deduplicate. PDFs and HEIC are not supported.
+- Review service date, each rider, scheduled pickup/drop-off, addresses, leg type and existing-run match before applying. Ambiguous matches require a selection. OCR text can be corrected and parsed again.
+- Intraday merge preserves absent runs, protected active/completed/canceled rows, actual timestamps, verified contacts, notes, selected ride, shift, settings and fares. Missing rows never imply cancellation. Pending corrections retain before/after schedule revisions. New rows receive unique IDs and join the remaining schedule.
+- Save a browser-local pre-import snapshot before applying. Undo restores the complete previous day; JSON export remains available for durable user backups. A new-day import retains driver settings and starts fresh operational history.
+- Recalculate the rolling forecast from current device time and preserved progress. Changed Google route plans invalidate in-flight results and reuse unaffected fresh quotes.
+- Tested real OCR on a fictional browser screenshot and the supplied Nov 20 RoutingBox screenshot locally, plus matching/duplicate/history regressions. Never publish private manifests or test screenshots in source.

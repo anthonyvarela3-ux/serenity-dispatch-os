@@ -1004,4 +1004,6 @@ console.log('Four-tab layout relocates summaries, imports and settings without d
 
   require('node:child_process').execFileSync(process.execPath, ['verify-runtime.cjs'], { stdio: 'inherit' });
   require('node:child_process').execFileSync(process.execPath, ['verify-routing.cjs'], { stdio: 'inherit' });
+  require('node:child_process').execFileSync(process.execPath, ['verify-manifest.cjs'], { stdio: 'inherit' });
+  require('node:child_process').execFileSync(process.execPath, ['verify-manifest-ui.cjs'], { stdio: 'inherit' });
 })().catch(error=>{console.error(error);process.exitCode=1;});

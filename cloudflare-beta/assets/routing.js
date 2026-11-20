@@ -2,7 +2,7 @@
   const quotes = new Map(), FLAG = STORE + '_routing_enabled';
   let unlocked=false, enabled=false, configured=false, verified=false, busy=false, scheduled=false;
   let lastPlan=0,lastActive=0,lastSignature='',message='Checking Google routing connection…',usage=null;
-  let gps=null,gpsWatch=null,errors=0,lastChecked='';
+  let gps=null,gpsWatch=null,errors=0,lastChecked='',manifestVersion=0;
   const status = () => {
     $('routingStatus').textContent=message;
     $('routingBrief').textContent=busy?'Refreshing Google travel estimates…':errors?'Traffic update unavailable · Some estimates may be stale':enabled&&verified?'Google Routes · Checked '+lastChecked+(locationNow()?' · GPS active':' · Logged locations'):'Saved travel estimates · Google routing '+(enabled?'connecting':'not active');
@@ -106,7 +106,9 @@
     if(!from||!to||typeof to!=='string'||/^(Public test pickup|Public test destination)$/.test(to))return;
     const signature=signatureFor(from,to),existing=quotes.get(id);
     if(!force&&existing?.signature===signature&&existing.remaining===remaining&&Date.now()-existing.fetchedAt<20*60000&&Math.abs(existing.departMinute-depart)<15)return;
+    const version=manifestVersion;
     const data=await api('/api/routes',{origin:from,destination:to,departureTime:departureISO(depart)});
+    if(version!==manifestVersion)return;
     quotes.set(id,{...data,signature,remaining,destination:to,serviceDate:date(),departMinute:depart,asOfMinute:currentTime()});
   }
   async function probe() {
@@ -121,7 +123,7 @@
     if(!/^\d{4}-\d{2}-\d{2}$/.test(date())||date()<localServiceDate()) {
       message='This manifest is for an earlier date. Google routing is paused.';status();return;
     }
-    const now=Date.now(),signature=routeSignature(),full=force||!lastPlan||now-lastPlan>=30*60000||signature!==lastSignature;
+    const now=Date.now(),version=manifestVersion,signature=routeSignature(),full=force||!lastPlan||now-lastPlan>=30*60000||signature!==lastSignature;
     const activeDue=force||!lastActive||now-lastActive>=5*60000;
     if(!full&&!activeDue)return;
     busy=true;status();
@@ -129,6 +131,7 @@
       if(!verified)await probe();
       const origins=approachOrigins();
       for(const t of routeOrder()){
+        if(version!==manifestVersion)return;
         if(t.outcome||t.status===6)continue;
         const active=t.status>0&&t.status<5;
         if(!full&&!active)continue;
@@ -137,18 +140,21 @@
           const departure=t.status===1?currentTime():Math.max(currentTime(),(p.pickup??t.scheduled)-p.connection.minutes);
           await requestQuote('connection:'+t.id,approach.from,t.pickupArea,departure,approach.remaining,force||active&&activeDue);
         }
+        if(version!==manifestVersion)return;
         p=project()[t.id];
         if(t.status<5){
           const ride=rideFrom(t),departure=t.status>=3?currentTime():(p.pickup??t.scheduled)+boardingMinutes;
           await requestQuote('ride:'+t.id,ride.from,t.dropArea,departure,ride.remaining,force||active&&activeDue);
         }
       }
+      if(version!==manifestVersion)return;
       if(full){lastPlan=now;lastSignature=signature;}
       lastActive=now;
       lastChecked=fmt(currentTime());
       message='Google Routes connected · Checked '+lastChecked+(locationNow()?' · Device location active.':gpsWatch==null?' · Location off; active rides use logged departure times.':' · Waiting for a usable device location.');
       errors=0;
     }catch(error){
+      if(version!==manifestVersion)return;
       errors++;message=error.message;
       if(error.code==='ROUTING_LOCKED'){unlocked=false;verified=false;enabled=false;}
       // Prevent a failed provider or quota from being retried on every clock tick.
@@ -167,6 +173,7 @@
       scheduled=true;setTimeout(()=>{scheduled=false;cycle();},250);
     },
     refresh:()=>cycle(true),
+    manifestChanged(){manifestVersion++;lastPlan=0;lastSignature='';routingProvider.tick();},
   };
   $('routingConnect').onclick=async()=>{
     if(enabled){enabled=false;quotes.clear();try{localStorage.setItem(FLAG,'false');}catch{}message='Google routing paused. Saved travel assumptions are in use.';status();render(true);return;}
