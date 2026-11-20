@@ -2,9 +2,10 @@
   const quotes = new Map(), FLAG = STORE + '_routing_enabled';
   let unlocked=false, enabled=false, configured=false, verified=false, busy=false, scheduled=false;
   let lastPlan=0,lastActive=0,lastSignature='',message='Checking Google routing connection…',usage=null;
-  let gps=null,gpsWatch=null,errors=0;
+  let gps=null,gpsWatch=null,errors=0,lastChecked='';
   const status = () => {
     $('routingStatus').textContent=message;
+    $('routingBrief').textContent=busy?'Refreshing Google travel estimates…':errors?'Traffic update unavailable · Some estimates may be stale':enabled&&verified?'Google Routes · Checked '+lastChecked+(locationNow()?' · GPS active':' · Logged locations'):'Saved travel estimates · Google routing '+(enabled?'connecting':'not active');
     $('routingConnect').textContent=enabled?'Pause Google Routing':unlocked?'Start Google Routing':'Connect Google Routing';
     $('routingRefresh').hidden=!unlocked;
     $('routingRefresh').disabled=busy;
@@ -48,7 +49,7 @@
   function quote(id,from,to,remaining) {
     if(!enabled||!verified)return null;
     const q=quotes.get(id),sig=signatureFor(from,to);
-    if(!q||q.remaining!==remaining||Date.now()-q.fetchedAt>30*60000)return null;
+    if(!q||q.remaining!==remaining||Date.now()-q.fetchedAt>(remaining?10:30)*60000)return null;
     if(remaining?(q.destination!==to||q.serviceDate!==date()):q.signature!==sig)return null;
     // Forecasts are refreshed in the background; expired values never pretend to be live.
     return {...q,rough:!q.trafficAware,google:!!q.trafficAware};
@@ -115,7 +116,8 @@
       }
       if(full){lastPlan=now;lastSignature=signature;}
       lastActive=now;
-      message='Google traffic connected · Checked '+fmt(currentTime())+(gpsWatch==null?' · Location off; active rides use logged departure times.':' · Device location enabled.');
+      lastChecked=fmt(currentTime());
+      message='Google Routes connected · Checked '+lastChecked+(locationNow()?' · Device location active.':gpsWatch==null?' · Location off; active rides use logged departure times.':' · Waiting for a usable device location.');
       errors=0;
     }catch(error){
       errors++;message=error.message;
@@ -164,7 +166,7 @@
     gpsWatch=navigator.geolocation.watchPosition(position=>{
       gps={latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy,at:Date.now()};
       if(lastActive===0)cycle();
-    },()=>{message='Device location unavailable. Logged trip locations remain in use.';status();},
+    },()=>{if(gpsWatch!=null)navigator.geolocation.clearWatch(gpsWatch);gpsWatch=null;gps=null;message='Device location unavailable. Logged trip locations remain in use.';status();},
     {enableHighAccuracy:true,maximumAge:30000,timeout:15000});
     lastActive=0;message='Waiting for the iPad location permission and a position…';status();
   };
