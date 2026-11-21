@@ -44,6 +44,7 @@
   }
   function validate(row){
     const errors=[];
+    if(row.pickupNotice!==undefined&&!['auto','none','dialysis','counseling','treatment','program','session'].includes(row.pickupNotice))errors.push('pickup reminder');
     if(row.dialysisReturn!==undefined&&typeof row.dialysisReturn!=='boolean')errors.push('dialysis return flag');
     if(!person(row).trim()||person(row).length>100)errors.push('rider name');
     if(!Number.isInteger(row.scheduled)||row.scheduled<0||row.scheduled>=1440)errors.push('pickup time');
@@ -69,10 +70,10 @@
     return rows.filter(row=>{const key=[normalized(person(row)),row.scheduled,normalized(row.pickupArea),normalized(row.dropArea)].join('|');if(found.has(key))return false;found.add(key);return true;});
   }
   function newTrip(row,id){const first=row.who||person(row).split(/\s+/)[0];return {id,who:/^[A-Z][A-Z']+$/.test(first)?first.slice(0,1)+first.slice(1).toLowerCase():first,riderName:person(row),scheduled:row.scheduled,scheduledDrop:row.scheduledDrop??null,
-    pickupArea:row.pickupArea.trim(),dropArea:row.dropArea.trim(),kind:row.dialysisReturn===true||row.kind==='Return'?'Return':'Outbound',dialysisReturn:row.dialysisReturn===true,facilityReady:null,
+    pickupArea:row.pickupArea.trim(),dropArea:row.dropArea.trim(),kind:row.kind==='Return'?'Return':'Outbound',pickupNotice:row.pickupNotice||(row.dialysisReturn===true?'dialysis':'auto'),dialysisReturn:row.dialysisReturn===true,
     status:0,actual:{},outcome:null,notes:'',phone:'',fare:null,drive:null,driveMiles:row.driveMiles??null,driveMilesEstimated:!!row.driveMilesEstimated,reposition:null,repositionMiles:null,combinedApproach:null};}
   function merge(day,entries,now){
-    const out=clone(day),before=clone(day.trips),used=new Set(),changes={added:[],updated:[],preserved:[]};
+    const out=clone(day),before=clone(day.trips),used=new Set(),scheduleChanged=new Set(),changes={added:[],updated:[],preserved:[]};
     let seq=Math.max(out.tripSeq||0,...out.trips.map(t=>+(String(t.id).match(/(\d+)$/)?.[1]||0)));
     const id=()=>{let value;do{value='F-'+String(++seq).padStart(3,'0');}while(out.trips.some(t=>t.id===value));return value;};
     for(const {row,target} of entries){
@@ -88,11 +89,11 @@
       const t=out.trips.find(t=>t.id===target);if(!t)throw Error('The selected run no longer exists. Review again.');
       if(locked(t)){changes.preserved.push(t.id);continue;}
       const oldRoute=[t.pickupArea,t.dropArea].join('|');
-      const patch={dialysisReturn:row.dialysisReturn===undefined?t.dialysisReturn===true:row.dialysisReturn,scheduled:row.scheduled,scheduledDrop:row.scheduledDrop??t.scheduledDrop??null,pickupArea:row.pickupArea.trim(),dropArea:row.dropArea.trim(),kind:row.dialysisReturn===true?'Return':row.kind||t.kind||'Outbound'};
+      const patch={pickupNotice:row.pickupNotice??t.pickupNotice??(t.dialysisReturn===true?'dialysis':'auto'),dialysisReturn:row.dialysisReturn===undefined?t.dialysisReturn===true:row.dialysisReturn,scheduled:row.scheduled,scheduledDrop:row.scheduledDrop??t.scheduledDrop??null,pickupArea:row.pickupArea.trim(),dropArea:row.dropArea.trim(),kind:row.kind||t.kind||'Outbound'};
       if(Object.keys(patch).some(k=>t[k]!==patch[k])){
         t.manifestRevisions??=[];t.manifestRevisions.push({at:now,before:{scheduled:t.scheduled,scheduledDrop:t.scheduledDrop??null,pickupArea:t.pickupArea,dropArea:t.dropArea,kind:t.kind},after:clone(patch)});
-        const resetReady=t.scheduled!==patch.scheduled||t.pickupArea!==patch.pickupArea||t.dialysisReturn!==patch.dialysisReturn;
-        Object.assign(t,patch);if(resetReady)t.facilityReady=null;
+        if(t.scheduled!==patch.scheduled||(t.scheduledDrop??null)!==patch.scheduledDrop||oldRoute!==[patch.pickupArea,patch.dropArea].join('|')||t.kind!==patch.kind)scheduleChanged.add(t.id);
+        Object.assign(t,patch);
         if(oldRoute!==[t.pickupArea,t.dropArea].join('|')){t.drive=null;t.driveMiles=null;t.driveMilesEstimated=false;delete t.pickupTown;delete t.dropTown;}
         changes.updated.push(t.id);
       }else changes.preserved.push(t.id);
@@ -106,7 +107,7 @@
     const pending=out.trips.filter(t=>!locked(t));
     const originMap=trips=>{let prev=null;const map=new Map();for(const t of trips){if(t.outcome==='Canceled in Advance')continue;map.set(t.id,prev);prev=t.id;}return map;};
     const oldOrigins=originMap(before),newOrigins=originMap(out.trips);
-    for(const t of pending)if(oldOrigins.get(t.id)!==newOrigins.get(t.id)||changes.updated.includes(t.id)){
+    for(const t of pending)if(oldOrigins.get(t.id)!==newOrigins.get(t.id)||scheduleChanged.has(t.id)){
       t.reposition=null;t.repositionMiles=null;t.combinedApproach=null;
     }
     out.manifestUpdatedAt=now;

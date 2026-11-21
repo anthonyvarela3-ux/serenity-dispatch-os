@@ -50,7 +50,7 @@
         const obj=JSON.parse(await files[0].text());
         if(obj.format!=='serenity-001'||!Array.isArray(obj.data?.trips)||obj.data.trips.length>100)throw Error('Choose a Serenity manifest JSON backup.');
         draft=M.deduplicate(obj.data.trips.map(t=>({riderName:String(t.riderName||t.who||''),who:String(t.who||''),scheduled:t.scheduled,
-          scheduledDrop:t.scheduledDrop??null,pickupArea:String(t.pickupArea||''),dropArea:String(t.dropArea||''),kind:t.kind,dialysisReturn:t.dialysisReturn===true,driveMiles:Number.isFinite(t.driveMiles)?t.driveMiles:null,driveMilesEstimated:!!t.driveMilesEstimated})));
+          scheduledDrop:t.scheduledDrop??null,pickupArea:String(t.pickupArea||''),dropArea:String(t.dropArea||''),kind:t.kind,pickupNotice:t.pickupNotice||(t.dialysisReturn===true?'dialysis':'auto'),dialysisReturn:t.dialysisReturn===true,driveMiles:Number.isFinite(t.driveMiles)?t.driveMiles:null,driveMilesEstimated:!!t.driveMilesEstimated})));
         sourceDate=obj.data.serviceDate||'';review([]);return;
       }
       if(files.some(f=>!['image/png','image/jpeg','image/webp'].includes(f.type)))throw Error('Use PNG or JPEG screenshots, or a Serenity JSON file.');
@@ -86,7 +86,7 @@
     if(!draft.length)draft=[{riderName:'',scheduled:null,scheduledDrop:null,pickupArea:'',dropArea:'',kind:'Outbound'}];
     const rows=draft.map((row,i)=>{
       const match=mode==='merge'?M.match(row,state.trips):{reason:'New day run'};
-      row.dialysisReturn=row.dialysisReturn??(match.id?state.trips.find(t=>t.id===match.id)?.dialysisReturn===true:false);
+      row.pickupNotice=row.pickupNotice??(row.dialysisReturn===true?'dialysis':match.id?(state.trips.find(t=>t.id===match.id)?.pickupNotice||(state.trips.find(t=>t.id===match.id)?.dialysisReturn===true?'dialysis':'auto')):'auto');
       row.kind=row.kind||(match.id?state.trips.find(t=>t.id===match.id)?.kind:null)||'Outbound';
       const options=mode==='merge'?'<option value="">Choose existing run or Add new run</option><option value="new">Add new run</option>'+state.trips.map(t=>'<option value="'+esc(t.id)+'">'+esc(t.id+' · '+t.who+' · '+fmt(t.scheduled)+(M.locked(t)?' · Keep saved progress':''))+'</option>').join(''):'<option value="new">Include in new day</option>';
       const selected=mode==='merge'?(match.id||(match.ambiguous?'':'new')):'new';row._target=row._target??selected;
@@ -95,7 +95,7 @@
         '<div class="two">'+field('mrName'+i,'Rider name',row.riderName||row.who||'')+field('mrPickup'+i,'Scheduled pickup',timeValue(row.scheduled),'time')+
         field('mrDrop'+i,'Scheduled drop-off (optional)',timeValue(row.scheduledDrop),'time')+
         '<div class="field"><label for="mrKind'+i+'">Leg</label><select id="mrKind'+i+'"><option>Outbound</option><option>Return</option></select></div></div>'+
-        '<label class="guidance-check"><input id="mrDialysis'+i+'" type="checkbox"'+(row.dialysisReturn?' checked':'')+'> Dialysis return · plan scheduled pickup; await facility readiness</label>'+
+        '<div class="field"><label for="mrNotice'+i+'">Pickup reminder - information only</label><select id="mrNotice'+i+'">'+pickupNoticeOptions()+'</select></div>'+
         field('mrFrom'+i,'Pickup address',row.pickupArea)+field('mrTo'+i,'Drop-off address',row.dropArea)+'</section>';
     }).join('');
     modal(mode==='merge'?'Review Manifest Changes':'Review New Manifest',
@@ -108,7 +108,7 @@
       (sourceText?'<details><summary>Recognized text · edit if needed</summary><label class="sr-only" for="manifestRawText">Recognized text</label><textarea id="manifestRawText" rows="10">'+esc(sourceText)+'</textarea><button class="btn" id="manifestReparse">Re-read corrected text</button></details>':'')+
       '<p id="manifestApplyError" role="alert"></p>',
       '<button class="btn primary" id="applyManifest">'+(mode==='merge'?'Apply Manifest Changes':'Start New Day')+'</button><button class="btn" id="closeModal">Cancel</button>');
-    draft.forEach((row,i)=>{$('mrDialysis'+i).checked=row.dialysisReturn===true;$('mrTarget'+i).value=row._target;$('mrKind'+i).value=row.kind==='Return'?'Return':'Outbound';});
+    draft.forEach((row,i)=>{$('mrNotice'+i).value=row.pickupNotice;$('mrTarget'+i).value=row._target;$('mrKind'+i).value=row.kind==='Return'?'Return':'Outbound';});
     if($('manifestReparse'))$('manifestReparse').onclick=()=>{sourceText=$('manifestRawText').value;const parsed=M.parse(sourceText);draft=M.deduplicate(parsed.rows);review(parsed.warnings);};
     $('applyManifest').onclick=apply;
   }
@@ -125,7 +125,7 @@
       const entries=draft.map((saved,i)=>{
         const riderName=$('mrName'+i).value.trim();
         return {target:$('mrTarget'+i).value,row:{riderName,who:riderName.split(/\s+/)[0],scheduled:fromTime($('mrPickup'+i).value),scheduledDrop:fromTime($('mrDrop'+i).value),
-          pickupArea:$('mrFrom'+i).value.trim(),dropArea:$('mrTo'+i).value.trim(),kind:$('mrKind'+i).value,dialysisReturn:$('mrDialysis'+i).checked===true,driveMiles:saved.driveMiles??null,driveMilesEstimated:!!saved.driveMilesEstimated}};
+          pickupArea:$('mrFrom'+i).value.trim(),dropArea:$('mrTo'+i).value.trim(),kind:$('mrKind'+i).value,pickupNotice:$('mrNotice'+i).value,dialysisReturn:$('mrNotice'+i).value==='dialysis',driveMiles:saved.driveMiles??null,driveMilesEstimated:!!saved.driveMilesEstimated}};
       });
       if(!entries.some(e=>e.target!=='skip'))throw Error('Include at least one run.');
       const clock=currentTime();

@@ -15,7 +15,6 @@
     const driving=state.trips.filter(t=>!t.outcome&&t.status===1);
     if(driving.length!==1)return null;
     const trip=driving[0],p=projected[trip.id];
-    if(dialysisHold(trip))return null;
     if(!p||p.conflict||p.orderPending||!Number.isFinite(p.pickup))return null;
     const remaining=Math.ceil(p.pickup-now);
     if(remaining<0||remaining>10)return null;

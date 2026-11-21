@@ -183,11 +183,10 @@ Reuse original CV4 town centers. Prefer saved loaded mileage. Otherwise estimate
 - Regression checks cover fresh fixes, accuracy/timestamp validation, GPS-only save, original/manual address preservation, endpoint changes, duplicate/race handling, export/backup/map links and all error fallbacks with zero network requests.
 
 
-## Confirmed dialysis-return pickup guidance - November 21, 2026
+## Session-return notifications - November 21, 2026
 
-- Pickup Guidance in Customer explicitly marks a run as Dialysis return; show a compact Dispatch label and detailed Customer reminder. Do not infer treatment from a rider name or facility address. The rule is per run, not a permanent patient diagnosis.
-- Plan these returns at the original scheduled pickup, with zero early-arrival lead, until the driver records facility readiness. Keep actual early/late timestamps and office times unchanged; roll dependent trips and gap calculations from the same target.
-- Hold automatic pickup heads-up prompts, 10m Out and Running Early drafts until facility readiness is confirmed. Confirmation and other deliberately selected operational messages remain available. This does not send messages automatically or prevent the driver recording actual status.
-- The driver may record facility ready now, allowing an earlier pickup from that time, and clear it again. Store readiness against the service date, scheduled pickup and pickup address so changes or a new day do not reuse a stale confirmation.
-- Guidance changes are saved locally with audit history, Undo and JSON backups. Import review includes an explicit checkbox; missing OCR information preserves a matched pending run's guidance, protected runs retain saved information, and new-day manifest imports never copy readiness confirmations.
-- Guidance/readiness changes make no Google requests and do not add data to the routing payload.
+- Customer Pickup Guidance and manifest review provide an informational reminder for dialysis, counseling, treatment/therapy, day program and other session returns. Display it in Dispatch and Customer. Save per trip with audit, Undo and JSON backup.
+- Notifications only: never change direction, times, ETAs, early-arrival lead, status availability, message wording/buttons or automatic ten-minute pickup prompts. Old dialysisReturn and facilityReady data must not impose timing or messaging restrictions.
+- Auto suggestions use clear terms in the pickup facility/address text or driver notes on a Return ride (or explicitly noted return ride). Do not infer a diagnosis from a rider name, a plain street address or the outbound destination. Label inferred facility types as suggestions to verify.
+- The reminder says to avoid early interruption and confirm readiness with the facility. Drivers may select a type or No reminder; manual suppression overrides Auto. No lookup, paid API call, patient message or push notification is triggered by the annotation.
+- Review/import preserves a matched pending trip's reminder when the source omits it; active/completed runs keep their saved details. Legacy manifests remain compatible. Raw screenshots are reviewed before application.

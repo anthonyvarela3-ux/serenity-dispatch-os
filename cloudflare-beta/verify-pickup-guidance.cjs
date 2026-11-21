@@ -20,44 +20,44 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
  const run=s=>vm.runInContext(s,context);
  run(html.split('<script>')[1].split('</script>')[0]);run(fs.readFileSync('assets/manifest-core.js','utf8'));
 
- run("state=seed();state.clockMode='simulation';state.clock=600;state.forecastClock=600;state.trips=state.trips.slice(0,2);Object.assign(state.trips[0],{scheduled:660,drive:30,reposition:0,combinedApproach:null,earlyArrivalOverride:null});Object.assign(state.trips[1],{scheduled:680,drive:20,reposition:15,combinedApproach:null});state.selected=state.trips[0].id;render();");
- const normal=run('project()[state.trips[1].id].pickup');
- run("state.trips[0].dialysisReturn=true;state.trips[0].kind='Return';state.trips[0].earlyArrivalOverride=90;render();");
- assert.equal(run('pickupLeadMinutes(state.trips[0])'),0,'unconfirmed dialysis overrides all early settings');
- assert.equal(run('project()[state.trips[0].id].pickup'),660);
- assert.equal(run('project()[state.trips[1].id].pickup'),normal+10,'the hold propagates to later rides');
- assert.match(ids.roster.innerHTML,/Dialysis return/);assert.match(ids.customerMain.innerHTML,/Await facility readiness/);
- assert.equal(ids.macro10.disabled,true);assert.equal(ids.macroEarly.disabled,true);
- assert.equal(run("messageFor(selected(),'10')"),'');assert.equal(run("messageFor(selected(),'early','es')"),'');
- assert.match(run("messageFor(selected(),'confirm')"),/11:00 AM/);
- run("selectMacro('early')");assert.equal(run('selectedMessageType'),'confirm');
- ids.pickupGuidanceButton.onclick();ids.pickupGuidanceType.value='dialysis-return';ids.pickupFacilityReady.checked=true;ids.savePickupGuidance.onclick();
- assert.equal(run('dialysisReady(selected()).minute'),600);assert.equal(run('project()[selected().id].pickup'),600);
- assert.equal(ids.macro10.disabled,false);assert.equal(run('selected().scheduled'),660);
- assert.equal(JSON.parse(saved[run('STORE')]).trips[0].facilityReady.minute,600);
- const restored=run('JSON.parse(JSON.stringify(state))');context.restored=restored;
- run('state=loadRouteScenario(restored)');assert.ok(run('dialysisReady(selected())'));
- run('undo()');assert.equal(run('dialysisReady(selected())'),null);assert.equal(run('pickupLeadMinutes(selected())'),0);
- run("selected().actual['Arrived at Pickup']=550;selected().status=2;render()");assert.equal(run('project()[selected().id].pickup'),550,'never rewrite actual early arrival');
- run("selected().actual={};selected().status=0;pickupGuidanceMenu(selected())");ids.pickupGuidanceType.value='dialysis-return';ids.pickupFacilityReady.checked=true;ids.savePickupGuidance.onclick();
- run('selected().scheduled++');assert.equal(run('dialysisReady(selected())'),null,'schedule change invalidates readiness');
- run('selected().scheduled--;state.serviceDate="2099-01-01"');assert.equal(run('dialysisReady(selected())'),null,'new date cannot reuse readiness');
- run('delete state.serviceDate;selected().pickupArea+=" changed"');assert.equal(run('dialysisReady(selected())'),null,'changed pickup cannot reuse readiness');
- run("state=seed();state.trips=state.trips.slice(0,1);state.selected=state.trips[0].id;Object.assign(selected(),{dialysisReturn:true,facilityReady:null,scheduled:600,status:1,actual:{'En Route to Pickup':585},reposition:10,combinedApproach:null});state.clockMode='device';state.serviceDate=localServiceDate();deviceTime=()=> '09:58';render();");
- run(fs.readFileSync('assets/pickup-reminder.js','utf8'));assert.equal(ids.pickupReminder.hidden,true,'no pre-readiness heads-up');
- run("selected().facilityReady={minute:598,serviceDate:state.serviceDate,scheduledPickup:600,pickupArea:selected().pickupArea};render();pickupReminderController.tick();");assert.equal(ids.pickupReminder.hidden,false,'confirmed-ready pickup may prompt');
- run("const row={riderName:'Alex Example',who:'Alex',scheduled:720,pickupArea:'Public Facility, Alpha, NY',dropArea:'Public Library, Beta, NY',kind:'Return',dialysisReturn:true};const imported=ManifestImport.newTrip(row,'F-001');imported.facilityReady={minute:690};const day={trips:[imported],tripSeq:1};const merged=ManifestImport.merge(day,[{row:{...row,scheduled:730},target:'F-001'}],700).day;globalThis.merged=merged;");
- assert.equal(run('merged.trips[0].dialysisReturn'),true);assert.equal(run('merged.trips[0].facilityReady'),null);
- assert.equal(run("ManifestImport.newTrip({...row,facilityReady:{minute:1}},'new').facilityReady"),null,'manifest new-day import does not inherit readiness');
- assert.ok(run("ManifestImport.validate({...row,dialysisReturn:'yes'}).includes('dialysis return flag')"));
- run("delete row.dialysisReturn;globalThis.kept=ManifestImport.merge(day,[{row,target:'F-001'}],700).day");assert.equal(run('kept.trips[0].dialysisReturn'),true,'missing OCR metadata preserves matched guidance');
- run("day.trips[0].status=3;day.trips[0].actual={'On Board':700};globalThis.protectedDay=ManifestImport.merge(day,[{row:{...row,dialysisReturn:false},target:'F-001'}],700).day");assert.equal(run('protectedDay.trips[0].dialysisReturn'),true);
- // Exercise the actual JSON review path and checkbox application.
+
+ run("state=seed();state.clockMode='simulation';state.clock=600;state.forecastClock=600;state.trips=state.trips.slice(0,2);Object.assign(state.trips[0],{scheduled:660,drive:30,reposition:0,combinedApproach:null,kind:'Return'});Object.assign(state.trips[1],{scheduled:680,drive:20,reposition:15,combinedApproach:null});state.selected=state.trips[0].id;render();");
+ const projection=run('JSON.stringify(project())'),lead=run('pickupLeadMinutes(selected())'),fare=run('JSON.stringify(revenue())');
+ const ten=run("messageFor(selected(),'10')"),early=run("messageFor(selected(),'early')");
+ ids.pickupGuidanceButton.onclick();ids.pickupGuidanceType.value='counseling';ids.savePickupGuidance.onclick();
+ assert.equal(run('JSON.stringify(project())'),projection,'manual notices do not change any chained estimate');
+ assert.equal(run('pickupLeadMinutes(selected())'),lead);assert.equal(run('JSON.stringify(revenue())'),fare);
+ assert.equal(run("messageFor(selected(),'10')"),ten);assert.equal(run("messageFor(selected(),'early')"),early);
+ assert.equal(ids.macro10.disabled,false);assert.equal(ids.macroEarly.disabled,false);
+ assert.match(ids.roster.innerHTML,/Counseling return/);assert.match(ids.customerMain.innerHTML,/Reminder only/);
+ assert.equal(JSON.parse(saved[run('STORE')]).trips[0].pickupNotice,'counseling');
+ run('undo()');assert.equal(run('selected().pickupNotice'),undefined);assert.equal(run('JSON.stringify(project())'),projection);
+ run("selected().dialysisReturn=true;selected().facilityReady={minute:450};render()");
+ assert.equal(run('JSON.stringify(project())'),projection,'legacy dialysis/ready data cannot constrain timing');assert.equal(ids.macro10.disabled,false);
+ assert.match(run("messageFor(selected(),'early','es')"),/antes/);
+ run("selected().dialysisReturn=false;selected().pickupNotice='auto';selected().pickupArea='Example Counseling Center, Alpha, NY';render()");
+ assert.equal(run('pickupNoticeType(selected()).type'),'counseling');assert.match(ids.roster.innerHTML,/Possible Counseling return/);
+ run("selected().pickupNotice='none';render()");assert.equal(run('pickupNoticeType(selected())'),null,'manual suppression wins');
+ run("selected().pickupNotice='auto';selected().pickupArea='100 Example Street, Alpha, NY';selected().dropArea='Example Dialysis Center';selected().notes='';selected().who='Counseling Example';render()");assert.equal(run('pickupNoticeType(selected())'),null,'no inference from person, street or destination');
+ run("selected().pickupArea='Example Dialysis Center';selected().kind='Outbound'");assert.equal(run('pickupNoticeType(selected())'),null,'outbound ride to a session is not a return notice');
+ run("selected().kind='Return'");assert.equal(run('pickupNoticeType(selected()).type'),'dialysis');
+ for(const [place,type] of [['Example Infusion Center','treatment'],['Example Physical Therapy','treatment'],['Example Day Program','program'],['Example Psychotherapy Center','counseling']]){context.place=place;run('selected().pickupArea=place');assert.equal(run('pickupNoticeType(selected()).type'),type);}
+ run("selected().pickupArea='100 Example Street';selected().notes='Return run from counseling';selected().kind='Outbound'");assert.equal(run('pickupNoticeType(selected()).type'),'counseling','explicit return note can identify a session');
+ // Automatic pickup reminders remain active for informational session flags.
+ run("state=seed();state.trips=state.trips.slice(0,1);state.selected=state.trips[0].id;Object.assign(selected(),{dialysisReturn:true,facilityReady:null,pickupNotice:'dialysis',scheduled:600,status:1,actual:{'En Route to Pickup':585},reposition:10,combinedApproach:null});state.clockMode='device';state.serviceDate=localServiceDate();deviceTime=()=> '09:58';render();");
+ run(fs.readFileSync('assets/pickup-reminder.js','utf8'));assert.equal(ids.pickupReminder.hidden,false,'informational notice never suppresses pickup heads-up');
+ // An import that changes only a reminder must retain saved travel assumptions.
+ run("const row={riderName:'Alex Example',who:'Alex',scheduled:720,pickupArea:'Public Facility, Alpha, NY',dropArea:'Public Library, Beta, NY',kind:'Outbound',pickupNotice:'auto'};const imported=ManifestImport.newTrip(row,'F-001');imported.reposition=21;imported.repositionMiles=10;imported.drive=34;const day={trips:[imported],tripSeq:1};globalThis.merged=ManifestImport.merge(day,[{row:{...row,pickupNotice:'treatment'},target:'F-001'}],700).day;");
+ assert.equal(run('merged.trips[0].pickupNotice'),'treatment');assert.equal(run('merged.trips[0].kind'),'Outbound');assert.equal(run('merged.trips[0].reposition'),21);assert.equal(run('merged.trips[0].drive'),34);
+ assert.ok(run("ManifestImport.validate({...row,pickupNotice:'invalid'}).includes('pickup reminder')"));
+ run("day.trips[0].pickupNotice='program';delete row.pickupNotice;globalThis.kept=ManifestImport.merge(day,[{row,target:'F-001'}],700).day");assert.equal(run('kept.trips[0].pickupNotice'),'program');
+ run("day.trips[0].status=3;day.trips[0].actual={'On Board':700};globalThis.protectedDay=ManifestImport.merge(day,[{row:{...row,pickupNotice:'none'},target:'F-001'}],700).day");assert.equal(run('protectedDay.trips[0].pickupNotice'),'program');
+ // Actual JSON review path retains annotation and never forces trip direction.
  run("state=seed();state.trips=[];state.tripSeq=0;state.clockMode='simulation';state.selected=null;render()");
  run(fs.readFileSync('assets/manifest-import.js','utf8'));ids.uploadNewManifest.onclick();
- const payload={format:'serenity-001',data:{serviceDate:'2099-01-01',trips:[{...run('row'),dialysisReturn:true,facilityReady:{minute:1}}]}};
+ const payload={format:'serenity-001',data:{serviceDate:'2099-01-01',trips:[{...run('row'),pickupNotice:'counseling'}]}};
  await ids.manifestFiles.onchange({target:{files:[{name:'manifest.json',type:'application/json',size:1000,text:async()=>JSON.stringify(payload)}],value:'x'}});
- assert.equal(ids.mrDialysis0.checked,true);ids.applyManifest.onclick();
- assert.equal(run('state.trips[0].dialysisReturn'),true);assert.equal(run('state.trips[0].kind'),'Return');assert.equal(run('state.trips[0].facilityReady'),null);
- console.log('Dialysis guidance passes scheduled-return floor, chained ETAs, immutable actuals, explicit ready override/Undo, no early messaging/reminder, persisted backup, stale-ready invalidation, reviewed imports and protected runs.');
+ assert.equal(ids.mrNotice0.value,'counseling');ids.applyManifest.onclick();
+ assert.equal(run('state.trips[0].pickupNotice'),'counseling');assert.equal(run('state.trips[0].kind'),'Outbound');
+ console.log('Session notifications pass manual/auto categories, cautious inference, suppression, unchanged forecasts/early targets/messages/reminders/statuses/revenue, legacy dialysis compatibility, Undo/backups and metadata-only imports without travel invalidation.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

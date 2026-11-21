@@ -435,49 +435,48 @@ function currentRide(){
 function firstDayTrip(){
   return state.trips.find(t=>t.outcome!=='Canceled in Advance');
 }
-function isDialysisReturn(t){return t?.dialysisReturn===true;}
-function dialysisReady(t){
-  const r=t?.facilityReady;
-  return isDialysisReturn(t)&&r&&Number.isInteger(r.minute)&&r.minute>=0&&r.minute<1440&&
-    r.serviceDate===(state.serviceDate||localServiceDate())&&r.scheduledPickup===t.scheduled&&r.pickupArea===t.pickupArea?r:null;
+const pickupNoticeLabels={dialysis:'Dialysis return',counseling:'Counseling return',treatment:'Treatment / therapy return',program:'Day program return',session:'Session return'};
+function pickupNoticeType(t){
+  if(!t)return null;
+  const saved=t.pickupNotice;
+  if(saved==='none')return null;
+  if(Object.hasOwn(pickupNoticeLabels,saved))return {type:saved,source:'Saved trip reminder'};
+  if(t.dialysisReturn===true)return {type:'dialysis',source:'Saved trip reminder'};
+  const notes=String(t.notes||'');
+  if(t.kind!=='Return'&&!/\breturn (?:run|ride|trip|pickup|from)\b/i.test(notes))return null;
+  const text=[t.pickupFacility,t.pickupArea,notes].filter(x=>typeof x==='string').join(' ');
+  const rules=[['dialysis',/\b(?:dialysis|hemodialysis)\b/i],
+    ['counseling',/\b(?:counsel+ing|psychotherapy|behavioral health|mental health)\b/i],
+    ['treatment',/\b(?:chemotherapy|radiation (?:therapy|oncology)|infusion|physical therapy|occupational therapy|(?:treatment|therapy|rehabilitation) (?:center|centre|session))\b/i],
+    ['program',/\b(?:day program|adult day care|day habilitation)\b/i],
+    ['session',/\b(?:session in progress|do not interrupt|no early pickup)\b/i]];
+  const match=rules.find(([,pattern])=>pattern.test(text));
+  return match?{type:match[0],source:'Location / notes suggestion - verify with facility'}:null;
 }
-function dialysisHold(t){return isDialysisReturn(t)&&!dialysisReady(t)&&!t.outcome&&t.status<3;}
+function pickupNoticeOptions(){return '<option value="auto">Auto - use pickup location / notes</option><option value="none">No reminder</option>'+Object.entries(pickupNoticeLabels).map(([value,label])=>'<option value="'+value+'">'+label+'</option>').join('');}
 function pickupGuidance(t,detail=false){
-  if(!isDialysisReturn(t))return '';
-  const ready=dialysisReady(t);
-  return '<div class="pickup-guidance" role="note"><strong>Dialysis return</strong> · '+
-    (ready?'Facility ready confirmed '+fmt(ready.minute):'Await facility readiness')+
-    (detail?'<div>'+(ready?'Earlier pickup is permitted by the saved readiness confirmation.':'Plan for scheduled pickup. Do not request an early pickup; confirm readiness with the facility.')+'</div>':'')+'</div>';
+  const notice=pickupNoticeType(t);if(!notice)return '';
+  return '<div class="pickup-guidance" role="note"><strong>'+(notice.source.startsWith('Location')?'Possible ':'')+esc(pickupNoticeLabels[notice.type])+'</strong> · Avoid early interruption'+
+    (detail?'<div>Rider may still be in a session. Confirm readiness with the facility before attempting an early pickup.</div><div class="small muted">'+esc(notice.source)+'. Reminder only; estimates, messages and status controls are unchanged.</div>':'')+'</div>';
 }
 function pickupGuidanceMenu(t){
   if(!t)return;
-  const ready=dialysisReady(t);
   modal('Pickup guidance · '+t.id,
-    '<div class="field"><label for="pickupGuidanceType">Pickup guidance</label><select id="pickupGuidanceType"><option value="standard">Standard pickup</option><option value="dialysis-return">Dialysis return</option></select></div>'+
-    '<p>Use Dialysis return only when confirmed by the manifest, office or facility. This applies to this run only.</p>'+
-    '<p>Until readiness is confirmed, plan at the scheduled pickup time and hold early-pickup messages and automatic heads-up prompts. Existing actual timestamps stay unchanged.</p>'+
-    '<label class="guidance-check"><input type="checkbox" id="pickupFacilityReady"> Facility has confirmed the rider is ready now</label>'+
-    (ready?'<p class="small muted">Readiness saved at '+fmt(ready.minute)+'. Clear the checkbox to return to scheduled pickup planning.</p>':'')+
-    '<p class="small muted">This records an operational instruction, not a medical assessment.</p>',
-    '<button class="btn primary" id="savePickupGuidance">Save Pickup Guidance</button><button class="btn" id="closeModal">Cancel</button>');
-  $('pickupGuidanceType').value=isDialysisReturn(t)?'dialysis-return':'standard';
-  $('pickupFacilityReady').checked=!!ready;
+    '<div class="field"><label for="pickupGuidanceType">Pickup reminder</label><select id="pickupGuidanceType">'+pickupNoticeOptions()+'</select></div>'+
+    '<p>For counseling, dialysis, treatment, therapy or other sessions: avoid an early interruption and confirm readiness with the facility.</p>'+
+    '<p>Auto uses clearly named pickup locations or existing notes on return rides. A street address alone does not identify the building. Suggestions are not a diagnosis or confirmation that treatment is in progress.</p>'+
+    '<p>Notifications only. This reminder does not change trip direction, scheduled times, ETAs, early-arrival settings, messages or status controls.</p>',
+    '<button class="btn primary" id="savePickupGuidance">Save Pickup Reminder</button><button class="btn" id="closeModal">Cancel</button>');
+  $('pickupGuidanceType').value=t.pickupNotice||(t.dialysisReturn===true?'dialysis':'auto');
   $('closeModal').onclick=closeModal;
   $('savePickupGuidance').onclick=()=>{
-    const dialysisReturn=$('pickupGuidanceType').value==='dialysis-return',confirmed=$('pickupFacilityReady').checked;
-    change('Update pickup guidance for '+t.id,()=>{
-      t.dialysisReturn=dialysisReturn;
-      if(dialysisReturn)t.kind='Return';
-      t.facilityReady=dialysisReturn&&confirmed?(ready||{minute:currentTime(),serviceDate:state.serviceDate||localServiceDate(),scheduledPickup:t.scheduled,pickupArea:t.pickupArea}):null;
-    });
-    closeModal();toast('Pickup guidance saved · Undo available');
+    const value=$('pickupGuidanceType').value;
+    if(!['auto','none',...Object.keys(pickupNoticeLabels)].includes(value))return;
+    change('Update pickup reminder for '+t.id,()=>{t.pickupNotice=value;t.dialysisReturn=value==='dialysis';});
+    closeModal();toast('Pickup reminder saved · Information only · Undo available');
   };
 }
 function pickupLeadMinutes(t){
-  if(isDialysisReturn(t)){
-    const ready=dialysisReady(t);
-    return ready?Math.max(0,t.scheduled-ready.minute):0;
-  }
   // Explicit per-trip exceptions and actual timestamps may go beyond the normal limit.
   if(Number.isFinite(t?.earlyArrivalOverride)&&t.earlyArrivalOverride>=0&&t.earlyArrivalOverride<=180)return t.earlyArrivalOverride;
   if(t?.id===firstDayTrip()?.id)return 10;
@@ -1037,7 +1036,6 @@ function messageFor(t,type,language=t?.messageLanguage??'en'){
   if(!t)return '';
   const es=language==='es';
   const greeting=es?'Hola, soy Anthony de Serenity. ':"Hi, it's Anthony from Serenity. ";
-  if(dialysisHold(t)&&['10','early','nearby','onway'].includes(type))return '';
   if(type==='confirm'){
     const scheduled=es?fmt(t.scheduled).replace(' AM',' a. m.').replace(' PM',' p. m.'):fmt(t.scheduled);
     const place=String(t.pickupArea??'').trim();
@@ -1075,7 +1073,6 @@ function appleSmsDevice(){
 }
 function renderMessages(){
   const trip=selected();
-  if(dialysisHold(trip)&&['10','early'].includes(selectedMessageType))selectedMessageType='confirm';
   const es=trip?.messageLanguage==='es';
   for(const [id,active] of [['messageEn',!es],['messageEs',es]]){
     $(id).classList.toggle('active',active);
@@ -1084,7 +1081,7 @@ function renderMessages(){
   }
   for(const [id,type] of [['macro10','10'],['macroEarly','early'],['macroCurb','curb'],['macroLate','late'],['macroConfirm','confirm']]){
     $(id).classList.toggle('active',selectedMessageType===type);
-    $(id).disabled=!trip||(dialysisHold(trip)&&['10','early'].includes(type));
+    $(id).disabled=!trip;
   }
   const draft=messageFor(trip,selectedMessageType);
   $('messagePreview').value=draft;
@@ -1097,12 +1094,11 @@ function renderMessages(){
   else $('openSms').removeAttribute('href');
   for(const id of ['copyMessage','openVoice'])$(id).disabled=!trip;
   $('copyRecipient').disabled=!phone;
-  $('messageContext').textContent=dialysisHold(trip)?(es?'Regreso de diálisis: confirme con el centro que la persona está lista. No solicite una recogida anticipada.':'Dialysis return: confirm readiness with the facility. Early-pickup messages are on hold.'):!trip?'':
+  $('messageContext').textContent=!trip?'':
     (es?'Elija el mensaje que corresponda. Revíselo antes de enviarlo.':
       'Choose the message that fits. Review it before sending.');
 }
 function selectMacro(type){
-  if(dialysisHold(selected())&&['10','early'].includes(type)){toast('Confirm facility readiness in Pickup Guidance first');return;}
   selectedMessageType=type;
   $('messageFeedback').textContent='';
   renderMessages();
