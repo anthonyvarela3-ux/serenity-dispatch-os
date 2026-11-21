@@ -44,6 +44,7 @@
   }
   function validate(row){
     const errors=[];
+    if(row.dialysisReturn!==undefined&&typeof row.dialysisReturn!=='boolean')errors.push('dialysis return flag');
     if(!person(row).trim()||person(row).length>100)errors.push('rider name');
     if(!Number.isInteger(row.scheduled)||row.scheduled<0||row.scheduled>=1440)errors.push('pickup time');
     if(row.scheduledDrop!==null&&row.scheduledDrop!==undefined&&(!Number.isInteger(row.scheduledDrop)||row.scheduledDrop<0||row.scheduledDrop>=1440))errors.push('drop-off time');
@@ -68,7 +69,7 @@
     return rows.filter(row=>{const key=[normalized(person(row)),row.scheduled,normalized(row.pickupArea),normalized(row.dropArea)].join('|');if(found.has(key))return false;found.add(key);return true;});
   }
   function newTrip(row,id){const first=row.who||person(row).split(/\s+/)[0];return {id,who:/^[A-Z][A-Z']+$/.test(first)?first.slice(0,1)+first.slice(1).toLowerCase():first,riderName:person(row),scheduled:row.scheduled,scheduledDrop:row.scheduledDrop??null,
-    pickupArea:row.pickupArea.trim(),dropArea:row.dropArea.trim(),kind:row.kind==='Return'?'Return':'Outbound',
+    pickupArea:row.pickupArea.trim(),dropArea:row.dropArea.trim(),kind:row.dialysisReturn===true||row.kind==='Return'?'Return':'Outbound',dialysisReturn:row.dialysisReturn===true,facilityReady:null,
     status:0,actual:{},outcome:null,notes:'',phone:'',fare:null,drive:null,driveMiles:row.driveMiles??null,driveMilesEstimated:!!row.driveMilesEstimated,reposition:null,repositionMiles:null,combinedApproach:null};}
   function merge(day,entries,now){
     const out=clone(day),before=clone(day.trips),used=new Set(),changes={added:[],updated:[],preserved:[]};
@@ -87,10 +88,11 @@
       const t=out.trips.find(t=>t.id===target);if(!t)throw Error('The selected run no longer exists. Review again.');
       if(locked(t)){changes.preserved.push(t.id);continue;}
       const oldRoute=[t.pickupArea,t.dropArea].join('|');
-      const patch={scheduled:row.scheduled,scheduledDrop:row.scheduledDrop??t.scheduledDrop??null,pickupArea:row.pickupArea.trim(),dropArea:row.dropArea.trim(),kind:row.kind||t.kind||'Outbound'};
+      const patch={dialysisReturn:row.dialysisReturn===undefined?t.dialysisReturn===true:row.dialysisReturn,scheduled:row.scheduled,scheduledDrop:row.scheduledDrop??t.scheduledDrop??null,pickupArea:row.pickupArea.trim(),dropArea:row.dropArea.trim(),kind:row.dialysisReturn===true?'Return':row.kind||t.kind||'Outbound'};
       if(Object.keys(patch).some(k=>t[k]!==patch[k])){
         t.manifestRevisions??=[];t.manifestRevisions.push({at:now,before:{scheduled:t.scheduled,scheduledDrop:t.scheduledDrop??null,pickupArea:t.pickupArea,dropArea:t.dropArea,kind:t.kind},after:clone(patch)});
-        Object.assign(t,patch);
+        const resetReady=t.scheduled!==patch.scheduled||t.pickupArea!==patch.pickupArea||t.dialysisReturn!==patch.dialysisReturn;
+        Object.assign(t,patch);if(resetReady)t.facilityReady=null;
         if(oldRoute!==[t.pickupArea,t.dropArea].join('|')){t.drive=null;t.driveMiles=null;t.driveMilesEstimated=false;delete t.pickupTown;delete t.dropTown;}
         changes.updated.push(t.id);
       }else changes.preserved.push(t.id);

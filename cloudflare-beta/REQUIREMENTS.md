@@ -181,3 +181,13 @@ Reuse original CV4 town centers. Prefer saved loaded mileage. Otherwise estimate
 - Report list, text, CSV, shares and JSON backups preserve the GPS evidence. View recorded location opens an explicit Google Maps coordinate link. GPS coordinates are not represented as a confirmed street address.
 - Automatic street-address lookup is not connected: Google reverse geocoding requires the separate Geocoding API and appropriate key permission. Current Routes-only credentials remain unchanged. Reference: https://developers.google.com/maps/documentation/geocoding/guides-v3/get-api-key
 - Regression checks cover fresh fixes, accuracy/timestamp validation, GPS-only save, original/manual address preservation, endpoint changes, duplicate/race handling, export/backup/map links and all error fallbacks with zero network requests.
+
+
+## Confirmed dialysis-return pickup guidance - November 21, 2026
+
+- Pickup Guidance in Customer explicitly marks a run as Dialysis return; show a compact Dispatch label and detailed Customer reminder. Do not infer treatment from a rider name or facility address. The rule is per run, not a permanent patient diagnosis.
+- Plan these returns at the original scheduled pickup, with zero early-arrival lead, until the driver records facility readiness. Keep actual early/late timestamps and office times unchanged; roll dependent trips and gap calculations from the same target.
+- Hold automatic pickup heads-up prompts, 10m Out and Running Early drafts until facility readiness is confirmed. Confirmation and other deliberately selected operational messages remain available. This does not send messages automatically or prevent the driver recording actual status.
+- The driver may record facility ready now, allowing an earlier pickup from that time, and clear it again. Store readiness against the service date, scheduled pickup and pickup address so changes or a new day do not reuse a stale confirmation.
+- Guidance changes are saved locally with audit history, Undo and JSON backups. Import review includes an explicit checkbox; missing OCR information preserves a matched pending run's guidance, protected runs retain saved information, and new-day manifest imports never copy readiness confirmations.
+- Guidance/readiness changes make no Google requests and do not add data to the routing payload.
