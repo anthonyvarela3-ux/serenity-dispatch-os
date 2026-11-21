@@ -36,10 +36,10 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
  assert.equal(run('JSON.stringify(project())'),projection,'legacy dialysis/ready data cannot constrain timing');assert.equal(ids.macro10.disabled,false);
  assert.match(run("messageFor(selected(),'early','es')"),/antes/);
  run("selected().dialysisReturn=false;selected().pickupNotice='auto';selected().pickupArea='Example Counseling Center, Alpha, NY';render()");
- assert.equal(run('pickupNoticeType(selected()).type'),'counseling');assert.match(ids.roster.innerHTML,/Possible Counseling return/);
+ assert.equal(run('pickupNoticeType(selected()).type'),'counseling');assert.match(ids.roster.innerHTML,/Counseling location/);
  run("selected().pickupNotice='none';render()");assert.equal(run('pickupNoticeType(selected())'),null,'manual suppression wins');
  run("selected().pickupNotice='auto';selected().pickupArea='100 Example Street, Alpha, NY';selected().dropArea='Example Dialysis Center';selected().notes='';selected().who='Counseling Example';render()");assert.equal(run('pickupNoticeType(selected())'),null,'no inference from person, street or destination');
- run("selected().pickupArea='Example Dialysis Center';selected().kind='Outbound'");assert.equal(run('pickupNoticeType(selected())'),null,'outbound ride to a session is not a return notice');
+ run("selected().pickupArea='Example Dialysis Center';selected().kind='Outbound'");assert.equal(run('pickupNoticeType(selected()).type'),'dialysis','a named pickup facility can prompt even when direction is unspecified or outbound');
  run("selected().kind='Return'");assert.equal(run('pickupNoticeType(selected()).type'),'dialysis');
  for(const [place,type] of [['Example Infusion Center','treatment'],['Example Physical Therapy','treatment'],['Example Day Program','program'],['Example Psychotherapy Center','counseling']]){context.place=place;run('selected().pickupArea=place');assert.equal(run('pickupNoticeType(selected()).type'),type);}
  run("selected().pickupArea='100 Example Street';selected().notes='Return run from counseling';selected().kind='Outbound'");assert.equal(run('pickupNoticeType(selected()).type'),'counseling','explicit return note can identify a session');

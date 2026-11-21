@@ -443,8 +443,8 @@ function pickupNoticeType(t){
   if(Object.hasOwn(pickupNoticeLabels,saved))return {type:saved,source:'Saved trip reminder'};
   if(t.dialysisReturn===true)return {type:'dialysis',source:'Saved trip reminder'};
   const notes=String(t.notes||'');
-  if(t.kind!=='Return'&&!/\breturn (?:run|ride|trip|pickup|from)\b/i.test(notes))return null;
-  const text=[t.pickupFacility,t.pickupArea,notes].filter(x=>typeof x==='string').join(' ');
+  const returnNotes=t.kind==='Return'||/\breturn (?:run|ride|trip|pickup|from)\b/i.test(notes)?notes:'';
+  const text=[t.pickupFacility,t.pickupArea,returnNotes].filter(x=>typeof x==='string').join(' ');
   const rules=[['dialysis',/\b(?:dialysis|hemodialysis)\b/i],
     ['counseling',/\b(?:counsel+ing|psychotherapy|behavioral health|mental health)\b/i],
     ['treatment',/\b(?:chemotherapy|radiation (?:therapy|oncology)|infusion|physical therapy|occupational therapy|(?:treatment|therapy|rehabilitation) (?:center|centre|session))\b/i],
@@ -456,7 +456,7 @@ function pickupNoticeType(t){
 function pickupNoticeOptions(){return '<option value="auto">Auto - use pickup location / notes</option><option value="none">No reminder</option>'+Object.entries(pickupNoticeLabels).map(([value,label])=>'<option value="'+value+'">'+label+'</option>').join('');}
 function pickupGuidance(t,detail=false){
   const notice=pickupNoticeType(t);if(!notice)return '';
-  return '<div class="pickup-guidance" role="note"><strong>'+(notice.source.startsWith('Location')?'Possible ':'')+esc(pickupNoticeLabels[notice.type])+'</strong> · Avoid early interruption'+
+  return '<div class="pickup-guidance" role="note"><strong>'+esc(notice.source.startsWith('Location')?({dialysis:'Dialysis location',counseling:'Counseling location',treatment:'Treatment / therapy location',program:'Day program location',session:'Session timing note'}[notice.type]):pickupNoticeLabels[notice.type])+'</strong> · Avoid early interruption'+
     (detail?'<div>Rider may still be in a session. Confirm readiness with the facility before attempting an early pickup.</div><div class="small muted">'+esc(notice.source)+'. Reminder only; estimates, messages and status controls are unchanged.</div>':'')+'</div>';
 }
 function pickupGuidanceMenu(t){
@@ -464,7 +464,7 @@ function pickupGuidanceMenu(t){
   modal('Pickup guidance · '+t.id,
     '<div class="field"><label for="pickupGuidanceType">Pickup reminder</label><select id="pickupGuidanceType">'+pickupNoticeOptions()+'</select></div>'+
     '<p>For counseling, dialysis, treatment, therapy or other sessions: avoid an early interruption and confirm readiness with the facility.</p>'+
-    '<p>Auto uses clearly named pickup locations or existing notes on return rides. A street address alone does not identify the building. Suggestions are not a diagnosis or confirmation that treatment is in progress.</p>'+
+    '<p>Auto uses clearly named pickup locations, or existing notes that identify a return ride. A street address alone does not identify the building. Suggestions are not a diagnosis or confirmation that treatment is in progress.</p>'+
     '<p>Notifications only. This reminder does not change trip direction, scheduled times, ETAs, early-arrival settings, messages or status controls.</p>',
     '<button class="btn primary" id="savePickupGuidance">Save Pickup Reminder</button><button class="btn" id="closeModal">Cancel</button>');
   $('pickupGuidanceType').value=t.pickupNotice||(t.dialysisReturn===true?'dialysis':'auto');
