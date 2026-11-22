@@ -65,6 +65,28 @@
     if(trips.some(t=>samePerson(t,row)))return {ambiguous:true,reason:'Rider already appears today · choose existing run or add a new leg'};
     return {reason:'New run'};
   }
+  function oneCharacterApart(a,b){
+    if(a.length>b.length)return oneCharacterApart(b,a);
+    if(b.length-a.length>1)return false;
+    let index=0;
+    while(index<a.length&&a[index]===b[index])index++;
+    if(a.length===b.length)return a.slice(index+1)===b.slice(index+1);
+    return a.slice(index)===b.slice(index+1);
+  }
+  function possibleDuplicate(a,b,{ocrOverlap=false}={}){
+    const name=normalized(person(a)),other=normalized(person(b));
+    if(!name||!other||!Number.isInteger(a.scheduled)||!Number.isInteger(b.scheduled))return false;
+    const sameTime=a.scheduled===b.scheduled;
+    if(name===other&&sameTime)return true;
+    if(!ocrOverlap||!normalized(a.pickupArea)||!normalized(a.dropArea)||!sameRoute(a,b))return false;
+    const sameDrop=Number.isInteger(a.scheduledDrop)&&a.scheduledDrop===b.scheduledDrop;
+    if(sameTime&&sameDrop&&name.length>=5&&oneCharacterApart(name,other))return true;
+    return name===other&&sameDrop&&Math.abs(a.scheduled-b.scheduled)===1;
+  }
+  function isReturn(a,b){
+    return samePerson(a,b)&&!!normalized(a.pickupArea)&&!!normalized(a.dropArea)&&
+      normalized(a.pickupArea)===normalized(b.dropArea)&&normalized(a.dropArea)===normalized(b.pickupArea);
+  }
   function deduplicate(rows){
     const found=new Set();
     return rows.filter(row=>{const key=[normalized(person(row)),row.scheduled,normalized(row.pickupArea),normalized(row.dropArea)].join('|');if(found.has(key))return false;found.add(key);return true;});
@@ -113,5 +135,5 @@
     out.manifestUpdatedAt=now;
     return {day:out,changes};
   }
-  return {parse,time,validate,match,deduplicate,merge,newTrip,locked};
+  return {parse,time,validate,match,deduplicate,possibleDuplicate,isReturn,merge,newTrip,locked};
 });
