@@ -73,11 +73,24 @@
         const result=await token.worker.recognize(files[index]);texts.push(result.data.text);
       }
       await token.worker.terminate();token.worker=null;if(token.cancelled)return;job=null;
-      sourceText=texts.join('\n');
-      const parsed=M.parse(sourceText);draft=M.deduplicate(parsed.rows);
+      sourceText=texts.join('\n--- Next screenshot ---\n');
       sourceDate=/\bTomorrow\b/i.test(sourceText)?datePlusOne():localServiceDate();
-      review(parsed.warnings);
+      readScreenshotText();
     }catch(error){if(token?.cancelled)return;stop();errorView(error.message||'The screenshot could not be read. Try a clearer screenshot.');}
+  }
+  function readScreenshotText(){
+    const pages=sourceText.split(/^--- Next screenshot ---$/m).map(M.parse);
+    const rows=pages.flatMap((page,index)=>page.rows.map(row=>({...row,_screenshot:index})));
+    draft=M.deduplicate(rows);
+    const warnings=pages.flatMap(page=>page.warnings);
+    const removed=rows.length-draft.length;
+    if(removed)warnings.unshift(removed+' repeated screenshot '+(removed===1?'row was':'rows were')+' removed.');
+    for(const [index,row] of draft.entries()){
+      const suspected=draft.slice(0,index).some(previous=>M.possibleDuplicate(previous,row,{ocrOverlap:previous._screenshot!==row._screenshot}));
+      if(suspected)row._overlap=true;
+      if(!row.kind&&draft.slice(0,index).some(previous=>M.isReturn(previous,row)))row.kind='Return';
+    }
+    review(warnings);
   }
   function field(id,label,value,type='text'){
     return '<div class="field"><label for="'+id+'">'+label+'</label><input id="'+id+'" type="'+type+'" value="'+esc(value)+'" autocomplete="off"></div>';
@@ -88,9 +101,10 @@
       const match=mode==='merge'?M.match(row,state.trips):{reason:'New day run'};
       row.pickupNotice=row.pickupNotice??(row.dialysisReturn===true?'dialysis':match.id?(state.trips.find(t=>t.id===match.id)?.pickupNotice||(state.trips.find(t=>t.id===match.id)?.dialysisReturn===true?'dialysis':'auto')):'auto');
       row.kind=row.kind||(match.id?state.trips.find(t=>t.id===match.id)?.kind:null)||'Outbound';
-      const options=mode==='merge'?'<option value="">Choose existing run or Add new run</option><option value="new">Add new run</option>'+state.trips.map(t=>'<option value="'+esc(t.id)+'">'+esc(t.id+' · '+t.who+' · '+fmt(t.scheduled)+(M.locked(t)?' · Keep saved progress':''))+'</option>').join(''):'<option value="new">Include in new day</option>';
-      const selected=mode==='merge'?(match.id||(match.ambiguous?'':'new')):'new';row._target=row._target??selected;
-      return '<section class="manifest-review-row"><div class="section-heading"><h4>Run '+(i+1)+'</h4><span class="small muted">'+esc(match.locked?'Already started or closed · saved run will be kept':match.reason)+'</span></div>'+
+      const options=mode==='merge'?'<option value="">Choose existing run or Add new run</option><option value="new">Add new run</option>'+state.trips.map(t=>'<option value="'+esc(t.id)+'">'+esc(t.id+' · '+t.who+' · '+fmt(t.scheduled)+(M.locked(t)?' · Keep saved progress':''))+'</option>').join(''):(row._overlap?'<option value="">Review possible duplicate</option>':'')+'<option value="new">Include in new day</option>';
+      const selected=row._overlap?'':mode==='merge'?(match.id||(match.ambiguous?'':'new')):'new';row._target=row._target??selected;
+      return '<section class="manifest-review-row"><div class="section-heading"><h4>Run '+(i+1)+'</h4><span class="small muted">'+esc(row._overlap?'Possible duplicate · compare with the earlier row and choose Include or Skip':match.locked?'Already started or closed · saved run will be kept':match.reason)+'</span></div>'+
+        (row._overlap?'<button class="btn" type="button" id="mrDelete'+i+'">Delete Run</button>':'')+
         '<div class="field"><label for="mrTarget'+i+'">How to apply</label><select id="mrTarget'+i+'">'+options+'<option value="skip">Skip this screenshot row</option></select></div>'+
         '<div class="two">'+field('mrName'+i,'Rider name',row.riderName||row.who||'')+field('mrPickup'+i,'Scheduled pickup',timeValue(row.scheduled),'time')+
         field('mrDrop'+i,'Scheduled drop-off (optional)',timeValue(row.scheduledDrop),'time')+
@@ -99,6 +113,9 @@
         field('mrFrom'+i,'Pickup address',row.pickupArea)+field('mrTo'+i,'Drop-off address',row.dropArea)+'</section>';
     }).join('');
     modal(mode==='merge'?'Review Manifest Changes':'Review New Manifest',
+      '<div class="actions"><button class="btn primary" type="button" id="acceptManifestTop">Accept Runs</button>'+
+      (draft.some(row=>row._overlap)?'<button class="btn" type="button" id="skipManifestDuplicates">Delete All Duplicates</button>':'')+
+      '</div><p id="manifestRideCount" role="status"></p><p id="manifestDuplicateResult" role="status"></p><p id="manifestApplyError" role="alert"></p>'+
       '<p>'+(mode==='merge'?'Missing rows will not be removed or canceled. Completed, canceled and active runs keep their saved information.':'Applying starts a new day after saving a backup of the current day.')+'</p>'+
       '<div class="field"><label for="manifestServiceDate">Service date</label><input id="manifestServiceDate" type="date" value="'+esc(mode==='merge'?(state.serviceDate||localServiceDate()):(sourceDate||localServiceDate()))+'" '+(mode==='merge'?'readonly':'')+'></div>'+
       (mode==='merge'&&sourceDate&&sourceDate!==(state.serviceDate||localServiceDate())?'<p class="notice">The source date differs from this saved day. Check that you chose the correct screenshot.</p>':'')+
@@ -106,11 +123,55 @@
       '<div id="manifestReviewRows">'+rows+'</div>'+
       '<p class="small muted">Review every included row. OCR can misread digits, apartment numbers and names.</p>'+
       (sourceText?'<details><summary>Recognized text · edit if needed</summary><label class="sr-only" for="manifestRawText">Recognized text</label><textarea id="manifestRawText" rows="10">'+esc(sourceText)+'</textarea><button class="btn" id="manifestReparse">Re-read corrected text</button></details>':'')+
-      '<p id="manifestApplyError" role="alert"></p>',
+      '',
       '<button class="btn primary" id="applyManifest">'+(mode==='merge'?'Apply Manifest Changes':'Start New Day')+'</button><button class="btn" id="closeModal">Cancel</button>');
     draft.forEach((row,i)=>{$('mrNotice'+i).value=row.pickupNotice;$('mrTarget'+i).value=row._target;$('mrKind'+i).value=row.kind==='Return'?'Return':'Outbound';});
-    if($('manifestReparse'))$('manifestReparse').onclick=()=>{sourceText=$('manifestRawText').value;const parsed=M.parse(sourceText);draft=M.deduplicate(parsed.rows);review(parsed.warnings);};
+    function updateRideCount(){
+      const targets=draft.map((_,index)=>$('mrTarget'+index).value);
+      const included=targets.filter(target=>target&&target!=='skip').length;
+      const pending=targets.filter(target=>!target).length;
+      const skipped=targets.filter(target=>target==='skip').length;
+      $('manifestRideCount').textContent=(mode==='merge'?'Rides selected for update: ':'Total rides selected: ')+included+
+        (pending?' · '+pending+' to review':'')+(skipped?' · '+skipped+' skipped':'')+
+        (mode==='merge'?' · '+state.trips.length+' rides already saved':'');
+    }
+    draft.forEach((row,index)=>{
+      const target=$('mrTarget'+index);
+      const button=$('mrDelete'+index);
+      function updateRow(){
+        if(button)button.textContent=target.value==='skip'?'Restore Run':'Delete Run';
+        updateRideCount();
+      }
+      target.onchange=updateRow;
+      if(button)button.onclick=()=>{
+        if(target.value==='skip')target.value=row._beforeDelete??'';
+        else {row._beforeDelete=target.value;target.value='skip';}
+        $('manifestApplyError').textContent='';
+        $('manifestDuplicateResult').textContent='';
+        updateRow();
+      };
+      updateRow();
+    });
+    if($('manifestReparse'))$('manifestReparse').onclick=()=>{sourceText=$('manifestRawText').value;readScreenshotText();};
     $('applyManifest').onclick=apply;
+    $('acceptManifestTop').onclick=apply;
+    const deleteDuplicates=$('skipManifestDuplicates');
+    if(deleteDuplicates)deleteDuplicates.onclick=()=>{
+      let skipped=0;
+      draft.forEach((row,index)=>{
+        const target=$('mrTarget'+index);
+        if(row._overlap&&target.value!=='skip'){
+          row._beforeDelete=target.value;
+          target.value='skip';
+          target.onchange();
+          skipped++;
+        }
+      });
+      $('manifestApplyError').textContent='';
+      $('manifestDuplicateResult').textContent=skipped
+        ?skipped+' possible duplicate '+(skipped===1?'row':'rows')+' marked Skip. Accept Runs to save.'
+        :'All possible duplicates are already marked Skip.';
+    };
   }
   function backup(){
     const snapshot=deep(state);snapshot.events=snapshot.events.map(({restore,...event})=>event);
@@ -127,6 +188,7 @@
         return {target:$('mrTarget'+i).value,row:{riderName,who:riderName.split(/\s+/)[0],scheduled:fromTime($('mrPickup'+i).value),scheduledDrop:fromTime($('mrDrop'+i).value),
           pickupArea:$('mrFrom'+i).value.trim(),dropArea:$('mrTo'+i).value.trim(),kind:$('mrKind'+i).value,pickupNotice:$('mrNotice'+i).value,dialysisReturn:$('mrNotice'+i).value==='dialysis',driveMiles:saved.driveMiles??null,driveMilesEstimated:!!saved.driveMilesEstimated}};
       });
+      if(entries.some(entry=>!entry.target))throw Error('Review each possible duplicate and choose Include or Skip.');
       if(!entries.some(e=>e.target!=='skip'))throw Error('Include at least one run.');
       const clock=currentTime();
       let result;
@@ -142,7 +204,11 @@
       closeModal();selectedTab='dispatch';rosterFilter='All';render();
       routingProvider?.manifestChanged?.();
       toast(summary+' · Undo restores the previous manifest');
-    }catch(error){$('manifestApplyError').textContent=error.message||'Could not save. Your previous day is unchanged.';}
+    }catch(error){
+      const message=$('manifestApplyError');
+      message.textContent=error.message||'Could not save. Your previous day is unchanged.';
+      message.scrollIntoView({block:'nearest'});
+    }
   }
   $('uploadNewManifest').onclick=()=>open('new');
   $('changeManifest').onclick=()=>open('merge');
