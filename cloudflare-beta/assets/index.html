@@ -157,7 +157,7 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-off
 
 <button class="btn" id="themeToggle" type="button">☾ Night</button>
 </div><div class="shell"><header class="top"><div><div class="brand">SERENITY <span class="brand-name">DISPATCH OS</span></div><div class="sub">Cloudflare Demo 003 · Pickup-anchored planning · Public-landmark simulation · NO REAL PATIENT DATA</div></div><div class="header-info"><div class="flex"><span class="pill" id="modeBadge">DEVICE TIME · AUTO</span><strong id="clockTop">—</strong></div></div></header>
-<nav class="mainnav"><button class="btn" data-tab="overview">Overview</button><button class="btn active" data-tab="dispatch">Dispatch</button><button class="btn" data-tab="customer">Customer</button><button class="btn" data-tab="settings">Settings</button></nav><div id="routingBrief" class="micro muted" role="status" style="margin:8px 0">Saved travel estimates · Google routing not active</div>
+<nav class="mainnav"><button class="btn" data-tab="overview">Overview</button><button class="btn active" data-tab="dispatch">Dispatch</button><button class="btn" data-tab="customer">Customer</button><button class="btn" data-tab="settings">Settings</button><button class="btn" id="openAskDispatch">Ask Dispatch</button></nav><div id="routingBrief" class="micro muted" role="status" style="margin:8px 0">Saved travel estimates · Google routing not active</div>
 <div class="toolbar workspace-actions"><button class="btn" id="refresh">Update Day</button><button class="btn" id="routingRefresh" hidden>Refresh Traffic</button><button class="btn" id="undo">Undo Last</button><button class="btn" id="uploadNewManifest">Upload New Manifest</button><button class="btn" id="changeManifest">Change Existing Manifest</button></div>
 <aside id="pickupReminder" class="pickup-reminder" hidden aria-label="Pickup message reminder"><div role="status" aria-live="polite"><strong id="pickupReminderTitle"></strong><div id="pickupReminderDetail" class="small"></div></div><div class="actions"><button class="btn primary" id="pickupReminderReview">Review Pickup Message</button><button class="btn" id="pickupReminderDismiss">Dismiss</button></div></aside>
 <main id="overview" class="page"><div class="section-heading"><div><h1>Day overview</h1><p class="small muted">Your daily totals, forecast and progress.</p></div><button class="btn warn" id="shift">Start Shift</button></div>
@@ -1313,6 +1313,85 @@ document.addEventListener('visibilitychange',()=>{
   refreshLiveClock();
 });
 setInterval(refreshLiveClock,15000);
-</script><script src="/routing.js"></script><script src="/manifest-core.js"></script><script src="/manifest-import.js"></script><script src="/pickup-reminder.js"></script><script src="/address-reports.js"></script></body></html>
+</script><script src="/routing.js"></script><script src="/manifest-core.js"></script><script src="/manifest-import.js"></script><script src="/pickup-reminder.js"></script><script src="/address-reports.js"></script><dialog id="askDispatch" class="panel" aria-labelledby="askDispatchTitle" style="width:min(92vw,38rem);max-height:85vh;color:inherit">
+<form id="askDispatchForm">
+<h2 id="askDispatchTitle">Ask Dispatch</h2>
+<label for="dispatchQuestion">Ask about your route</label>
+<input id="dispatchQuestion" type="text" placeholder="What time will I reach my next pickup?" maxlength="240" required>
+<p class="small muted">Try a rider name, town, or trip number. You can also ask about gaps or late pickups.</p>
+<div class="actions"><button class="btn primary" type="submit">Ask</button><button class="btn" id="closeAskDispatch" type="button">Close</button></div>
+</form>
+<p id="dispatchAnswer" role="status" style="white-space:pre-line"></p>
+</dialog>
+<script>
+(() => {
+  const dialog = $('askDispatch');
+  const input = $('dispatchQuestion');
+  const output = $('dispatchAnswer');
+  const normalize = value => String(value ?? '').toLowerCase().match(/[a-z0-9]+/g)?.join(' ') ?? '';
+
+  function answer(question) {
+    const query = normalize(question);
+    const includes = value => {
+      const target = normalize(value);
+      return target && (' ' + query + ' ').includes(' ' + target + ' ');
+    };
+    const clock = forecastTime();
+    const projected = project(clock);
+    const trips = routeOrder();
+    const remaining = trips.filter(trip => !trip.outcome && trip.status < 6);
+
+    if (/\b(gap|gaps|downtime|dead time|break|free time)\b/.test(query)) {
+      const gaps = remaining.map(trip => availableGap(trip, projected, clock)).filter(Boolean);
+      return gaps.length ? gaps.map(gap =>
+        (gap.projected || gap.rough ? 'Estimated ' : '') + duration(gap.minutes) +
+        ' free from ' + fmt(gap.start) + ' to ' + fmt(gap.leaveBy) +
+        ' before ' + gap.next + ', after allowing for travel and your pickup buffer.'
+      ).join('\n') : 'No usable gap over 45 minutes is currently projected.';
+    }
+    if (/\b(remaining|left)\b/.test(query) && /\b(runs|trips|rides|pickups)\b/.test(query)) {
+      return remaining.length + ' of ' + trips.length + ' runs remaining.';
+    }
+
+    let matches = trips.filter(trip => includes(trip.id));
+    const drop = /\b(drop off|dropoff|destination)\b/.test(query);
+    if (!matches.length) matches = trips.filter(trip =>
+      includes(trip.who) || includes(String(trip.who ?? '').split(/\s+/)[0]) ||
+      includes(drop ? trip.dropArea : trip.pickupArea) || includes(trip.dropArea)
+    );
+    if (!matches.length && /\b(late|behind)\b/.test(query)) {
+      matches = remaining.filter(trip => projected[trip.id]?.pickup > trip.scheduled);
+      if (!matches.length) return 'No pickups with a known ETA are currently projected late.';
+    }
+    if (!matches.length && /\bnext\b/.test(query)) {
+      const next = drop ? currentRide() ?? remaining[0] : remaining.find(trip => trip.status < 2);
+      if (!next) return 'No upcoming ' + (drop ? 'drop-offs' : 'pickups') + '.';
+      matches = [next];
+    }
+    if (!matches.length) return 'I couldn’t match that question. Try a trip number, a rider or town from the manifest, “next pickup,” “late pickups,” or “next gap.”';
+
+    return matches.map(trip => {
+      const estimate = projected[trip.id];
+      const label = trip.id + ' · ' + trip.who + ' · ' + trip.kind;
+      if (trip.outcome && trip.outcome !== 'Completed') return label + ' · ' + trip.outcome;
+      if (estimate?.conflict || estimate?.orderPending) return label + ' · ETA pending confirmation of pickup order.';
+      const pickup = trip.actual['Arrived at Pickup'];
+      const dropoff = trip.actual['Arrived at Drop-Off'] ?? trip.actual.Finished;
+      const timing = (actual, predicted, rough) => Number.isFinite(actual) ? fmt(actual) + ' actual' :
+        Number.isFinite(predicted) ? fmt(predicted) + (rough ? ' rough estimate' : ' estimated') : 'time unavailable';
+      return label + '\nPickup ' + timing(pickup, estimate?.pickup, estimate?.pickupRough) +
+        ' (scheduled ' + fmt(trip.scheduled) + ')' +
+        ' · Drop-off ' + timing(dropoff, estimate?.drop, estimate?.dropRough);
+    }).join('\n\n');
+  }
+
+  $('openAskDispatch').addEventListener('click', () => dialog.showModal());
+  $('closeAskDispatch').addEventListener('click', () => dialog.close());
+  $('askDispatchForm').addEventListener('submit', event => {
+    event.preventDefault();
+    output.textContent = answer(input.value);
+  });
+})();
+</script></body></html>
 
 
