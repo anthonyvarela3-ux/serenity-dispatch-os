@@ -1317,9 +1317,9 @@ setInterval(refreshLiveClock,15000);
 <form id="askDispatchForm">
 <h2 id="askDispatchTitle">Ask Dispatch</h2>
 <label for="dispatchQuestion">Ask about your route</label>
-<input id="dispatchQuestion" type="text" placeholder="What time will I reach my next pickup?" maxlength="240" required>
-<p class="small muted">Try a rider name, town, or trip number. You can also ask about gaps or late pickups.</p>
-<div class="actions"><button class="btn primary" type="submit">Ask</button><button class="btn" id="closeAskDispatch" type="button">Close</button></div>
+<input id="dispatchQuestion" type="text" autocomplete="off" style="display:block;width:100%" placeholder="What time will I reach my next pickup?" maxlength="240" required>
+<p class="small muted">Try a rider name, town, or trip number. You can also ask about gaps, late pickups, shift hours, or estimated driver pay. Voice input uses your browser or keyboard’s dictation.</p>
+<div class="actions"><button class="btn primary" type="submit">Ask</button><button class="btn" id="voiceAskDispatch" type="button">🎙 Dictate</button><button class="btn" id="clearAskDispatch" type="button">Clear</button><button class="btn" id="closeAskDispatch" type="button">Close</button></div>
 </form>
 <p id="dispatchAnswer" role="status" style="white-space:pre-line"></p>
 </dialog>
@@ -1336,6 +1336,15 @@ setInterval(refreshLiveClock,15000);
       const target = normalize(value);
       return target && (' ' + query + ' ').includes(' ' + target + ' ');
     };
+    const wantsPay = /\b(pay|wage[s]?|earn\w*|salary|income|paid)\b|\bhow much\b.*\b(make|made)\b/.test(query);
+    const wantsHours = /\b(hours worked|hours did|hours i|hours for|hours logged|shift hours|work hours|shift duration|how long.*work|how long.*shift)\b/.test(query) || /^(?:my )?hours$/.test(query);
+    if (wantsPay || wantsHours) {
+      const shift = revenue();
+      if (shift.hours == null) return 'There’s no recorded shift start for this manifest. Start or correct the shift in Overview to see hours and estimated driver pay.';
+      const hours = duration(Math.round(shift.hours * 60));
+      const label = state.shift.end == null ? 'Shift so far' : 'Recorded shift';
+      return label + ' · ' + hours + (wantsPay ? ' · Estimated driver pay ' + money(shift.driver) : '') + '.';
+    }
     const clock = forecastTime();
     const projected = project(clock);
     const trips = routeOrder();
@@ -1385,7 +1394,61 @@ setInterval(refreshLiveClock,15000);
     }).join('\n\n');
   }
 
-  $('openAskDispatch').addEventListener('click', () => dialog.showModal());
+  const voice = $('voiceAskDispatch');
+  let listening;
+  function reset() {
+    const previous = listening;
+    listening = null;
+    previous?.abort();
+    voice.textContent = '🎙 Dictate';
+    input.value = '';
+    output.textContent = '';
+  }
+  $('openAskDispatch').addEventListener('click', () => {
+    reset();
+    dialog.showModal();
+  });
+  $('clearAskDispatch').addEventListener('click', reset);
+  dialog.addEventListener('close', reset);
+  voice.addEventListener('click', () => {
+    const fallback = () => {
+      input.focus();
+      output.textContent = 'Tap the microphone on your keyboard to dictate, then tap Ask.';
+    };
+    if (listening) {
+      listening.stop();
+      return;
+    }
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      fallback();
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    listening = recognition;
+    recognition.lang = document.documentElement.lang || 'en-US';
+    recognition.onresult = event => {
+      if (listening !== recognition) return;
+      input.value = Array.from(event.results, result => result[0].transcript).join(' ').slice(0, 240);
+      output.textContent = 'Review your question and tap Ask.';
+    };
+    recognition.onend = () => {
+      if (listening !== recognition) return;
+      listening = null;
+      voice.textContent = '🎙 Dictate';
+    };
+    recognition.onerror = () => {
+      if (listening === recognition) fallback();
+    };
+    try {
+      recognition.start();
+      voice.textContent = 'Stop dictation';
+      output.textContent = 'Listening…';
+    } catch {
+      listening = null;
+      fallback();
+    }
+  });
   $('closeAskDispatch').addEventListener('click', () => dialog.close());
   $('askDispatchForm').addEventListener('submit', event => {
     event.preventDefault();
