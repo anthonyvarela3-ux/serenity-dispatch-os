@@ -32,7 +32,7 @@
     const title=next.trip.who+' · '+(next.remaining===0?'Pickup ETA reached':next.remaining+' min to pickup');
     // Do not repeatedly announce the same minute or steal focus from notes.
     if(title!==lastAnnouncement){$('pickupReminderTitle').textContent=title;lastAnnouncement=title;}
-    $('pickupReminderDetail').textContent='Pickup heads-up ready · ETA '+fmt(next.p.pickup)+(next.p.pickupRough?' · Rough estimate':'')+'. Review the message before sending.';
+    $('pickupReminderDetail').textContent='Pickup heads-up ready · ETA '+fmt(next.p.pickup)+(next.p.pickupRough?' · Rough estimate':'')+'. Prepare a pickup text?';
   }
   function handle(status){
     if(!notice)return;
