@@ -249,7 +249,7 @@ function nextActive(){return state.trips.find(t=>t.status<6&&!t.outcome)}
 function statusText(t){return t.outcome||(t.status===6?'Completed':stages[t.status])}
 const statusColors=['pending','to-pickup','at-pickup','on-board','to-dropoff','at-dropoff','completed'];
 function rideStatus(t,prefix=''){
-  const color=t.outcome==='Canceled at Door'?'canceled-door':
+  const color=closedAtPickup(t)?'canceled-door':
     t.outcome==='Canceled in Advance'?'canceled-advance':
     t.outcome==='Completed'?'completed':
     t.outcome?'canceled':(statusColors[t.status]??'pending');
@@ -350,10 +350,11 @@ function renderRevenue(r){
       ' loaded distance for an estimate.</p>':'')+
     '<div class="events" aria-label="Trip revenue estimates">'+rows+'</div>';
 }
+function closedAtPickup(t){return t.outcome==='Canceled at Door'||t.outcome==='No Show';}
 function routeOrder(){
   const underway=state.trips.filter(t=>!t.outcome&&t.status>=3&&t.status<6);
   const closed=state.trips.filter(t=>t.outcome||t.status===6);
-  const closedTime=t=>t.actual.Finished??t.actual['Canceled at Door']??t.actual['Arrived at Drop-Off']??-1;
+  const closedTime=t=>t.actual.Finished??t.actual['Canceled at Door']??t.actual['No Show']??t.actual['Arrived at Drop-Off']??-1;
   closed.sort((a,b)=>closedTime(a)-closedTime(b));
   return [...closed,...underway,...state.trips.filter(t=>!t.outcome&&t.status<3)];
 }
@@ -363,7 +364,7 @@ function approachOrigins(){
   for(const t of routeOrder()){
     if(t.outcome==='Canceled in Advance')continue;
     origins.set(t.id,previous);
-    previous=t.outcome==='Canceled at Door'?t.id+':pickup':t.id;
+    previous=closedAtPickup(t)?t.id+':pickup':t.id;
   }
   return origins;
 }
@@ -573,7 +574,7 @@ function project(clock=forecastTime()){
 // Every alternative starts from the same latest known stop or the active rider's drop-off.
 function addEarliestPickups(projected,trips,origins,clock,riding){
   const lastStop=trips.reduce((latest,t)=>{
-    const atDoor=t.outcome==='Canceled at Door';
+    const atDoor=closedAtPickup(t);
     const atPickup=!t.outcome&&t.status===2;
     const finished=filterStatus(t)==='Completed';
     if(!atDoor&&!atPickup&&!finished)return latest;
@@ -804,7 +805,7 @@ function modal(title,body,buttons){$('modalRoot').hidden=false;$('modalRoot').in
   if(adjust){adjustQuickField($(adjust.dataset.quickId),adjust.dataset.step);return;}
   if(e.target.classList.contains('modalshade'))closeModal();
 })};function closeModal(){$('modalRoot').hidden=true;$('modalRoot').innerHTML=''}function toast(t){const a=document.createElement('div');a.className='pill';a.textContent=t;a.style='position:fixed;bottom:15px;left:15px;z-index:50;background:#126b72';document.body.appendChild(a);setTimeout(()=>a.remove(),2300)}
-function modifyOutcome(t,outcome){if(!t)return;if(outcome==='Canceled at Door'&&t.status<2){toast('Arrive at pickup first');return}if(!confirm('Mark '+t.id+' '+outcome+'?'))return;routingProvider?.invalidate?.();change(t.id+' '+outcome,()=>{reviseSchedule(()=>{t.outcome=outcome;t.actual[outcome]=state.clock});selectNextRun()})}
+function modifyOutcome(t,outcome){if(!t)return;if(outcome==='No Show'&&(t.outcome||t.status!==2)){toast('No Show is available after Arrived at Pickup and before On Board');return;}if(outcome==='Canceled at Door'&&t.status<2){toast('Arrive at pickup first');return}if(!confirm('Mark '+t.id+' '+outcome+'?'))return;routingProvider?.invalidate?.();change(t.id+' '+outcome,()=>{reviseSchedule(()=>{t.outcome=outcome;t.actual[outcome]=state.clock});selectNextRun()})}
 function connectionLabel(p){
   if(!p.connection?.sameStop)return '';
   return '<div class="info connection-detail">'+(p.connection.roundTrip?'Same-location return':'Same location')+' · 0 min drive</div>';
@@ -825,7 +826,7 @@ function availableGap(next,projected,clock,origins=approachOrigins()){
   const previous=state.trips.find(t=>t.id===(atDoor?origin.slice(0,-7):origin));
   const before=previous&&projected[previous.id],after=projected[next.id];
   if(!previous||!before||!after||before.conflict||before.orderPending||after.conflict||after.orderPending)return null;
-  const actualRelease=atDoor?previous.actual['Canceled at Door']:previous.actual.Finished;
+  const actualRelease=atDoor?previous.actual[previous.outcome]:previous.actual.Finished;
   const release=actualRelease??before.ready??before.drop;
   const leg=connectionTo(next,origin);
   if(!Number.isFinite(release)||!Number.isFinite(leg.minutes)||!Number.isFinite(next.scheduled))return null;
@@ -834,7 +835,7 @@ function availableGap(next,projected,clock,origins=approachOrigins()){
   const minutes=Math.floor(leaveBy-start);
   if(minutes<=45)return null;
   return {previous:previous.id,next:next.id,minutes,start,leaveBy,drive:leg.minutes,buffer,
-    projected:actualRelease==null,confirmedLabel:atDoor?'From canceled-at-door time':'From Finish Run',rough:leg.rough||!!before.dropRough,
+    projected:actualRelease==null,confirmedLabel:atDoor?'From '+previous.outcome.toLowerCase()+' time':'From Finish Run',rough:leg.rough||!!before.dropRough,
     handoff:!atDoor&&previous.status===5&&actualRelease==null};
 }
 function gapBar(gap){
@@ -1005,13 +1006,14 @@ $('customerMain').innerHTML=handoff?
   '<div class="statusline">'+rideStatus(sel,'Status: ')+'<strong>Scheduled '+fmt(sel.scheduled)+'</strong></div>'+
   '<p>'+esc(sel.pickupArea)+'</p>'+pickupGuidance(sel,true)+chainedPickupText(sel,sp)+connectionLabel(sp)+
   '<button class="btn primary big" id="openNextRun">Open Next Run</button>'
-  :sel?'<div class="customer-heading">'+esc(sel.id)+' · '+esc(sel.who)+'</div><div class="statusline">'+rideStatus(sel,'Status: ')+'<span class="small muted">'+esc(sel.kind)+'</span></div>'+pickupGuidance(sel,true)+customerTimes(sel,sp)+tripWaits(sel)+'<div class="actions"><button class="btn primary big" id="customerAdvance" '+(sel.outcome||sel.status===6?'disabled':'')+'>'+esc(sel.status===0&&!sel.outcome?'Start Pickup':stepLabels[sel.status]||'Done')+'</button><button class="btn" id="customerBack" '+(sel.status===0?'disabled':'')+'>↶ Back</button></div>':'<div class="paneltitle" role="status">'+(unfinished.length?'Confirm order with dispatch, then select the trip in Dispatch':'No runs remaining')+'</div>';
+  :sel?'<div class="customer-heading">'+esc(sel.id)+' · '+esc(sel.who)+'</div><div class="statusline">'+rideStatus(sel,'Status: ')+'<span class="small muted">'+esc(sel.kind)+'</span></div>'+pickupGuidance(sel,true)+customerTimes(sel,sp)+tripWaits(sel)+'<div class="actions"><button class="btn primary big" id="customerAdvance" '+(sel.outcome||sel.status===6?'disabled':'')+'>'+esc(sel.status===0&&!sel.outcome?'Start Pickup':stepLabels[sel.status]||'Done')+'</button><button class="btn" id="customerBack" '+(sel.status===0?'disabled':'')+'>↶ Back</button>'+(sel.status===2&&!sel.outcome?'<button class="btn warn" id="customerNoShow">No Show</button>':'')+'</div>':'<div class="paneltitle" role="status">'+(unfinished.length?'Confirm order with dispatch, then select the trip in Dispatch':'No runs remaining')+'</div>';
 $('openNextRun')?.addEventListener('click',()=>{
   state.handoff = null;
   persist();
   render();
   $('customerAdvance')?.focus();
 });
+$('customerNoShow')?.addEventListener('click',()=>modifyOutcome(selected(),'No Show'));
 $('customerAdvance')?.addEventListener('click',()=>logStep(selected()));$('customerBack')?.addEventListener('click',()=>backTrip(selected()));if($('customerAdvance')&&!$('customerAdvance').disabled)installHold($('customerAdvance'),()=>stepMenu(selected()));
 if(!refreshOnly){
 $('pickupGuidanceButton').disabled=!sel;
