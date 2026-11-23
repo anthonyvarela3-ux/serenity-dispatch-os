@@ -1,6 +1,6 @@
 (() => {
   const quotes = new Map(), FLAG = STORE + '_routing_enabled';
-  let unlocked=false, enabled=false, configured=false, verified=false, busy=false;
+  let locating=false,unlocked=false, enabled=false, configured=false, verified=false, busy=false;
   let message='Checking Google routing connection…',usage=null;
   let gps=null,gpsWatch=null,errors=0,lastChecked='',lastCheckedAt=0,manifestVersion=0,needsRefresh=false,pendingStatus=null;
   const status = () => {
@@ -12,7 +12,9 @@
     $('routingBrief').textContent=busy?'Refreshing Google travel estimates…':errors?'Traffic check failed · Manual retry available':snapshot?'Google traffic on arrival/finish · Checked '+lastChecked+(needsRefresh?' · Manifest changed':older?' · Older saved estimates':'')+(locationNow()?' · GPS ready':' · Logged locations'):'Traffic on arrival/finish · '+(unlocked?'Ready when routing is enabled':'Connect Google Routing when ready');
     $('routingConnect').textContent=enabled?'Pause Google Routing':unlocked?'Start Google Routing':'Connect Google Routing';
     $('routingRefresh').hidden=!unlocked;
-    $('routingRefresh').disabled=busy;
+    $('routingRefresh').disabled=busy||locating;
+    const update=$('updateEtas');
+    if(update){update.disabled=busy||locating;update.textContent=locating?'Getting location…':busy?'Updating ETAs…':'Update ETAs';}
     $('routingLocation').hidden=!unlocked;
     $('routingLocation').textContent=gpsWatch==null?'Use iPad Location':'Stop Location';
     $('routingUsage').textContent=(usage?usage.used+' / '+usage.limit+' Google route requests today. ':'')+
@@ -223,6 +225,32 @@
     };
   };
   $('routingRefresh').onclick=()=>routingProvider.refresh();
+  const updateEtas=$('updateEtas');
+  if(updateEtas)updateEtas.onclick=async()=>{
+    if(busy||locating)return;
+    if(!unlocked){$('routingConnect').onclick();return;}
+    const today=date()===localServiceDate();
+    const underway=routeOrder().some(t=>!t.outcome&&[1,3,4].includes(t.status));
+    if(today&&usesDeviceTime()&&underway&&!locationNow()&&navigator.geolocation){
+      const version=manifestVersion;
+      locating=true;status();
+      try{
+        const position=await new Promise(resolve=>navigator.geolocation.getCurrentPosition(
+          resolve,()=>resolve(null),{enableHighAccuracy:true,maximumAge:15000,timeout:4500}
+        ));
+        if(position?.coords.accuracy<=250)gps={
+          latitude:position.coords.latitude,longitude:position.coords.longitude,
+          accuracy:position.coords.accuracy,at:position.timestamp??Date.now()
+        };
+      }catch{
+        // Route from the last logged stop if a device fix is unavailable.
+      }finally{
+        locating=false;status();
+      }
+      if(version!==manifestVersion)return;
+    }
+    await routingProvider.refresh();
+  };
   $('routingLocation').onclick=()=>{
     if(gpsWatch!=null){navigator.geolocation.clearWatch(gpsWatch);gpsWatch=null;gps=null;message='Location off. Active estimates use logged departure times.';status();render(true);return;}
     if(!navigator.geolocation){message='Location is unavailable in this browser.';status();return;}
