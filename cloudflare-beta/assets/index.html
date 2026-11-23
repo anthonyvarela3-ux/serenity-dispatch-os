@@ -552,7 +552,7 @@ function project(clock=forecastTime()){
     const ready=Math.max(clock,actualDrop??dropEta);
     const overdue=t===riding&&actualDrop==null&&clock>=dropEta;
     const projectedPickupRough=combined?previousDepartureRough:cursorRough||connection.rough;
-    const pickup=actualPickup??(activeRide?boarded:plannedPickup);
+    const pickup=actualPickup??(activeRide?boarded:drivingToPickup?arrival:plannedPickup);
     const pickupRough=pickup!=null&&actualPickup==null&&boarded==null&&projectedPickupRough;
     const projectedDropRough=actualDrop==null&&(ride.rough||(!activeRide&&projectedPickupRough));
     result[t.id]={pickup,drop:actualDrop??ready,pickupRough,dropRough:projectedDropRough,
@@ -620,7 +620,7 @@ function earliestPickupText(p){
 }
 function chainedPickupText(t,p){
   if(!p||!Number.isFinite(p.pickup)||t.outcome||t.status===6)return '';
-  const label=t.actual['Arrived at Pickup']!=null?'Arrived at Pickup':t.actual['On Board']!=null?'On Board':'Estimated Pickup Time';
+  const label=t.actual['Arrived at Pickup']!=null?'Arrived at Pickup':t.actual['On Board']!=null?'On Board':t.status===1?'Estimated Arrival at Pickup':'Estimated Pickup Time';
   const detail=p.conflict?' · If first':p.orderPending?' · Order pending':p.pickupRough?' · Rough':p.pickupGoogle?' · Google traffic':'';
   return '<div class="info earliest-pickup">'+label+' · '+fmt(p.pickup)+detail+'</div>';
 }
@@ -643,6 +643,7 @@ function cockpitTownLabel(trip,side){
 function pickupText(t,p){
   if(t.actual['Arrived at Pickup']!=null)return 'Arrived '+fmt(p.pickup);
   if(t.actual['On Board']!=null)return 'On board '+fmt(p.pickup);
+  if(t.status===1&&!p.conflict&&!p.orderPending)return 'En route · scheduled pickup unchanged';
   return 'After preceding runs'+(p.conflict?' · If first':p.orderPending?' · Order pending':p.pickupRough?' · Rough':'');
 }
 function dropLabel(t,p){
