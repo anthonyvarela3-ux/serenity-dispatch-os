@@ -3,7 +3,19 @@
   let locating=false,unlocked=false, enabled=false, configured=false, verified=false, busy=false;
   let message='Checking Google routing connection…',usage=null;
   let gps=null,gpsWatch=null,errors=0,lastChecked='',lastCheckedAt=0,manifestVersion=0,needsRefresh=false,pendingStatus=null;
+  let latestTraffic=null;
+  const trafficClock=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'2-digit'});
+  function freshnessText(now){
+    if(!enabled)return 'Traffic last updated: — · Routing paused or disconnected';
+    if(!latestTraffic||latestTraffic.serviceDate!==date())return 'Traffic last updated: — · No route refresh yet';
+    const minutes=Math.max(0,Math.floor((now-latestTraffic.at)/60000));
+    const age=minutes===0?'just now':minutes<60?minutes+' min ago':Math.floor(minutes/60)+'h '+minutes%60+'m ago';
+    return 'Traffic last updated: '+trafficClock.format(latestTraffic.at)+' · '+age+
+      (errors?' · Latest check failed':needsRefresh?' · Manifest changed':'');
+  }
   const status = () => {
+    const freshness=$('etaFreshness');
+    if(freshness)freshness.textContent=freshnessText(Date.now());
     const snapshot=enabled&&verified&&lastCheckedAt>0;
     const older=snapshot&&[...quotes.values()].some(q=>Date.now()-q.fetchedAt>(q.remaining?10:30)*60000);
     const location=locationNow()?'Device location ready.':gpsWatch==null?'Location off; active rides use logged departure times.':'Waiting for a usable device location.';
@@ -120,6 +132,7 @@
     const version=manifestVersion;
     const data=await api('/api/routes',{origin:from,destination:to,departureTime:departureISO(depart)});
     if(version!==manifestVersion)return;
+    latestTraffic={at:Date.now(),serviceDate:date()};
     quotes.set(id,{...data,signature,remaining,destination:to,serviceDate:date(),departMinute:depart,asOfMinute:currentTime()});
     if(id.startsWith('ride:')&&!remaining&&Number.isFinite(data.miles)&&data.miles>=0){
       const trip=state.trips.find(t=>t.id===id.slice(5));
@@ -217,10 +230,10 @@
       return cycle(id);
     },
     refresh:()=>{enabled=true;try{localStorage.setItem(FLAG,'true');}catch{}return cycle();},
-    manifestChanged(){manifestVersion++;pendingStatus=null;needsRefresh=true;message='Manifest changed. ETAs have recalculated; tap Refresh Traffic when you want updated Google travel times.';status();},
+    manifestChanged(){manifestVersion++;pendingStatus=null;latestTraffic=null;needsRefresh=true;message='Manifest changed. ETAs have recalculated; tap Refresh Traffic when you want updated Google travel times.';status();},
   };
   $('routingConnect').onclick=async()=>{
-    if(enabled){manifestVersion++;enabled=false;verified=false;lastCheckedAt=0;quotes.clear();try{localStorage.setItem(FLAG,'false');}catch{}message='Google routing paused. Saved travel assumptions are in use.';status();render(true);return;}
+    if(enabled){manifestVersion++;enabled=false;verified=false;lastCheckedAt=0;latestTraffic=null;quotes.clear();try{localStorage.setItem(FLAG,'false');}catch{}message='Google routing paused. Saved travel assumptions are in use.';status();render(true);return;}
     if(unlocked){enabled=true;try{localStorage.setItem(FLAG,'true');}catch{}message='';status();render(true);return;}
     modal('Connect Google Routing',
       '<p>Paste the same Google Routes key you saved privately in Cloudflare. This unlocks traffic estimates for this browser for up to 18 hours.</p>'+
