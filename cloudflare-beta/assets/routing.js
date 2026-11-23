@@ -121,6 +121,13 @@
     const data=await api('/api/routes',{origin:from,destination:to,departureTime:departureISO(depart)});
     if(version!==manifestVersion)return;
     quotes.set(id,{...data,signature,remaining,destination:to,serviceDate:date(),departMinute:depart,asOfMinute:currentTime()});
+    if(id.startsWith('ride:')&&!remaining&&Number.isFinite(data.miles)&&data.miles>=0){
+      const trip=state.trips.find(t=>t.id===id.slice(5));
+      if(trip&&trip.pickupArea===from&&trip.dropArea===to){
+        trip.loadedRoute={pickup:from,dropoff:to,miles:data.miles};
+        persist();
+      }
+    }
   }
   async function probe() {
     const data=await api('/api/routing/probe',{});
@@ -147,13 +154,21 @@
       message='This manifest is for an earlier date. Google routing is paused.';status();return;
     }
     const trips=routeOrder().filter(t=>!t.outcome&&t.status!==6);
-    if(!trips.length){errors=0;message='All runs are closed. No Google requests were needed.';status();return;}
+    if(!trips.length&&!state.trips.some(t=>filterStatus(t)==='Completed'&&tripRevenue(t).cents==null)){errors=0;message='All runs are closed. No Google requests were needed.';status();return;}
     const selected=eventId?statusRoutes(eventId,trips):null;
-    if(selected&&!selected.size)return;
+    if(selected&&!selected.size&&!state.trips.some(t=>t.id===eventId&&filterStatus(t)==='Completed'&&tripRevenue(t).cents==null))return;
     const version=manifestVersion;
     busy=true;status();
     try {
       if(!verified)await probe();
+      const completedMissing=state.trips.filter(t=>filterStatus(t)==='Completed'&&tripRevenue(t).cents==null&&(!eventId||t.id===eventId));
+      const backfill=eventId?completedMissing[0]:null;
+      if(backfill&&selected.size>=2)selected.delete([...selected].at(-1));
+      for(const trip of (eventId?(backfill?[backfill]:[]):completedMissing)){
+        if(version!==manifestVersion)return;
+        const departure=trip.actual?.['En Route to Drop-Off']??currentTime();
+        await requestQuote('ride:'+trip.id,trip.pickupArea,trip.dropArea,Math.max(currentTime(),departure),false);
+      }
       const origins=approachOrigins();
       for(const t of trips){
         if(version!==manifestVersion)return;
