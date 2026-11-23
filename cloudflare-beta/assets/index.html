@@ -164,7 +164,7 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-off
 <div class="metrics"><div class="metric"><div class="m-title">Progress</div><div class="m-value" id="mProgress">0 / 8</div></div><div class="metric"><div class="m-title">Next pickup variance</div><div class="m-value" id="mVariance">—</div></div><div class="metric"><div class="m-title">Remaining trips</div><div class="m-value" id="mRemaining">8</div></div><div class="metric"><div class="m-title">Shift duration</div><div class="m-value" id="mShift">—</div></div><div class="metric"><div class="m-title">Projected home</div><div class="m-value" id="mHome">—</div></div></div><section class="panel"><div class="paneltitle">DAILY TIMING · ESTIMATED</div><div class="checkpoints" id="checkpoints"></div></section>
 <div class="grid overview-grid"><div><div class="panel" id="activePanel"></div><div class="panel" id="revenuePanel"><div class="revenuehead"><div><div class="paneltitle" style="margin-bottom:2px">REVENUE</div><div class="small muted">Driver income · Vehicle revenue</div></div><button type="button" class="btn" id="revenueToggle" aria-expanded="false" aria-controls="revenueBody">Show ▾</button></div><div id="revenueBody" hidden></div><div class="micro muted" style="margin-top:9px">Hold for details.</div></div><div class="panel"><div class="paneltitle">COMPLETIONS</div><div id="dayCounts" class="actions"></div></div></div><div><section class="weather-card" aria-label="Bay Shore weather forecast"><div class="weather-head"><strong>Bay Shore weather</strong><button class="btn" id="weatherRefresh" type="button">Refresh</button></div><div id="weatherBody"><span class="small muted">Loading forecast…</span></div><div id="weatherAlerts" class="weather-alerts"></div><div id="weatherUpdated" class="weather-updated"></div></section><section class="panel"><div class="paneltitle">SCHEDULE NOTES</div><div class="warninglist" id="warnings"></div></section><details class="panel"><summary>Beta timing information</summary><p class="small muted">Fictional test data and public landmarks only. Estimates use your clock, trip status and saved driving assumptions; live traffic is not connected yet.</p></details></div></div></main>
 <main id="dispatch" class="page hidden"><section class="panel dispatch-panel"><div class="section-heading"><div><h1>Dispatch</h1><p class="small muted">Full-day schedule · Tap a rider for Customer · Hold ◇ for corrections</p></div></div><div class="panel" id="betweenRuns" hidden></div><div class="dispatch-scroll"><div class="notice" id="pickupConflicts" role="status" hidden></div><div class="rosthead"><span>Trip</span><span>Rider</span><span>Scheduled / ETA</span><span>Drop-off / ETA</span><span>Variance</span><span>Status</span></div><div class="filterbar" id="statusFilters" aria-label="Manifest status filters"><button type="button" class="btn active" data-filter="All">All</button><button type="button" class="btn" data-filter="Pending">Pending</button><button type="button" class="btn" data-filter="Active">Active</button><button type="button" class="btn" data-filter="Completed">Completed</button><button type="button" class="btn" data-filter="Canceled">Canceled</button></div><div id="roster"></div></div></section></main>
-<main id="customer" class="page hidden"><div class="grid"><div class="panel"><div id="customerMain"></div><div class="actions" style="margin-top:14px"><button class="btn" id="reportAddress">Report Wrong Address</button><button class="btn" id="pickupGuidanceButton">Pickup Guidance</button></div><p id="addressReportHint" class="small muted" role="status"></p></div><div class="panel"><div class="paneltitle">DRIVER NOTES <span class="muted small">· Fictional test data only</span></div><div class="field"><label>Customer / facility instructions</label><textarea id="notes" placeholder="Door, pickup point, call preference…"></textarea></div><button class="btn primary" id="saveNotes">Save Notes</button><div class="field"><label for="phone">Verified phone</label><input id="phone" type="tel" autocomplete="off" placeholder="Phone number"></div><button class="btn" id="savePhone">Save Verified Number</button><div class="paneltitle" style="margin-top:18px">CUSTOMER MESSAGES</div>
+<main id="customer" class="page hidden"><div class="grid"><div class="panel"><div id="customerMain"></div><div class="actions" style="margin-top:14px"><button class="btn" id="reportAddress">Report Wrong Address</button><button class="btn" id="pickupGuidanceButton">Pickup Guidance</button></div><p id="addressReportHint" class="small muted" role="status"></p></div><div class="panel"><div class="paneltitle">DRIVER NOTES <span class="muted small">· Fictional test data only</span></div><div class="field"><label>Customer / facility instructions</label><textarea id="notes" placeholder="Door, pickup point, call preference…"></textarea></div><button class="btn primary" id="saveNotes">Save Notes</button><div class="field"><label for="phone">Verified phone</label><input id="phone" type="tel" autocomplete="off" placeholder="Phone number"></div><div class="actions"><button class="btn" id="copyPhone" type="button">Copy Phone Number</button><button class="btn" id="savePhone">Save Verified Number</button></div><p id="copyPhoneFeedback" class="small muted" role="status"></p><div class="paneltitle" style="margin-top:18px">CUSTOMER MESSAGES</div>
 <div class="actions" aria-label="Message language"><button class="btn" id="messageEn" aria-pressed="true">English</button><button class="btn" id="messageEs" aria-pressed="false">Español</button></div>
 <div class="actions" style="margin-top:10px" aria-label="Message templates">
 <button class="btn" id="macro10">10m Out</button><button class="btn" id="macroEarly">Running Early</button><button class="btn" id="macroCurb">At Curb</button><button class="btn" id="macroLate">Running Late</button><button class="btn" id="macroConfirm">Confirm Pickup</button></div>
@@ -1017,7 +1017,7 @@ $('customerNoShow')?.addEventListener('click',()=>modifyOutcome(selected(),'No S
 $('customerAdvance')?.addEventListener('click',()=>logStep(selected()));$('customerBack')?.addEventListener('click',()=>backTrip(selected()));if($('customerAdvance')&&!$('customerAdvance').disabled)installHold($('customerAdvance'),()=>stepMenu(selected()));
 if(!refreshOnly){
 $('pickupGuidanceButton').disabled=!sel;
-$('notes').value=sel?.notes||'';$('phone').value=sel?.phone||'';
+$('notes').value=sel?.notes||'';$('phone').value=sel?.phone||'';if($('copyPhoneFeedback'))$('copyPhoneFeedback').textContent='';
 $('manifestRows').innerHTML=state.trips.map(t=>'<div class="event"><strong>'+esc(t.id)+'</strong> · '+esc(t.who)+' · '+fmt(t.scheduled)+' · '+esc(t.kind)+' · '+rideStatus(t)+' <button class="btn" data-edit="'+esc(t.id)+'" style="float:right;padding:4px 7px">Edit</button></div>').join('');for(const k of ['commute','garagePrep','early','firstDrive','hourlyRate','overtimeAfter','overtimeMultiplier'])$(k).value=(k==='early'?Math.max(0,Math.min(15,state.settings.early??10)):state.settings[k])??({hourlyRate:22.5,overtimeAfter:8,overtimeMultiplier:1.5}[k]);
 document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===selectedTab));document.querySelectorAll('.page').forEach(e=>e.classList.toggle('hidden',e.id!==selectedTab));
 }
@@ -1125,6 +1125,24 @@ async function copyMessageText(text){
     return false;
   }
 }
+if($('copyPhone'))$('copyPhone').onclick=async()=>{
+  const field=$('phone'),feedback=$('copyPhoneFeedback'),trip=selected();
+  const value=field.value;
+  const number=messagePhone(value);
+  if(!trip||!number){
+    feedback.textContent=value.trim()?'Enter a valid phone number first.':'No phone number to copy.';
+    return;
+  }
+  const copied=await copyMessageText(number);
+  if(trip!==selected()||field.value!==value)return;
+  if(copied){
+    feedback.textContent='Phone number copied. Paste it into Google Voice.';
+  }else{
+    field.focus();
+    field.select();
+    feedback.textContent='Phone number selected. Use your device’s Copy command.';
+  }
+};
 $('messageEn').onclick=()=>setMessageLanguage('en');
 $('messageEs').onclick=()=>setMessageLanguage('es');
 for(const [id,type] of [['macro10','10'],['macroEarly','early'],['macroCurb','curb'],['macroLate','late'],['macroConfirm','confirm']])
