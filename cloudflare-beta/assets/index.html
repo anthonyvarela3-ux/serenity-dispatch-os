@@ -282,6 +282,9 @@ function revenueTown(area){
 function revenueMiles(trip){
   if(typeof trip.driveMiles==='number'&&Number.isFinite(trip.driveMiles)&&trip.driveMiles>=0)
     return {miles:Math.round(trip.driveMiles*10)/10,source:trip.driveMilesEstimated?'Town-based loaded mileage estimate':'Saved loaded mileage'};
+  const route=trip.loadedRoute;
+  if(route?.pickup===trip.pickupArea&&route?.dropoff===trip.dropArea&&Number.isFinite(route?.miles)&&route.miles>=0)
+    return {miles:route.miles,source:'Google Routes · pickup to drop-off'};
   const pickup=revenueTown(trip.pickupArea),drop=revenueTown(trip.dropArea);
   if(pickup&&drop&&pickup[0]!==drop[0]){
     const rad=value=>value*Math.PI/180;
@@ -1314,7 +1317,7 @@ document.addEventListener('visibilitychange',()=>{
   refreshLiveClock();
 });
 setInterval(refreshLiveClock,15000);
-</script><script src="/routing.js?v=eta-control-1"></script><script src="/manifest-core.js"></script><script src="/manifest-import.js"></script><script src="/pickup-reminder.js"></script><script src="/address-reports.js"></script><dialog id="askDispatch" class="panel" aria-labelledby="askDispatchTitle" style="width:min(92vw,38rem);max-height:85vh;color:inherit">
+</script><script src="/routing.js?v=loaded-mileage-1"></script><script src="/manifest-core.js"></script><script src="/manifest-import.js"></script><script src="/pickup-reminder.js"></script><script src="/address-reports.js"></script><dialog id="askDispatch" class="panel" aria-labelledby="askDispatchTitle" style="width:min(92vw,38rem);max-height:85vh;color:inherit">
 <form id="askDispatchForm">
 <h2 id="askDispatchTitle">Ask Dispatch</h2>
 <label for="dispatchQuestion">Ask about your route</label>
