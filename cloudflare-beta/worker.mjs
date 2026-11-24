@@ -48,10 +48,14 @@ export class RoutingBudget {
     const path = new URL(request.url).pathname;
     const fuel = path === '/consume-fuel';
     const consume = fuel || path === '/consume';
-    const limit = fuel ? 2 : 150;
+    const now = Date.now();
+    // Allow one extra production lookup for the November 23 fuel test.
+    const fuelTestEnds = Date.parse('2026-11-24T00:00:00-05:00');
+    const dailyFuelLimit = now < fuelTestEnds ? 3 : 2;
+    const limit = fuel ? dailyFuelLimit : 150;
     const minuteLimit = fuel ? 3 : 20;
-    const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
-    const minute = Math.floor(Date.now() / 60000);
+    const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+    const minute = Math.floor(now / 60000);
     const result = await this.ctx.storage.transaction(async tx => {
       let counts = await tx.get('counts');
       if (counts?.date !== date) counts = { date, used: 0, minute, minuteUsed: 0 };
