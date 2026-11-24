@@ -45,17 +45,21 @@ function waypoint(value) {
 export class RoutingBudget {
   constructor(ctx) { this.ctx = ctx; }
   async fetch(request) {
-    const consume = new URL(request.url).pathname === '/consume';
+    const path = new URL(request.url).pathname;
+    const fuel = path === '/consume-fuel';
+    const consume = fuel || path === '/consume';
+    const limit = fuel ? 30 : 150;
+    const minuteLimit = fuel ? 3 : 20;
     const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
     const minute = Math.floor(Date.now() / 60000);
     const result = await this.ctx.storage.transaction(async tx => {
       let counts = await tx.get('counts');
       if (counts?.date !== date) counts = { date, used: 0, minute, minuteUsed: 0 };
       if (counts.minute !== minute) { counts.minute = minute; counts.minuteUsed = 0; }
-      if (consume && counts.used >= 150) return { error: 'DAILY_ROUTE_LIMIT', used: counts.used, limit: 150 };
-      if (consume && counts.minuteUsed >= 20) return { error: 'ROUTE_RATE_LIMIT', used: counts.used, limit: 150 };
+      if (consume && counts.used >= limit) return { error: fuel ? 'FUEL_DAILY_LIMIT' : 'DAILY_ROUTE_LIMIT', used: counts.used, limit };
+      if (consume && counts.minuteUsed >= minuteLimit) return { error: fuel ? 'FUEL_RATE_LIMIT' : 'ROUTE_RATE_LIMIT', used: counts.used, limit };
       if (consume) { counts.used++; counts.minuteUsed++; await tx.put('counts', counts); }
-      return { used: counts.used, limit: 150, remaining: 150 - counts.used };
+      return { used: counts.used, limit, remaining: limit - counts.used };
     });
     return json(result, result.error ? 429 : 200);
   }
@@ -119,6 +123,69 @@ async function googleRoute(body, env) {
   return json({ minutes: Math.ceil(seconds / 60), miles: route.distanceMeters / 1609.344,
     fetchedAt: Date.now(), trafficAware: !data.fallbackInfo, source: 'Google Routes', usage });
 }
+const FUEL_GRADES = new Set(['REGULAR_UNLEADED', 'MIDGRADE', 'PREMIUM', 'DIESEL']);
+const METERS_PER_MILE = 1609.344;
+function distanceMiles(from, to) {
+  const radians = degrees => degrees * Math.PI / 180;
+  const h = Math.sin(radians(to.latitude - from.latitude) / 2) ** 2 +
+    Math.cos(radians(from.latitude)) * Math.cos(radians(to.latitude)) *
+    Math.sin(radians(to.longitude - from.longitude) / 2) ** 2;
+  return 6371008.8 * 2 * Math.asin(Math.sqrt(Math.min(1, h))) / METERS_PER_MILE;
+}
+function fuelStation(place, center) {
+  const location = place?.location;
+  if (place?.postalAddress?.regionCode !== 'US' || !Number.isFinite(location?.latitude) ||
+      !Number.isFinite(location?.longitude) || !place.displayName?.text) return null;
+  const miles = distanceMiles(center, location);
+  if (miles > 10) return null;
+  const prices = {};
+  for (const report of place.fuelOptions?.fuelPrices ?? []) {
+    const price = report.price;
+    if (!FUEL_GRADES.has(report.type) || price?.currencyCode !== 'USD') continue;
+    const amount = Number(price.units ?? 0) + Number(price.nanos ?? 0) / 1e9;
+    if (!Number.isFinite(amount) || amount <= 0) continue;
+    prices[report.type] = { amount, updatedAt: Number.isFinite(Date.parse(report.updateTime)) ? report.updateTime : null };
+  }
+  const directions = new URL('https://www.google.com/maps/dir/');
+  directions.search = new URLSearchParams({ api: '1', travelmode: 'driving',
+    destination: place.formattedAddress || location.latitude + ',' + location.longitude });
+  if (place.id) directions.searchParams.set('destination_place_id', place.id);
+  return { name: place.displayName.text, address: place.formattedAddress, miles, prices, directions: directions.href };
+}
+async function nearbyFuel(request, env) {
+  if (!env.GOOGLE_PLACES_API_KEY || !env.ROUTING_BUDGET) return json({ error: 'FUEL_NOT_CONFIGURED' }, 503);
+  if (!await authorized(request, env)) return json({ error: 'ROUTING_LOCKED' }, 401);
+  let center;
+  try {
+    const body = await readBody(request);
+    center = waypoint(body).location?.latLng;
+    if (!center) throw new Error('INVALID_LOCATION');
+  } catch { return json({ error: 'INVALID_LOCATION' }, 400); }
+  try {
+    // A separate object keeps fuel searches outside the Routes request budget.
+    const allowance = await env.ROUTING_BUDGET.getByName('single-driver-fuel-budget-v1')
+      .fetch(new Request('https://budget.internal/consume-fuel', { method: 'POST' }));
+    if (!allowance.ok) return allowance;
+    const response = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
+      method: 'POST', signal: AbortSignal.timeout(12000),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': env.GOOGLE_PLACES_API_KEY,
+        'X-Goog-FieldMask': 'places.id,places.location,places.displayName,places.formattedAddress,places.postalAddress,places.fuelOptions,places.attributions',
+      },
+      body: JSON.stringify({ includedTypes: ['gas_station'], rankPreference: 'DISTANCE', maxResultCount: 20,
+        locationRestriction: { circle: { center, radius: 10 * METERS_PER_MILE } }, regionCode: 'US' }),
+    });
+    if (!response.ok) return json({ error: 'FUEL_PROVIDER_UNAVAILABLE' }, 502);
+    const data = await response.json();
+    const matched = (data.places ?? []).map(place => ({ place, station: fuelStation(place, center) }))
+      .filter(match => match.station);
+    const attributions = [...new Set(matched.flatMap(({ place }) =>
+      (place.attributions ?? []).map(attribution => attribution.provider).filter(Boolean)))];
+    const stations = matched.map(({ station }) => station).sort((a, b) => a.miles - b.miles);
+    return json({ stations, attributions, checkedAt: Date.now() });
+  } catch { return json({ error: 'FUEL_PROVIDER_UNAVAILABLE' }, 502); }
+}
 export default {
   async fetch(request, env) {
     const path = new URL(request.url).pathname;
@@ -148,6 +215,11 @@ export default {
         const value = expiry + '.' + nonce + '.' + await signature(env.GOOGLE_MAPS_API_KEY, new URL(request.url).host + '.' + expiry + '.' + nonce);
         return json({ unlocked: true }, 200, { 'Set-Cookie': COOKIE + '=' + value + '; Secure; HttpOnly; SameSite=Strict; Path=/; Max-Age=' + SESSION_SECONDS });
       } catch { return json({ error: 'INVALID_REQUEST' }, 400); }
+    }
+    if (path === '/api/fuel') {
+      if (request.method !== 'POST') return json({ error: 'METHOD_NOT_ALLOWED' }, 405, { Allow: 'POST' });
+      if (!ownOrigin(request)) return json({ error: 'ORIGIN_DENIED' }, 403);
+      return nearbyFuel(request, env);
     }
     if (path === '/api/routes' || path === '/api/routing/probe') {
       if (request.method !== 'POST') return json({ error: 'METHOD_NOT_ALLOWED' }, 405);
