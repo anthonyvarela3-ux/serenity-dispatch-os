@@ -7,16 +7,29 @@
   const refresh = byId('gasRefresh');
   const demo = document.body.hasAttribute('data-driver-demo');
   const dollars = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+  const fuelSearchTerms = { REGULAR_UNLEADED: 'regular gas', MIDGRADE: 'midgrade gas', PREMIUM: 'premium gas', DIESEL: 'diesel' };
   let data;
   let lookup;
+
+  function updateSearchLinks() {
+    const nearby = byId('gasSearchNearby');
+    const cheapest = byId('gasSearchCheapest');
+    if (!nearby || !cheapest) return;
+    const fuel = fuelSearchTerms[grade.value];
+    const search = query => 'https://www.google.com/search?' + new URLSearchParams({ q: query });
+    nearby.href = search(`${fuel} prices near me`);
+    cheapest.href = search(`cheapest ${fuel} within 10 miles of me`);
+  }
 
   function showPrices() {
     if (!data) return;
     const { stations, attributions = [] } = data;
-    const reported = stations.map(station => station.prices[grade.value]?.amount).filter(Number.isFinite);
-    byId('gasRange').textContent = reported.length
-      ? `10-mile reported range: ${dollars.format(Math.min(...reported))} low · ${dollars.format(Math.max(...reported))} high per gallon (${reported.length} of ${stations.length} stations checked)`
-      : 'No prices reported for this grade within the search results.';
+    const reported = stations.map(station => ({ station, amount: station.prices[grade.value]?.amount }))
+      .filter(entry => Number.isFinite(entry.amount)).sort((a, b) => a.amount - b.amount);
+    const lowest = reported[0];
+    byId('gasRange').textContent = lowest
+      ? `Lowest reported within 10 mi: ${dollars.format(lowest.amount)}/gal at ${lowest.station.name} (${lowest.station.miles.toFixed(1)} mi). High: ${dollars.format(reported.at(-1).amount)}/gal. Prices reported for ${reported.length} of ${stations.length} stations checked.`
+      : 'Google Places returned no prices for this grade. Check Google Search for more prices.';
     const list = byId('gasStations');
     list.replaceChildren();
     for (const station of stations.slice(0, 5)) {
@@ -145,7 +158,11 @@
     void find();
   });
   refresh.addEventListener('click', find);
-  grade.addEventListener('change', showPrices);
+  updateSearchLinks();
+  grade.addEventListener('change', () => {
+    updateSearchLinks();
+    showPrices();
+  });
   dialog.addEventListener('close', () => {
     lookup?.abort();
     lookup = undefined;

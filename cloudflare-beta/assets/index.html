@@ -1408,6 +1408,11 @@ setInterval(refreshLiveClock,15000);
 <form method="dialog"><button class="btn">Close</button></form>
 </div>
 <p id="gasStatus" role="status"></p>
+<div class="actions" role="group" aria-label="Compare prices on Google">
+<a class="btn" id="gasSearchNearby" href="https://www.google.com/search?q=regular+gas+prices+near+me" target="_blank" rel="noopener noreferrer">Google nearby prices</a>
+<a class="btn" id="gasSearchCheapest" href="https://www.google.com/search?q=cheapest+regular+gas+within+10+miles+of+me" target="_blank" rel="noopener noreferrer">Google cheapest within 10 mi</a>
+</div>
+<p class="small muted">Google opens in a new tab and uses its location settings. Search results may include stations farther away.</p>
 <details class="small muted"><summary>Location and price data</summary>
 <p>Find Gas sends your current coordinates to the Serenity server and Google Maps to look up nearby stations. The lookup uses coordinates only, and Serenity does not save them or the price results. Google Maps data is subject to the <a href="https://www.google.com/intl/en_US/help/terms_maps/" target="_blank" rel="noopener noreferrer">Google Maps Terms of Service</a> and <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google Privacy Policy</a>.</p>
 </details>
@@ -1417,7 +1422,7 @@ setInterval(refreshLiveClock,15000);
 <p id="gasSource" class="small" translate="no" style="font-weight:400;font-family:Roboto,sans-serif"></p>
 </div>
 </dialog>
-<script src="/find-gas.js?v=2"></script>
+<script src="/find-gas.js?v=3"></script>
 <dialog id="askDispatch" class="panel" aria-labelledby="askDispatchTitle" style="width:min(92vw,38rem);max-height:85vh;color:inherit">
 <form id="askDispatchForm">
 <h2 id="askDispatchTitle">Ask Dispatch</h2>
