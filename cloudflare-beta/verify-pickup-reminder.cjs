@@ -11,7 +11,7 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
  }
  for(const m of html.split('<script>')[0].matchAll(/id="([^"]+)"/g))ids[m[1]]=new Element(m[1]);ids.modalRoot.hidden=true;
  const context=vm.createContext({console,confirm:()=>true,setTimeout(){},clearTimeout(){},setInterval(){},
-   document:{visibilityState:'visible',documentElement:new Element(),getElementById:id=>ids[id]??null,querySelectorAll:()=>[],addEventListener:(type,fn)=>(documentEvents[type]??=[]).push(fn),createElement:()=>new Element(),body:{appendChild(){}}},
+   document:{visibilityState:'visible',documentElement:new Element(),getElementById:id=>ids[id]??null,querySelector:()=>null,querySelectorAll:()=>[],addEventListener:(type,fn)=>(documentEvents[type]??=[]).push(fn),createElement:()=>new Element(),body:{appendChild(){}}},
    localStorage:{getItem:k=>saved[k]??null,setItem:(k,v)=>saved[k]=v},
    navigator:{userAgent:'Mozilla/5.0 (Linux; Android 16; Pixel 9 Pro XL) Chrome/142 Mobile',clipboard:{writeText:async text=>copied.push(text)}},
    window:{open:(...args)=>opened.push(args),addEventListener:(type,fn)=>(windowEvents[type]??=[]).push(fn)},
@@ -34,9 +34,9 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
  assert.equal(ids.notes.value,'Unsaved note');assert.equal(ids.phone.value,'Unsaved number');
  assert.equal(opened.length,0);assert.equal(copied.length,0,'An alert cannot open an app, send a message or write the clipboard');
  ids.pickupReminderReview.onclick();
- assert.match(ids.modalRoot.innerHTML,/Hi, it&#39;s Anthony from Serenity/);
- assert.match(ids.modalRoot.innerHTML,/approximately ten minutes out/);
- assert.match(ids.modalRoot.innerHTML,/sms:\+15555550123\?body=/);
+ assert.match(ids.pickupReminderDraft.value,/Hi Alex, it's Anthony from Serenity/);
+ assert.match(ids.pickupReminderDraft.value,/approximately ten minutes out/);
+ assert.match(ids.pickupReminderSms.attributes.href,/sms:\+15555550123\?body=/);
  assert.match(ids.modalRoot.innerHTML,/class="btn primary" id="pickupReminderSms"/,'Android keeps the native SMS draft primary');
  assert.equal(run('state.selected'),'F-002','Reviewing another rider does not replace the selected run or unsaved notes');
  await ids.pickupReminderCopy.onclick();assert.match(copied[0],/approximately ten minutes/);
@@ -57,27 +57,41 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
  run("state.clockMode='device';state.serviceDate='2099-01-01';pickupReminderController.tick();");assert.equal(ids.pickupReminder.hidden,true,'Tomorrow previews cannot notify today');
  run("state.serviceDate=localServiceDate();deviceTime=()=> '09:22';state.trips[1].who='Short ride';pickupReminderController.tick();");
  assert.equal(ids.pickupReminder.hidden,false);ids.pickupReminderReview.onclick();
- assert.match(ids.modalRoot.innerHTML,/just a few minutes out/);assert.doesNotMatch(ids.modalRoot.innerHTML,/ten minutes out/);
- assert.match(ids.modalRoot.innerHTML,/id="pickupReminderSms" aria-disabled="true"/);
+ assert.match(ids.pickupReminderDraft.value,/just a few minutes out/);assert.doesNotMatch(ids.pickupReminderDraft.value,/ten minutes out/);
+ assert.equal(ids.pickupReminderSms.attributes['aria-disabled'],'true');
  run("closeModal();state.trips[1].who='Spanish test';state.trips[1].messageLanguage='es';pickupReminderController.tick();");ids.pickupReminderReview.onclick();
- assert.match(ids.modalRoot.innerHTML,/Hola, soy Anthony de Serenity/);assert.match(ids.modalRoot.innerHTML,/solo unos minutos/);
+ assert.match(ids.pickupReminderDraft.value,/Hola Spanish, soy Anthony de Serenity/);assert.match(ids.pickupReminderDraft.value,/solo unos minutos/);
  run("closeModal();deviceTime=()=> '09:29';state.trips[1].who='ETA reached';pickupReminderController.tick();");ids.pickupReminderReview.onclick();
- assert.doesNotMatch(ids.modalRoot.innerHTML,/ten minutes|diez minutos|solo unos minutos/,'An overdue estimate does not pretend the driver is ten minutes away');
+ assert.doesNotMatch(ids.pickupReminderDraft.value,/ten minutes|diez minutos|solo unos minutos/,'An overdue estimate does not pretend the driver is ten minutes away');
  run("closeModal();deviceTime=()=> '09:15';state.trips[1].who='Predeparture test';state.trips[1].status=0;state.selected=state.trips[1].id;selectedMessageType='10';render();");
  await ids.copyMessage.onclick();run('state.trips[1].status=1;pickupReminderController.tick();');
  assert.equal(ids.pickupReminder.hidden,false,'Testing a draft before departure does not suppress the later driving reminder');
  run("closeModal();deviceTime=()=> '09:15';state.trips[1].who='Manual draft';state.selected=state.trips[1].id;selectedMessageType='10';render();");
  await ids.copyMessage.onclick();run('pickupReminderController.tick();');
  assert.equal(ids.pickupReminder.hidden,true,'Preparing the regular 10-minute macro also handles its automatic reminder');
- run("navigator.userAgent='iPad';state.trips[1].who='Web draft';render();");
+ run("navigator.userAgent='iPad';Object.assign(state.trips[1],{who:'Taylor',riderName:'Taylor Example',phone:'+15555550124',messageLanguage:'en'});deviceTime=()=> '09:14';render();");
+ assert.equal(ids.modalRoot.hidden,true,'The iPad does not open a draft at 11 minutes');
+ run("modal('Unrelated form','<p>Keep this open</p>');deviceTime=()=> '09:15';pickupReminderController.tick();");
+ assert.match(ids.modalRoot.innerHTML,/Unrelated form/);
+ run('closeModal();pickupReminderController.offerDraft();');
+ assert.match(ids.modalRoot.innerHTML,/Ready to send a pickup text\?/,'The iPad opens the due draft without a tap');
+ assert.equal(ids.pickupReminderRecipient.textContent,'To Taylor Example · +15555550124');
+ assert.match(ids.pickupReminderDraft.value,/Hi Taylor, it's Anthony from Serenity.*ten minutes out/);
+ assert.equal(opened.length,0);
+ const copiesBefore= copied.length;
+ run('closeModal();pickupReminderController.tick();');
+ assert.equal(ids.modalRoot.hidden,true,'Later leaves the banner without a second pop-up');
+ assert.equal(ids.pickupReminder.hidden,false);
+ assert.equal(copied.length,copiesBefore,'The draft does not copy or open another service before review');
  ids.pickupReminderReview.onclick();
  assert.match(ids.modalRoot.innerHTML,/class="btn primary" id="pickupReminderMessagesWeb" href="https:\/\/messages\.google\.com\/web\/" target="_blank" rel="noopener noreferrer"/);
- assert.match(ids.modalRoot.innerHTML,/id="pickupReminderSms" aria-disabled="true"/,'The web handoff works with contacts saved on the phone');
- await ids.pickupReminderMessagesWeb.onclick();
- assert.match(copied.at(-1),/Estoy a unos diez minutos/);
+ run("deviceTime=()=> '09:22';pickupReminderController.refreshOpenDraft();");
+ assert.match(ids.pickupReminderDraft.value,/just a few minutes out/);
+ await ids.pickupReminderMessagesWeb.onclick({preventDefault(){assert.fail('The current draft may open Google Messages');}});
+ assert.match(copied.at(-1),/Hi Taylor,.*just a few minutes out/);
  assert.match(ids.pickupReminderFeedback.textContent,/Select the recipient in Google Messages and paste/);
  assert.equal(opened.length,0,'The handoff uses a normal link and does not launch outside a link click');
- run("closeModal();state.trips[1].who='Web from Customer';render();");
+ run("closeModal();state.trips[1].who='Web from Customer';state.trips[1].messageLanguage='es';render();");
  assert.match(html,/id="openMessagesWeb" href="https:\/\/messages\.google\.com\/web\/" target="_blank"/);
  await ids.openMessagesWeb.onclick({preventDefault(){assert.fail('A selected rider can open Google Messages');}});
  assert.match(copied.at(-1),/Estoy a unos diez minutos/);
@@ -85,6 +99,11 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
  run("navigator.clipboard.writeText=async()=>{throw Error('Clipboard denied')};");
  await ids.openMessagesWeb.onclick({preventDefault(){}});
  assert.match(ids.messageFeedback.textContent,/copy the preview manually/);
+ run("state.trips[1].who='Arrived during review';render();state.trips[1].status=2;");
+ let prevented=false;
+ await ids.pickupReminderMessagesWeb.onclick({preventDefault(){prevented=true;}});
+ assert.equal(prevented,true,'An arrival recorded while the draft is open prevents the handoff');
+ assert.match(ids.pickupReminderEta.textContent,/no longer due/);
  assert.equal(run("state.trips[0].actual['En Route to Pickup']"),540);
  console.log('Pickup reminders pass ETA-based threshold, persistent once-per-run handling, correct recipient/language, short/overdue wording, no automatic external action, preserved notes/selection/actuals, future-date/status/cancellation suppression and independent next-run reminders.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

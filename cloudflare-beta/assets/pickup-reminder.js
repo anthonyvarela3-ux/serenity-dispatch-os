@@ -3,7 +3,7 @@
   const KEY=STORE+'_pickup_reminders_v1';
   let ledger={};
   try{const saved=JSON.parse(localStorage.getItem(KEY));if(saved&&typeof saved==='object'&&!Array.isArray(saved))ledger=saved;}catch{}
-  let notice=null,lastAnnouncement='';
+  let notice=null,lastAnnouncement='',draftView=null;
   const keyFor=t=>JSON.stringify([state.serviceDate||localServiceDate(),t.id,t.who]);
   const save=()=>{try{
     const entries=Object.entries(ledger).sort((a,b)=>(b[1]?.recordedAt||0)-(a[1]?.recordedAt||0)).slice(0,150);
@@ -32,49 +32,106 @@
     const title=next.trip.who+' · '+(next.remaining===0?'Pickup ETA reached':next.remaining+' min to pickup');
     // Do not repeatedly announce the same minute or steal focus from notes.
     if(title!==lastAnnouncement){$('pickupReminderTitle').textContent=title;lastAnnouncement=title;}
-    $('pickupReminderDetail').textContent='Pickup heads-up ready · ETA '+fmt(next.p.pickup)+(next.p.pickupRough?' · Rough estimate':'')+'. Prepare a pickup text?';
+    $('pickupReminderDetail').textContent='Pickup text ready to review · ETA '+fmt(next.p.pickup)+(next.p.pickupRough?' · Rough estimate':'')+'.';
+    if(canShowDraft()&&!ledger[next.key].prompted)showDraft(next);
   }
-  function handle(status){
-    if(!notice)return;
-    ledger[notice.key]={...ledger[notice.key],status,handledAt:Date.now()};save();
-    $('pickupReminder').hidden=true;
+  function canShowDraft(){
+    return appleSmsDevice()&&$('modalRoot').hidden&&!activePointers.size&&
+      !document.querySelector('dialog[open]')&&
+      !document.activeElement?.matches('input, textarea, select, [contenteditable="true"]');
   }
-  function review(){
-    // Recheck the current status/ETA at the click, rather than using an old banner.
-    const current=candidate(project(),currentTime());
-    if(!current){tick();return;}
-    notice=current;
-    const trip=current.trip,body=messageFor(trip,current.type),phone=messagePhone(trip.phone);
-    const useMessagesWeb=appleSmsDevice(),link=smsDraftUrl(phone,body,useMessagesWeb);
-    handle('reviewed');
-    modal('Pickup message · '+trip.who,
-      '<p>Estimated arrival '+fmt(current.p.pickup)+(current.p.pickupRough?' · Rough estimate':'')+'.</p>'+
-      '<label for="pickupReminderDraft">Message preview</label><textarea id="pickupReminderDraft" rows="5" readonly>'+esc(body)+'</textarea>'+
-      '<p class="small">'+(phone?'Recipient · '+esc(trip.who)+' · '+esc(phone):'Choose a contact in your messaging app, or save a verified number in Customer to open an SMS draft.')+'</p>'+
+  function handle(current,status){
+    if(!current)return;
+    ledger[current.key]={...ledger[current.key],status,handledAt:Date.now()};save();
+    if(notice?.key===current.key){notice=null;$('pickupReminder').hidden=true;}
+  }
+  function showingDraft(){
+    return draftView&&!$('modalRoot').hidden&&$('pickupReminderDraft')===draftView.text;
+  }
+  function updateDraft(){
+    const view=draftView;
+    const latest=candidate(project(),currentTime());
+    const valid=latest?.key===view.key;
+    const body=valid?messageFor(latest.trip,latest.type,undefined,true):'';
+    const phone=valid?messagePhone(latest.trip.phone):null;
+    const changed=view.text.value!==body||view.phone!==phone;
+    view.text.value=body;
+    view.phone=phone;
+    view.eta.textContent=valid?'Estimated arrival '+fmt(latest.p.pickup)+(latest.p.pickupRough?' · Rough estimate':'')+'.':
+      'This pickup text is no longer due.';
+    view.recipient.textContent=valid?'To '+(latest.trip.riderName?.trim()||latest.trip.who)+(phone?' · '+phone:' · Select the contact in Google Messages'):'';
+    const link=smsDraftUrl(phone,body,view.useMessagesWeb);
+    view.sms.setAttribute('aria-disabled',String(!link));
+    if(link)view.sms.setAttribute('href',link);else view.sms.removeAttribute('href');
+    view.web.setAttribute('aria-disabled',String(!valid));
+    view.voice.disabled=!valid;view.copy.disabled=!valid;
+    return {latest:valid?latest:null,changed};
+  }
+  function showDraft(current){
+    ledger[current.key]={...ledger[current.key],prompted:true};save();
+    const useMessagesWeb=appleSmsDevice();
+    modal('Ready to send a pickup text?',
+      '<p class="small" id="pickupReminderRecipient"></p><p id="pickupReminderEta"></p>'+
+      '<label for="pickupReminderDraft">Message preview</label><textarea id="pickupReminderDraft" rows="5" readonly></textarea>'+
       '<p class="small muted">'+(useMessagesWeb?'In Google Messages, select the recipient, paste the draft and tap Send.':'Review and send the draft from your messaging app.')+'</p><p id="pickupReminderFeedback" role="status"></p>',
       '<a class="btn'+(useMessagesWeb?' primary':'')+'" id="pickupReminderMessagesWeb" href="https://messages.google.com/web/" target="_blank" rel="noopener noreferrer">Copy &amp; Open Google Messages</a>'+
-      '<a class="btn'+(useMessagesWeb?'':' primary')+'" id="pickupReminderSms" '+(link?'href="'+esc(link)+'"':'aria-disabled="true"')+'>Open SMS Draft</a>'+
+      '<a class="btn'+(useMessagesWeb?'':' primary')+'" id="pickupReminderSms">Open SMS Draft</a>'+
       '<button class="btn" id="pickupReminderVoice">Copy &amp; Open Google Voice</button>'+
-      '<button class="btn" id="pickupReminderCopy">Copy Message</button><button class="btn" id="closeModal">Close</button>');
-    const feedback=$('pickupReminderFeedback');
-    $('pickupReminderMessagesWeb').onclick=()=>copyForGoogleMessages(body,feedback);
-    $('pickupReminderSms').onclick=event=>{
-      if(!phone){event.preventDefault();$('pickupReminderFeedback').textContent='Save a verified phone number first.';return;}
-      $('pickupReminderFeedback').textContent='Opening a draft. Delivery is not confirmed by Serenity.';
+      '<button class="btn" id="pickupReminderCopy">Copy Message</button><button class="btn" id="closeModal">Later</button>'+
+      '<button class="btn" id="pickupReminderSkip">Skip This Pickup</button>');
+    const view=draftView={key:current.key,useMessagesWeb,text:$('pickupReminderDraft'),eta:$('pickupReminderEta'),
+      recipient:$('pickupReminderRecipient'),sms:$('pickupReminderSms'),web:$('pickupReminderMessagesWeb'),
+      voice:$('pickupReminderVoice'),copy:$('pickupReminderCopy'),feedback:$('pickupReminderFeedback'),phone:null,handled:false};
+    updateDraft();
+    function ready(event){
+      if(view.handled){event?.preventDefault();return null;}
+      const {latest,changed}=updateDraft();
+      if(!latest||changed){
+        event?.preventDefault();
+        view.feedback.textContent=latest?'The draft just updated. Review it before continuing.':view.eta.textContent;
+        return null;
+      }
+      return latest;
+    }
+    function finish(latest){
+      view.handled=true;handle(latest,'reviewed');
+    }
+    view.web.onclick=async event=>{
+      const latest=ready(event);
+      if(!latest)return;
+      if(await copyForGoogleMessages(view.text.value,view.feedback))finish(latest);
     };
-    $('pickupReminderCopy').onclick=async()=>{
-      const copied=await copyMessageText(body);
-      $('pickupReminderFeedback').textContent=copied?'Message copied.':'Select and copy the message from the preview.';
+    view.sms.onclick=event=>{
+      const latest=ready(event);
+      if(!latest)return;
+      if(!view.phone){event.preventDefault();return;}
+      view.feedback.textContent='Opening SMS draft.';finish(latest);
     };
-    $('pickupReminderVoice').onclick=async()=>{
+    view.copy.onclick=async()=>{
+      const latest=ready();if(!latest)return;
+      const copied=await copyMessageText(view.text.value);
+      view.feedback.textContent=copied?'Message copied.':'Select and copy the message from the preview.';
+      if(copied)finish(latest);
+    };
+    view.voice.onclick=async()=>{
+      const latest=ready();if(!latest)return;
+      const copying=copyMessageText(view.text.value);
       window.open('https://voice.google.com/messages','_blank','noopener,noreferrer');
-      const copied=await copyMessageText(body);
-      $('pickupReminderFeedback').textContent=copied?'Message copied. Choose the recipient in Google Voice and paste.':'Choose the recipient in Google Voice, then copy the message from this preview.';
+      const copied=await copying;
+      view.feedback.textContent=copied?'Message copied. Choose the recipient in Google Voice and paste.':'Return to this tab and copy from the preview.';
+      if(copied)finish(latest);
+    };
+    $('pickupReminderSkip').onclick=()=>{
+      handle(current,'dismissed');closeModal();
     };
   }
-  $('pickupReminderReview').onclick=review;
-  $('pickupReminderDismiss').onclick=()=>{handle('dismissed');notice=null;};
-  pickupReminderController={tick,prepared(trip,type){
+  $('pickupReminderReview').onclick=()=>{
+    const current=candidate(project(),currentTime());
+    if(current)showDraft(current);else tick();
+  };
+  $('pickupReminderDismiss').onclick=()=>handle(notice,'dismissed');
+  pickupReminderController={tick,refreshOpenDraft(){if(showingDraft()&&!draftView.handled)updateDraft();},
+    offerDraft(){if(canShowDraft()&&state.trips.some(t=>!t.outcome&&t.status===1))tick();},prepared(trip,type){
     if(!trip||type!=='10'||trip.status!==1||trip.outcome||previewingServiceDay()||(state.serviceDate&&state.serviceDate!==localServiceDate()))return;
     const key=keyFor(trip);
     ledger[key]={status:'reviewed',tripId:trip.id,recordedAt:Date.now(),handledAt:Date.now()};save();
