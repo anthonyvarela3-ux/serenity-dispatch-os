@@ -48,7 +48,7 @@ export class RoutingBudget {
     const path = new URL(request.url).pathname;
     const fuel = path === '/consume-fuel';
     const consume = fuel || path === '/consume';
-    const limit = fuel ? 30 : 150;
+    const limit = fuel ? 2 : 150;
     const minuteLimit = fuel ? 3 : 20;
     const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
     const minute = Math.floor(Date.now() / 60000);
