@@ -153,7 +153,8 @@ function fuelStation(place, center) {
   return { name: place.displayName.text, address: place.formattedAddress, miles, prices, directions: directions.href };
 }
 async function nearbyFuel(request, env) {
-  if (!env.GOOGLE_PLACES_API_KEY || !env.ROUTING_BUDGET) return json({ error: 'FUEL_NOT_CONFIGURED' }, 503);
+  const apiKey = env.GOOGLE_PLACES_API_KEY?.trim();
+  if (!apiKey || !env.ROUTING_BUDGET) return json({ error: 'FUEL_NOT_CONFIGURED' }, 503);
   if (!await authorized(request, env)) return json({ error: 'ROUTING_LOCKED' }, 401);
   let center;
   try {
@@ -170,13 +171,14 @@ async function nearbyFuel(request, env) {
       method: 'POST', signal: AbortSignal.timeout(12000),
       headers: {
         'Content-Type': 'application/json',
-        'X-Goog-Api-Key': env.GOOGLE_PLACES_API_KEY,
+        'X-Goog-Api-Key': apiKey,
         'X-Goog-FieldMask': 'places.id,places.location,places.displayName,places.formattedAddress,places.postalAddress,places.fuelOptions,places.attributions',
       },
       body: JSON.stringify({ includedTypes: ['gas_station'], rankPreference: 'DISTANCE', maxResultCount: 20,
         locationRestriction: { circle: { center, radius: 10 * METERS_PER_MILE } }, regionCode: 'US' }),
     });
-    if (!response.ok) return json({ error: 'FUEL_PROVIDER_UNAVAILABLE' }, 502);
+    if (!response.ok) return json({ error: 'FUEL_PROVIDER_REJECTED',
+      upstreamStatus: response.status, diagnostic: await googleDiagnostic(response) }, 502);
     const data = await response.json();
     const matched = (data.places ?? []).map(place => ({ place, station: fuelStation(place, center) }))
       .filter(match => match.station);

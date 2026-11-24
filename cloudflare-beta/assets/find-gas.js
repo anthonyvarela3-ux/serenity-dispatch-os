@@ -100,11 +100,27 @@
       const payload = await response.json();
       if (request.signal.aborted) return;
       if (!response.ok) {
+        if (payload.error === 'FUEL_PROVIDER_REJECTED') {
+          const reason = payload.diagnostic?.reason;
+          const explanations = {
+            API_KEY_INVALID: 'Google did not accept the saved Places key. Check the value in the Cloudflare production secret.',
+            API_KEY_EXPIRED: 'The saved Places key has expired.',
+            API_KEY_NOT_FOUND: 'Google could not find the saved Places key.',
+            SERVICE_DISABLED: 'Enable Places API (New) in the project that owns the saved key.',
+            API_KEY_SERVICE_BLOCKED: 'Allow Places API (New) in the saved key’s API restrictions.',
+            API_KEY_IP_ADDRESS_BLOCKED: 'The saved key’s IP restrictions blocked the Cloudflare Worker.',
+            API_KEY_HTTP_REFERRER_BLOCKED: 'The saved key’s website restriction blocked the server request.',
+            BILLING_DISABLED: 'Check billing for the Google Cloud project that owns the Places key.',
+          };
+          const detail = reason || payload.diagnostic?.status || 'HTTP ' + payload.upstreamStatus;
+          throw new Error(`${explanations[reason] || 'Google Places returned an error.'} (${detail})`);
+        }
         const messages = {
           FUEL_NOT_CONFIGURED: 'Live fuel prices are awaiting Google Places setup.',
           ROUTING_LOCKED: 'Connect Google Routing in Settings, then try Find Gas again.',
           FUEL_RATE_LIMIT: 'Wait a minute, then try again.',
           FUEL_DAILY_LIMIT: 'Today’s fuel-search limit has been reached.',
+          FUEL_PROVIDER_UNAVAILABLE: 'Serenity could not complete the fuel lookup. Try again later.',
         };
         throw new Error(messages[payload.error] || 'Fuel prices are temporarily unavailable. Try again later.');
       }
