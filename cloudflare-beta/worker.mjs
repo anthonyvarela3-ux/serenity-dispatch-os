@@ -1,5 +1,7 @@
 const VERSION = 'google-routing-beta-v1';
-const COOKIE = '__Host-serenity-routing', SESSION_SECONDS = 18 * 3600;
+const COOKIE = '__Host-serenity-routing';
+const SESSION_SECONDS = 18 * 3600, REMEMBERED_SECONDS = 30 * 24 * 3600;
+const sessionCookie = (value, seconds) => COOKIE + '=' + value + '; Secure; HttpOnly; SameSite=Strict; Path=/; Max-Age=' + seconds;
 const encoder = new TextEncoder();
 const json = (body, status = 200, headers = {}) => new Response(JSON.stringify(body), {
   status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...headers },
@@ -23,7 +25,7 @@ async function authorized(request, env) {
   const [expiry, nonce, supplied, extra] = cookie.split('.');
   if (extra || !/^\d{10}$/.test(expiry) || !/^[0-9a-f]{32}$/.test(nonce) || !/^[0-9a-f]{64}$/.test(supplied)) return false;
   const now = Math.floor(Date.now() / 1000);
-  if (+expiry <= now || +expiry > now + SESSION_SECONDS) return false;
+  if (+expiry <= now || +expiry > now + REMEMBERED_SECONDS) return false;
   return equal(supplied, await signature(env.GOOGLE_MAPS_API_KEY, new URL(request.url).host + '.' + expiry + '.' + nonce));
 }
 function ownOrigin(request) {
@@ -216,11 +218,17 @@ export default {
         const body = await readBody(request);
         if (typeof body.key !== 'string' || body.key.length > 256 || !equal(await digest(body.key.trim()), await digest(env.GOOGLE_MAPS_API_KEY)))
           return json({ error: 'KEY_NOT_MATCHED' }, 401);
-        const expiry = String(Math.floor(Date.now() / 1000) + SESSION_SECONDS);
+        const seconds = body.rememberBrowser === true ? REMEMBERED_SECONDS : SESSION_SECONDS;
+        const expiry = String(Math.floor(Date.now() / 1000) + seconds);
         const nonce = hex(crypto.getRandomValues(new Uint8Array(16)));
         const value = expiry + '.' + nonce + '.' + await signature(env.GOOGLE_MAPS_API_KEY, new URL(request.url).host + '.' + expiry + '.' + nonce);
-        return json({ unlocked: true }, 200, { 'Set-Cookie': COOKIE + '=' + value + '; Secure; HttpOnly; SameSite=Strict; Path=/; Max-Age=' + SESSION_SECONDS });
+        return json({ unlocked: true }, 200, { 'Set-Cookie': sessionCookie(value, seconds) });
       } catch { return json({ error: 'INVALID_REQUEST' }, 400); }
+    }
+    if (path === '/api/routing/lock') {
+      if (request.method !== 'POST') return json({ error: 'METHOD_NOT_ALLOWED' }, 405, { Allow: 'POST' });
+      if (!ownOrigin(request)) return json({ error: 'ORIGIN_DENIED' }, 403);
+      return json({ unlocked: false }, 200, { 'Set-Cookie': sessionCookie('', 0) });
     }
     if (path === '/api/fuel') {
       if (request.method !== 'POST') return json({ error: 'METHOD_NOT_ALLOWED' }, 405, { Allow: 'POST' });

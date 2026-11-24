@@ -23,7 +23,8 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
      if(!url.startsWith('/api/'))return new Response('{}',{status:503});
      const body=options.body?JSON.parse(options.body):null;calls.push({url,body});
      if(url==='/api/routing/status')return new Response(JSON.stringify({configured:true,unlocked:serverUnlocked}));
-     if(url==='/api/routing/unlock'){assert.equal(body.key,'private-test-key');serverUnlocked=true;return new Response('{"unlocked":true}');}
+     if(url==='/api/routing/unlock'){assert.deepEqual(body,{key:'private-test-key',rememberBrowser:true});serverUnlocked=true;return new Response('{"unlocked":true}');}
+     if(url==='/api/routing/lock'){serverUnlocked=false;return new Response('{"unlocked":false}');}
      if(url==='/api/routes'&&holdRoute){const wait=holdRoute;holdRoute=null;await wait;}
      if(deny)return new Response(JSON.stringify({error:'GOOGLE_ACCESS_DENIED',...(diagnostic?{upstreamStatus:400,diagnostic}:{})}),{status:502});
      const minutes=url.endsWith('probe')?15:typeof body.origin==='object'?8:
@@ -38,6 +39,8 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
  run(fs.readFileSync('assets/routing.js','utf8'));await flush();
  assert.equal(calls.length,1,'Page load only checks session, never spends on unauthenticated routing');
  await ids.routingConnect.onclick();ids.routingUnlockKey.value='private-test-key';
+ assert.match(ids.modalRoot.innerHTML,/id="routingRemember" type="checkbox" checked/);
+ ids.routingRemember.checked=true;
  await ids.routingUnlockSubmit.onclick();await flush();
  assert.equal(ids.routingUnlockKey.value,'','Key input is cleared immediately');
  assert.ok(!JSON.stringify(saved).includes('private-test-key'));
@@ -159,6 +162,16 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
  deny=true;run('testMs+=60000;testMinute++;logStep(state.trips[0],true);');await flush();
  assert.match(ids.routingStatus.textContent,/billing/);start=paid();run('routingProvider.tick();render();');await flush();assert.equal(paid(),start,'Failures do not auto-retry');
  await ids.routingConnect.onclick();run('backTrip(state.trips[0]);logStep(state.trips[0],true);');await flush();assert.equal(paid(),start,'Paused routing stays paused on arrival');
+ deny=false;
+ run(fs.readFileSync('assets/routing.js','utf8'));
+ const unlocks=calls.filter(c=>c.url==='/api/routing/unlock').length;
+ await ids.updateEtas.onclick();await flush();
+ assert.equal(calls.filter(c=>c.url==='/api/routing/unlock').length,unlocks,'Update ETAs waits for session status and uses the existing cookie');
+ assert.equal(ids.modalRoot.hidden,true);
+ assert.equal(ids.routingForget.hidden,false);
+ await ids.routingForget.onclick();
+ assert.equal(serverUnlocked,false);assert.equal(ids.routingForget.hidden,true);
+ assert.match(ids.routingStatus.textContent,/removed from this browser/);
  console.log('Arrival/finish checks pass all six stages across six runs, <=49 attempts, at most two routes per event, future ETA propagation, fresh-route reuse, latest-event coalescing, preserved timestamps, pause/preview/Undo guards and no error retry.');
  console.log('Browser routing integration passes explicit Google refresh, no polling on clock/import/GPS/reload, unchanged check timestamps, retained older quotes, private unlock, future departure conversion, chained next pickup, actual events, GPS remaining duration, provider failure and pause fallback checks.');
 })().catch(e=>{console.error(e);process.exitCode=1;});

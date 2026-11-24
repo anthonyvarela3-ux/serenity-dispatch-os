@@ -1,6 +1,7 @@
 (() => {
   const quotes = new Map(), FLAG = STORE + '_routing_enabled';
-  let locating=false,unlocked=false, enabled=false, configured=false, verified=false, busy=false;
+  let locating=false,unlocked=false,enabled=false,verified=false,busy=false,forgetting=false;
+  let sessionChecked=false,sessionCheck=null;
   let message='Checking Google routing connection…',usage=null;
   let gps=null,gpsWatch=null,errors=0,lastChecked='',lastCheckedAt=0,manifestVersion=0,needsRefresh=false,pendingStatus=null;
   let latestTraffic=null;
@@ -24,9 +25,13 @@
     $('routingBrief').textContent=busy?'Refreshing Google travel estimates…':errors?'Traffic check failed · Manual retry available':snapshot?'Google traffic on arrival/finish · Checked '+lastChecked+(needsRefresh?' · Manifest changed':older?' · Older saved estimates':'')+(locationNow()?' · GPS ready':' · Logged locations'):'Traffic on arrival/finish · '+(unlocked?'Ready when routing is enabled':'Connect Google Routing when ready');
     $('routingConnect').textContent=enabled?'Pause Google Routing':unlocked?'Start Google Routing':'Connect Google Routing';
     $('routingRefresh').hidden=!unlocked;
-    $('routingRefresh').disabled=busy||locating;
+    $('routingConnect').disabled=forgetting;
+    $('routingRefresh').disabled=busy||locating||forgetting;
+    const forget=$('routingForget');
+    forget.hidden=!unlocked;
+    forget.disabled=busy||locating||forgetting;
     const update=$('updateEtas');
-    if(update){update.disabled=busy||locating;update.textContent=locating?'Getting location…':busy?'Updating ETAs…':'Update ETAs';}
+    if(update){update.disabled=busy||locating||forgetting;update.textContent=locating?'Getting location…':busy?'Updating ETAs…':'Update ETAs';}
     $('routingLocation').hidden=!unlocked;
     $('routingLocation').textContent=gpsWatch==null?'Use iPad Location':'Stop Location';
     $('routingUsage').textContent=(usage?usage.used+' / '+usage.limit+' Google route requests today. ':'')+
@@ -142,6 +147,20 @@
       }
     }
   }
+  function checkSession(){
+    if(sessionCheck)return sessionCheck;
+    sessionCheck=api('/api/routing/status').then(data=>{
+      sessionChecked=true;unlocked=data.unlocked;
+      try{enabled=unlocked&&localStorage.getItem(FLAG)==='true';}catch{}
+      message=!data.configured?'The private Google routing setup is incomplete.':
+        unlocked?'':'Connect Google Routing to authorize this browser.';
+      return true;
+    }).catch(()=>{
+      message='Google routing connection unavailable. Saved estimates remain in use.';
+      return false;
+    }).finally(()=>{sessionCheck=null;status();});
+    return sessionCheck;
+  }
   async function probe() {
     const data=await api('/api/routing/probe',{});
     verified=true;usage=data.usage;errors=0;
@@ -162,7 +181,7 @@
     return selected;
   }
   async function cycle(eventId=null) {
-    if(busy||!enabled||!unlocked||document.visibilityState==='hidden')return;
+    if(busy||forgetting||!enabled||!unlocked||document.visibilityState==='hidden')return;
     if(!/^\d{4}-\d{2}-\d{2}$/.test(date())||date()<localServiceDate()) {
       message='This manifest is for an earlier date. Google routing is paused.';status();return;
     }
@@ -233,30 +252,48 @@
     manifestChanged(){manifestVersion++;pendingStatus=null;latestTraffic=null;needsRefresh=true;message='Manifest changed. ETAs have recalculated; tap Refresh Traffic when you want updated Google travel times.';status();},
   };
   $('routingConnect').onclick=async()=>{
+    if(!sessionChecked&&!await checkSession())return;
+    if(forgetting)return;
     if(enabled){manifestVersion++;enabled=false;verified=false;lastCheckedAt=0;latestTraffic=null;quotes.clear();try{localStorage.setItem(FLAG,'false');}catch{}message='Google routing paused. Saved travel assumptions are in use.';status();render(true);return;}
     if(unlocked){enabled=true;try{localStorage.setItem(FLAG,'true');}catch{}message='';status();render(true);return;}
     modal('Connect Google Routing',
-      '<p>Paste the same Google Routes key you saved privately in Cloudflare. This unlocks traffic estimates for this browser for up to 18 hours.</p>'+
+      '<p>Enter the Google Routes key saved in Cloudflare to authorize this browser.</p>'+
       '<label for="routingUnlockKey">Private Routes API key</label><input id="routingUnlockKey" type="password" autocomplete="off" autocapitalize="none" spellcheck="false">'+
-      '<p class="micro muted">The key is sent only to your Serenity server to unlock this session. It is not saved in browser storage or exported manifests. Connecting tests one public-landmark route, then requests travel estimates using this manifest’s addresses. Maximum: 150 Google route requests per day.</p><p id="routingUnlockError" role="alert"></p>',
+      '<label class="guidance-check" style="margin-top:12px"><input id="routingRemember" type="checkbox" checked> Remember this browser for 30 days</label>'+
+      '<p class="micro muted">Serenity saves the connection in a secure cookie. The key stays out of browser storage and exported manifests. Leave the box unchecked on a shared device for an 18-hour connection.</p><p id="routingUnlockError" role="alert"></p>',
       '<button class="btn primary" id="routingUnlockSubmit">Unlock and Test Connection</button><button class="btn" id="closeModal">Cancel</button>');
     $('routingUnlockSubmit').onclick=async()=>{
       const input=$('routingUnlockKey'),key=input.value.trim();
-      if(!key){$('routingUnlockError').textContent='Paste your Routes API key.';return;}
-      input.value='';$('routingUnlockSubmit').disabled=true;
+      const submit=$('routingUnlockSubmit'),feedback=$('routingUnlockError');
+      if(!key){feedback.textContent='Paste your Routes API key.';return;}
+      input.value='';submit.disabled=true;feedback.textContent='';
       try{
-        await api('/api/routing/unlock',{key});
+        await api('/api/routing/unlock',{key,rememberBrowser:$('routingRemember').checked});
         unlocked=true;enabled=true;verified=false;
         try{localStorage.setItem(FLAG,'true');}catch{}
-        closeModal();await cycle();
-      }catch(error){$('routingUnlockError').textContent=error.message;$('routingUnlockSubmit').disabled=false;}
+        if($('routingUnlockSubmit')===submit)closeModal();
+        await cycle();
+      }catch(error){feedback.textContent=error.message;submit.disabled=false;}
     };
+  };
+  $('routingForget').onclick=async()=>{
+    if(busy||locating||forgetting||!unlocked)return;
+    forgetting=true;status();
+    try{
+      await api('/api/routing/lock',{});
+      manifestVersion++;pendingStatus=null;unlocked=false;enabled=false;verified=false;
+      lastCheckedAt=0;latestTraffic=null;quotes.clear();usage=null;errors=0;
+      try{localStorage.setItem(FLAG,'false');}catch{}
+      message='Routing connection removed from this browser.';render(true);
+    }catch{message='Could not remove the routing connection. Try again.';}
+    finally{forgetting=false;status();}
   };
   $('routingRefresh').onclick=()=>routingProvider.refresh();
   const updateEtas=$('updateEtas');
   if(updateEtas)updateEtas.onclick=async()=>{
-    if(busy||locating)return;
-    if(!unlocked){$('routingConnect').onclick();return;}
+    if(!sessionChecked&&!await checkSession())return;
+    if(busy||locating||forgetting)return;
+    if(!unlocked)return $('routingConnect').onclick();
     const today=date()===localServiceDate();
     const underway=routeOrder().some(t=>!t.outcome&&[1,3,4].includes(t.status));
     if(today&&usesDeviceTime()&&underway&&!locationNow()&&navigator.geolocation){
@@ -297,12 +334,6 @@
     change('Update garage starting address',()=>state.settings.garageAddress=value);
     routingProvider.manifestChanged();toast('Garage address saved');
   };
-  api('/api/routing/status').then(data=>{
-    configured=data.configured;unlocked=data.unlocked;usage=data.usage;
-    try{enabled=unlocked&&localStorage.getItem(FLAG)==='true';}catch{}
-    message=!configured?'The private Google routing setup is incomplete.':
-      unlocked?'Arrival and Finish Run buttons refresh relevant travel estimates when routing is enabled. Refresh Traffic checks the full remaining schedule.':'Private key saved on server. Connect Google Routing to unlock this browser.';
-    status();
-  }).catch(()=>{message='Google routing connection unavailable. Saved estimates remain in use.';status();});
+  void checkSession();
 })();
 
