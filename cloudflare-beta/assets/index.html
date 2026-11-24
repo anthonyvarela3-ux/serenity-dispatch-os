@@ -153,6 +153,12 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-off
 .manifest-review-row{border:1px solid var(--border);border-radius:12px;padding:16px;margin:14px 0;background:var(--inset)}.manifest-review-row h4{margin:0}.manifest-review-row .field{margin-top:10px}.manifest-review-row label{font-size:16px}.manifest-review-row input,.manifest-review-row select{font-size:18px;min-height:48px}.modal:has(.manifest-review-row){width:min(860px,94vw);max-width:94vw}.workspace-actions{flex-wrap:wrap}
 .pickup-reminder{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 16px;margin:12px 0;background:var(--selection);border:1px solid var(--accent);border-radius:12px}.pickup-reminder strong{font-size:18px}.pickup-reminder .small{margin-top:5px}#pickupReminderDraft{display:block;width:100%;margin-top:8px;min-height:130px;background:var(--input);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:18px}
 .pickup-guidance{font-size:14px;line-height:1.4;color:var(--text);border-left:3px solid var(--accent);padding:5px 8px;margin:7px 0}.guidance-check{display:flex;align-items:center;gap:10px;font-size:16px;line-height:1.4}.guidance-check input{width:22px;height:22px;flex-shrink:0}
+#gasDialog{width:min(92vw,38rem);max-height:85vh;max-height:85dvh;margin:auto;padding:0;overflow:hidden;color:var(--text)}
+#gasDialog[open]{display:flex;flex-direction:column}
+.gas-dialog-header{flex:none;padding:15px;border-bottom:1px solid var(--border)}
+.gas-dialog-header h2{margin:0 0 6px}
+.gas-dialog-header p{margin:0 0 10px}
+.gas-dialog-body{min-height:0;overflow:auto;overscroll-behavior:contain;padding:0 15px 15px}
 </style></head><body><div class="quickdock" role="group" aria-label="Display theme">
 
 <button class="btn" id="themeToggle" type="button">☾ Night</button>
@@ -1399,14 +1405,17 @@ document.addEventListener('visibilitychange',()=>{
   refreshLiveClock();
 });
 setInterval(refreshLiveClock,15000);
-</script><script src="/routing.js?v=eta-freshness-1"></script><script src="/manifest-core.js"></script><script src="/manifest-import.js"></script><script src="/pickup-reminder.js?v=pickup-prompt-1"></script><script src="/address-reports.js"></script><dialog id="gasDialog" class="panel" aria-labelledby="gasTitle" style="width:min(92vw,38rem);max-height:85vh;color:inherit">
+</script><script src="/routing.js?v=eta-freshness-1"></script><script src="/manifest-core.js"></script><script src="/manifest-import.js"></script><script src="/pickup-reminder.js?v=pickup-prompt-1"></script><script src="/address-reports.js"></script><dialog id="gasDialog" class="panel" aria-labelledby="gasTitle">
+<div class="gas-dialog-header">
 <h2 id="gasTitle">Find Gas</h2>
 <p class="small muted">Closest stations within 10 miles · straight-line distance</p>
 <div class="actions">
 <label for="gasGrade">Fuel grade <select id="gasGrade"><option value="REGULAR_UNLEADED">Regular</option><option value="MIDGRADE">Midgrade</option><option value="PREMIUM">Premium</option><option value="DIESEL">Diesel</option></select></label>
 <button class="btn primary" id="gasRefresh" type="button">Refresh prices</button>
-<form method="dialog"><button class="btn">Close</button></form>
+<form method="dialog"><button class="btn" autofocus>Close</button></form>
 </div>
+</div>
+<div class="gas-dialog-body">
 <p id="gasStatus" role="status"></p>
 <div class="actions" role="group" aria-label="Compare prices on Google">
 <a class="btn" id="gasSearchNearby" href="https://www.google.com/search?q=regular+gas+prices+near+me" target="_blank" rel="noopener noreferrer">Google nearby prices</a>
@@ -1420,6 +1429,7 @@ setInterval(refreshLiveClock,15000);
 <p id="gasRange"></p>
 <ol id="gasStations" style="padding-inline-start:1.5rem"></ol>
 <p id="gasSource" class="small" translate="no" style="font-weight:400;font-family:Roboto,sans-serif"></p>
+</div>
 </div>
 </dialog>
 <script src="/find-gas.js?v=3"></script>
