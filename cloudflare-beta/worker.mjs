@@ -49,9 +49,9 @@ export class RoutingBudget {
     const fuel = path === '/consume-fuel';
     const consume = fuel || path === '/consume';
     const now = Date.now();
-    // Allow one extra production lookup for the November 23 fuel test.
+    // Suspend the daily fuel cap for the November 23 production test.
     const fuelTestEnds = Date.parse('2026-11-24T00:00:00-05:00');
-    const dailyFuelLimit = now < fuelTestEnds ? 3 : 2;
+    const dailyFuelLimit = now < fuelTestEnds ? null : 2;
     const limit = fuel ? dailyFuelLimit : 150;
     const minuteLimit = fuel ? 3 : 20;
     const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
@@ -60,10 +60,10 @@ export class RoutingBudget {
       let counts = await tx.get('counts');
       if (counts?.date !== date) counts = { date, used: 0, minute, minuteUsed: 0 };
       if (counts.minute !== minute) { counts.minute = minute; counts.minuteUsed = 0; }
-      if (consume && counts.used >= limit) return { error: fuel ? 'FUEL_DAILY_LIMIT' : 'DAILY_ROUTE_LIMIT', used: counts.used, limit };
+      if (consume && limit !== null && counts.used >= limit) return { error: fuel ? 'FUEL_DAILY_LIMIT' : 'DAILY_ROUTE_LIMIT', used: counts.used, limit };
       if (consume && counts.minuteUsed >= minuteLimit) return { error: fuel ? 'FUEL_RATE_LIMIT' : 'ROUTE_RATE_LIMIT', used: counts.used, limit };
       if (consume) { counts.used++; counts.minuteUsed++; await tx.put('counts', counts); }
-      return { used: counts.used, limit, remaining: limit - counts.used };
+      return { used: counts.used, limit, remaining: limit === null ? null : limit - counts.used };
     });
     return json(result, result.error ? 429 : 200);
   }
