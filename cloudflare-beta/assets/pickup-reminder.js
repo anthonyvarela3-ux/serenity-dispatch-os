@@ -45,16 +45,19 @@
     if(!current){tick();return;}
     notice=current;
     const trip=current.trip,body=messageFor(trip,current.type),phone=messagePhone(trip.phone);
-    const link=smsDraftUrl(phone,body,appleSmsDevice());
+    const useMessagesWeb=appleSmsDevice(),link=smsDraftUrl(phone,body,useMessagesWeb);
     handle('reviewed');
     modal('Pickup message · '+trip.who,
       '<p>Estimated arrival '+fmt(current.p.pickup)+(current.p.pickupRough?' · Rough estimate':'')+'.</p>'+
       '<label for="pickupReminderDraft">Message preview</label><textarea id="pickupReminderDraft" rows="5" readonly>'+esc(body)+'</textarea>'+
-      '<p class="small">'+(phone?'Recipient · '+esc(trip.who)+' · '+esc(phone):'Save a verified phone number in Customer to open SMS, or choose the contact in Google Voice.')+'</p>'+
-      '<p class="small muted">This prepares a draft. You send it from your messaging app.</p><p id="pickupReminderFeedback" role="status"></p>',
-      '<a class="btn primary" id="pickupReminderSms" '+(link?'href="'+esc(link)+'"':'aria-disabled="true"')+'>Open SMS Draft</a>'+
+      '<p class="small">'+(phone?'Recipient · '+esc(trip.who)+' · '+esc(phone):'Choose a contact in your messaging app, or save a verified number in Customer to open an SMS draft.')+'</p>'+
+      '<p class="small muted">'+(useMessagesWeb?'In Google Messages, select the recipient, paste the draft and tap Send.':'Review and send the draft from your messaging app.')+'</p><p id="pickupReminderFeedback" role="status"></p>',
+      '<a class="btn'+(useMessagesWeb?' primary':'')+'" id="pickupReminderMessagesWeb" href="https://messages.google.com/web/" target="_blank" rel="noopener noreferrer">Copy &amp; Open Google Messages</a>'+
+      '<a class="btn'+(useMessagesWeb?'':' primary')+'" id="pickupReminderSms" '+(link?'href="'+esc(link)+'"':'aria-disabled="true"')+'>Open SMS Draft</a>'+
       '<button class="btn" id="pickupReminderVoice">Copy &amp; Open Google Voice</button>'+
       '<button class="btn" id="pickupReminderCopy">Copy Message</button><button class="btn" id="closeModal">Close</button>');
+    const feedback=$('pickupReminderFeedback');
+    $('pickupReminderMessagesWeb').onclick=()=>copyForGoogleMessages(body,feedback);
     $('pickupReminderSms').onclick=event=>{
       if(!phone){event.preventDefault();$('pickupReminderFeedback').textContent='Save a verified phone number first.';return;}
       $('pickupReminderFeedback').textContent='Opening a draft. Delivery is not confirmed by Serenity.';
