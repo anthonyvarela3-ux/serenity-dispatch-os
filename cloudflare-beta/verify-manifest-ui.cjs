@@ -12,7 +12,8 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
  for(const m of html.split('<script>')[0].matchAll(/id="([^"]+)"/g))ids[m[1]]=new Element(m[1]);
  ids.modalRoot.hidden=true;
  let readText='',terminateCount=0,refreshes=0;
- const context=vm.createContext({console,confirm:()=>true,setTimeout(){},clearTimeout(){},setInterval(){},
+ const timers=new Map();
+ const context=vm.createContext({console,confirm:()=>true,setTimeout(task,delay){const id=Symbol();timers.set(id,{task,delay});return id;},clearTimeout(id){timers.delete(id);},setInterval(){},
    document:{visibilityState:'visible',documentElement:new Element(),getElementById:id=>ids[id]??null,querySelectorAll:()=>[],addEventListener(){},createElement:()=>new Element(),body:{appendChild(){}}},
    window:{Tesseract:{createWorker:async()=>({setParameters:async()=>{},recognize:async()=>({data:{text:readText}}),terminate:async()=>{terminateCount++;}})}},
    localStorage:{getItem:k=>saved[k]??null,setItem:(k,v)=>saved[k]=v},
@@ -28,9 +29,11 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
  run(fs.readFileSync('assets/manifest-import.js','utf8'));
  ids.changeManifest.onclick();
  assert.match(ids.modalRoot.innerHTML,/Change Existing Manifest/);
+ assert.match(ids.modalRoot.innerHTML,/<input class="manifest-file-picker"[^>]*>/);
+ assert.doesNotMatch(ids.modalRoot.innerHTML,/<input[^>]*\bhidden\b[^>]*>/);
  readText='JAMIE SAMPLE\nPU: 10:15 AM\nPublic Station, Beta, NY 11702\nDO: 10:45 AM\nPublic Library, Gamma, NY 11703\nCASEY TEST\nPU: 11:30 AM\nPublic Library, Gamma, NY 11703\nDO: 12:00 PM\nPublic Station, Delta, NY 11704';
  const file={name:'test.png',type:'image/png',size:1000};
- await ids.manifestFiles.onchange({target:{files:[file],value:'test.png'}});
+ await ids.manifestFiles.onchange({target:{files:[{...file,type:''}],value:'test.png'}});
  assert.equal(terminateCount,1);assert.match(ids.modalRoot.innerHTML,/Review Manifest Changes/);
  assert.equal(ids.mrTarget0.value,'F-002');assert.equal(ids.mrTarget1.value,'new');
  assert.equal(run('JSON.stringify(state)'),original,'OCR and review never change the current day');
@@ -48,5 +51,36 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
  ids.changeManifest.onclick();
  await ids.manifestFiles.onchange({target:{files:[{name:'bad.pdf',type:'application/pdf',size:1000}],value:'bad.pdf'}});
  assert.match(ids.modalRoot.innerHTML,/Manifest not changed/);assert.equal(run('JSON.stringify(state)'),original);
- console.log('Manifest UI passes screenshot review, explicit merge, pre-import backup, preserved active events/contacts/shift, traffic invalidation, reversible new day and invalid-file handling.');
+ const ocr=context.window.Tesseract;
+ const createWorker=ocr.createWorker;
+ let started,finishStart;
+ const didStart=new Promise(resolve=>{started=resolve;});
+ ocr.createWorker=()=>new Promise(resolve=>{finishStart=resolve;started();});
+ ids.retryManifest.onclick();
+ const upload=ids.manifestFiles.onchange({target:{files:[file],value:file.name}});
+ await didStart;
+ assert.match(ids.modalRoot.innerHTML,/Reading manifest screenshots/);
+ const startTimeout=[...timers.values()].find(timer=>timer.delay===60000);
+ assert.ok(startTimeout);startTimeout.task();
+ await upload;
+ assert.match(ids.modalRoot.innerHTML,/took too long to start/);
+ assert.equal(run('JSON.stringify(state)'),original);
+ finishStart(await createWorker());
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(terminateCount,3,'A worker that starts after timeout is released');
+ ocr.createWorker=createWorker;
+ ids.retryManifest.onclick();
+ let finishRead;
+ const savedFile={name:'backup.json',size:1000,text:()=>new Promise(resolve=>{finishRead=resolve;})};
+ const jsonUpload=ids.manifestFiles.onchange({target:{files:[savedFile],value:savedFile.name}});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.match(ids.modalRoot.innerHTML,/Reading manifest file/);
+ ids.cancelManifestOCR.onclick();
+ await jsonUpload;
+ ids.uploadNewManifest.onclick();
+ finishRead(JSON.stringify({format:'serenity-001',data:{trips:[]}}));
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.match(ids.modalRoot.innerHTML,/Upload New Manifest/);
+ assert.equal(run('JSON.stringify(state)'),original);
+ console.log('Manifest UI passes screenshot review, merge, Undo, file validation, OCR timeout and cleanup, and canceled file reads.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

@@ -151,6 +151,7 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-off
 @media(max-width:1000px){#customer .grid{grid-template-columns:1fr}.overview-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:640px){.top{padding:10px}.brand{font-size:14px}.header-info{margin-right:85px}.header-info .pill{display:none}.mainnav{gap:5px}.mainnav .btn{flex:1;min-width:0;padding:10px 7px;font-size:14px}.overview-grid{grid-template-columns:1fr}.rosthead>*:nth-child(5),.rosthead>*:nth-child(6),.trip>*:nth-child(5),.trip>*:nth-child(6){display:block}.customer-time .live-time{font-size:27px}.customer-time .scheduled-time{font-size:22px}#overview .checkpoints{gap:6px}.checkpoint-info{padding:8px}.checkpoint-time{font-size:19px}.customer-time{padding:11px}.quickdock{left:auto}}
 .manifest-review-row{border:1px solid var(--border);border-radius:12px;padding:16px;margin:14px 0;background:var(--inset)}.manifest-review-row h4{margin:0}.manifest-review-row .field{margin-top:10px}.manifest-review-row label{font-size:16px}.manifest-review-row input,.manifest-review-row select{font-size:18px;min-height:48px}.modal:has(.manifest-review-row){width:min(860px,94vw);max-width:94vw}.workspace-actions{flex-wrap:wrap}
+.manifest-file-picker{display:block;width:100%;margin-top:8px;color:var(--text);font:inherit}.manifest-file-picker::file-selector-button{min-height:44px;margin-right:8px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--inset);color:inherit;font:inherit;font-weight:700;cursor:pointer}
 .pickup-reminder{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 16px;margin:12px 0;background:var(--selection);border:1px solid var(--accent);border-radius:12px}.pickup-reminder strong{font-size:18px}.pickup-reminder .small{margin-top:5px}#pickupReminderDraft{display:block;width:100%;margin-top:8px;min-height:130px;background:var(--input);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:18px}
 .pickup-guidance{font-size:14px;line-height:1.4;color:var(--text);border-left:3px solid var(--accent);padding:5px 8px;margin:7px 0}.guidance-check{display:flex;align-items:center;gap:10px;font-size:16px;line-height:1.4}.guidance-check input{width:22px;height:22px;flex-shrink:0}
 #gasDialog{width:min(92vw,38rem);max-height:85vh;max-height:85dvh;margin:auto;padding:0;overflow:hidden;color:var(--text)}
@@ -1405,7 +1406,7 @@ document.addEventListener('visibilitychange',()=>{
   refreshLiveClock();
 });
 setInterval(refreshLiveClock,15000);
-</script><script src="/routing.js?v=eta-freshness-1"></script><script src="/manifest-core.js"></script><script src="/manifest-import.js"></script><script src="/pickup-reminder.js?v=pickup-prompt-1"></script><script src="/address-reports.js"></script><dialog id="gasDialog" class="panel" aria-labelledby="gasTitle">
+</script><script src="/routing.js?v=eta-freshness-1"></script><script src="/manifest-core.js"></script><script src="/manifest-import.js?v=upload-2"></script><script src="/pickup-reminder.js?v=pickup-prompt-1"></script><script src="/address-reports.js"></script><dialog id="gasDialog" class="panel" aria-labelledby="gasTitle">
 <div class="gas-dialog-header">
 <h2 id="gasTitle">Find Gas</h2>
 <p class="small muted">Closest stations within 10 miles · straight-line distance</p>

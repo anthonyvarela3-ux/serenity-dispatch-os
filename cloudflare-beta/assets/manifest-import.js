@@ -20,7 +20,29 @@
     });
     return libraryPromise;
   }
-  function stop(){if(!job)return;job.cancelled=true;job.worker?.terminate().catch(()=>{});job=null;}
+  function releaseWorker(worker){
+    if(worker)void Promise.resolve().then(()=>worker.terminate()).catch(()=>{});
+  }
+  function stop(){
+    const token=job;if(!token)return;
+    job=null;token.cancelled=true;token.interrupt?.('Manifest upload canceled.');
+    releaseWorker(token.worker);token.worker=null;
+  }
+  async function readStep(token,task,timeout,message){
+    let timer;
+    try{
+      return await new Promise((resolve,reject)=>{
+        token.interrupt=reason=>reject(Error(reason));
+        timer=setTimeout(()=>token.interrupt(message),timeout);
+        Promise.resolve().then(()=>{if(!token.cancelled)return task();}).then(resolve,reject);
+      });
+    }finally{clearTimeout(timer);token.interrupt=null;}
+  }
+  function isScreenshot(file){
+    const type=String(file.type||'').toLowerCase();
+    return ['image/png','image/jpeg','image/webp'].includes(type)||
+      ((!type||type==='application/octet-stream')&&/\.(png|jpe?g|webp)$/i.test(file.name));
+  }
   $('modalRoot').addEventListener('click',event=>{
     if(event.target.id==='closeModal'||event.target.id==='cancelManifestOCR'||event.target.classList.contains('modalshade'))stop();
   });
@@ -29,8 +51,7 @@
     modal(mode==='merge'?'Change Existing Manifest':'Upload New Manifest',
       '<p>'+(mode==='merge'?'Add or revise today’s remaining runs. Existing runs and all recorded progress stay saved.':'Start a new service day. Your current day is backed up before replacement.')+'</p>'+
       '<p class="small muted">Choose one or more RoutingBox screenshots, or a Serenity JSON file. Screenshot text is read on this device; the OCR engine downloads when first needed. Review names, times and addresses before applying.</p>'+
-      '<label for="manifestFiles" class="btn primary">Choose screenshots or JSON</label><input id="manifestFiles" type="file" accept="image/png,image/jpeg,image/webp,application/json,.json" multiple hidden>'+
-      '<p id="manifestPickError" role="alert"></p>',
+      '<label for="manifestFiles">Choose screenshots or JSON</label><input class="manifest-file-picker" id="manifestFiles" type="file" accept="image/png,image/jpeg,image/webp,application/json,.png,.jpg,.jpeg,.webp,.json" multiple>',
       '<button class="btn" id="closeModal">Cancel</button>');
     $('manifestFiles').onchange=readFiles;
   }
@@ -41,42 +62,56 @@
   }
   async function readFiles(event){
     const files=Array.from(event.target.files||[]);event.target.value='';if(!files.length)return;
-    let token;
+    stop();
+    const token={cancelled:false,worker:null,interrupt:null};job=token;
     try{
       if(files.length>4||files.some(f=>f.size>20*1024*1024))throw Error('Choose at most four screenshots, each smaller than 20 MB.');
       const jsonFiles=files.filter(f=>/\.json$/i.test(f.name)||f.type==='application/json');
-      if(jsonFiles.length){
-        if(files.length!==1)throw Error('Choose a JSON file by itself, or choose screenshots together.');
-        const obj=JSON.parse(await files[0].text());
-        if(obj.format!=='serenity-001'||!Array.isArray(obj.data?.trips)||obj.data.trips.length>100)throw Error('Choose a Serenity manifest JSON backup.');
-        draft=M.deduplicate(obj.data.trips.map(t=>({riderName:String(t.riderName||t.who||''),who:String(t.who||''),scheduled:t.scheduled,
-          scheduledDrop:t.scheduledDrop??null,pickupArea:String(t.pickupArea||''),dropArea:String(t.dropArea||''),kind:t.kind,pickupNotice:t.pickupNotice||(t.dialysisReturn===true?'dialysis':'auto'),dialysisReturn:t.dialysisReturn===true,driveMiles:Number.isFinite(t.driveMiles)?t.driveMiles:null,driveMilesEstimated:!!t.driveMilesEstimated})));
-        sourceDate=obj.data.serviceDate||'';review([]);return;
-      }
-      if(files.some(f=>!['image/png','image/jpeg','image/webp'].includes(f.type)))throw Error('Use PNG or JPEG screenshots, or a Serenity JSON file.');
-      token={cancelled:false,worker:null};job=token;
-      modal('Reading manifest screenshots','<p id="manifestOCRProgress" role="status">Loading OCR… The first use may take a little longer.</p><p class="small muted">Your saved runs stay unchanged until you review and apply.</p>',
+      if(jsonFiles.length&&files.length!==1)throw Error('Choose a JSON file by itself, or choose screenshots together.');
+      if(!jsonFiles.length&&files.some(f=>!isScreenshot(f)))throw Error('Use PNG, JPEG, or WebP screenshots, or a Serenity JSON file.');
+      modal(jsonFiles.length?'Reading manifest file':'Reading manifest screenshots',
+        '<p id="manifestOCRProgress" role="status">'+(jsonFiles.length?'Reading saved manifest…':'Loading OCR… The first use may take a little longer.')+'</p><p class="small muted">Your saved runs stay unchanged until you review and apply.</p>',
         '<button class="btn" id="cancelManifestOCR">Cancel</button>');
       $('cancelManifestOCR').onclick=()=>{stop();closeModal();};
-      const T=await library();if(token.cancelled)return;
+      if(jsonFiles.length){
+        const text=await readStep(token,()=>files[0].text(),15000,'The file took too long to open. Save it to your device and try again.');
+        if(token.cancelled)return;
+        let obj;
+        try{obj=JSON.parse(text);}catch{throw Error('Choose a Serenity manifest JSON backup.');}
+        if(obj?.format!=='serenity-001'||!Array.isArray(obj.data?.trips)||obj.data.trips.length>100)throw Error('Choose a Serenity manifest JSON backup.');
+        draft=M.deduplicate(obj.data.trips.map(t=>({riderName:String(t.riderName||t.who||''),who:String(t.who||''),scheduled:t.scheduled,
+          scheduledDrop:t.scheduledDrop??null,pickupArea:String(t.pickupArea||''),dropArea:String(t.dropArea||''),kind:t.kind,pickupNotice:t.pickupNotice||(t.dialysisReturn===true?'dialysis':'auto'),dialysisReturn:t.dialysisReturn===true,driveMiles:Number.isFinite(t.driveMiles)?t.driveMiles:null,driveMilesEstimated:!!t.driveMilesEstimated})));
+        sourceDate=obj.data.serviceDate||'';review([]);job=null;return;
+      }
+      const T=await readStep(token,library,50000,'OCR download timed out. Check your connection and try again.');
+      if(token.cancelled)return;
+      if(!T?.createWorker)throw Error('OCR could not load. Reload the page and try again.');
       let index=0;
-      token.worker=await T.createWorker('eng',1,{
-        workerPath:'https://cdn.jsdelivr.net/npm/tesseract.js@6.0.1/dist/worker.min.js',
-        corePath:'https://cdn.jsdelivr.net/npm/tesseract.js-core@6.0.0',
-        logger:progress=>{if(!token.cancelled&&$('manifestOCRProgress'))$('manifestOCRProgress').textContent='Screenshot '+(index+1)+' of '+files.length+' · '+String(progress.status||'Reading')+(Number.isFinite(progress.progress)?' · '+Math.round(progress.progress*100)+'%':'');}
-      });
-      if(token.cancelled){await token.worker.terminate();return;}
-      await token.worker.setParameters({preserve_interword_spaces:'1'});
+      const ocrError='The screenshot reader stopped. Try again with one screenshot saved on this device.';
+      await readStep(token,async()=>{
+        const worker=await T.createWorker('eng',1,{
+          workerPath:'https://cdn.jsdelivr.net/npm/tesseract.js@6.0.1/dist/worker.min.js',
+          corePath:'https://cdn.jsdelivr.net/npm/tesseract.js-core@6.0.0',
+          errorHandler:()=>token.interrupt?.(ocrError),
+          logger:progress=>{if(!token.cancelled&&$('manifestOCRProgress'))$('manifestOCRProgress').textContent='Screenshot '+(index+1)+' of '+files.length+' · '+String(progress.status||'Reading')+(Number.isFinite(progress.progress)?' · '+Math.round(progress.progress*100)+'%':'');}
+        });
+        if(token.cancelled)releaseWorker(worker);
+        else token.worker=worker;
+      },60000,'The screenshot reader took too long to start. Check your connection and try again.');
+      if(token.cancelled)return;
+      await readStep(token,()=>token.worker.setParameters({preserve_interword_spaces:'1'}),15000,ocrError);
       const texts=[];
       for(index=0;index<files.length;index++){
         if(token.cancelled)return;
-        const result=await token.worker.recognize(files[index]);texts.push(result.data.text);
+        const result=await readStep(token,()=>token.worker.recognize(files[index]),60000,'Screenshot '+(index+1)+' took too long to read. Try a smaller or clearer screenshot.');
+        texts.push(result.data.text);
       }
-      await token.worker.terminate();token.worker=null;if(token.cancelled)return;job=null;
+      if(token.cancelled)return;
+      releaseWorker(token.worker);token.worker=null;
       sourceText=texts.join('\n--- Next screenshot ---\n');
       sourceDate=/\bTomorrow\b/i.test(sourceText)?datePlusOne():localServiceDate();
-      readScreenshotText();
-    }catch(error){if(token?.cancelled)return;stop();errorView(error.message||'The screenshot could not be read. Try a clearer screenshot.');}
+      readScreenshotText();job=null;
+    }catch(error){if(token.cancelled)return;stop();errorView(error.message||'The manifest could not be read. Try again with one file.');}
   }
   function readScreenshotText(){
     const pages=sourceText.split(/^--- Next screenshot ---$/m).map(M.parse);
