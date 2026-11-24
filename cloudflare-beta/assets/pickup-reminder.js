@@ -77,5 +77,10 @@
     ledger[key]={status:'reviewed',tripId:trip.id,recordedAt:Date.now(),handledAt:Date.now()};save();
     if(notice?.key===key){notice=null;$('pickupReminder').hidden=true;}
   }};
+  function checkVisibleReminder(){
+    if(document.visibilityState!=='hidden')tick();
+  }
+  document.addEventListener('visibilitychange',checkVisibleReminder);
+  window.addEventListener('pageshow',checkVisibleReminder);
   tick();
 })();

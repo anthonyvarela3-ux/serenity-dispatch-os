@@ -14,7 +14,7 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
  let readText='',terminateCount=0,refreshes=0;
  const context=vm.createContext({console,confirm:()=>true,setTimeout(){},clearTimeout(){},setInterval(){},
    document:{visibilityState:'visible',documentElement:new Element(),getElementById:id=>ids[id]??null,querySelectorAll:()=>[],addEventListener(){},createElement:()=>new Element(),body:{appendChild(){}}},
-   window:{Tesseract:{createWorker:async()=>({setParameters:async()=>{},recognize:async()=>({data:{text:readText}}),terminate:async()=>{terminateCount++;}})}},
+   window:{addEventListener(){},Tesseract:{createWorker:async()=>({setParameters:async()=>{},recognize:async()=>({data:{text:readText}}),terminate:async()=>{terminateCount++;}})}},
    localStorage:{getItem:k=>saved[k]??null,setItem:(k,v)=>saved[k]=v},
  });
  const run=s=>vm.runInContext(s,context);

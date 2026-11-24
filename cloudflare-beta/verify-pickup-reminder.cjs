@@ -1,6 +1,7 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 (async()=>{
  const html=fs.readFileSync('assets/index.html','utf8'),ids={},saved={},opened=[],copied=[];
+ const documentEvents={},windowEvents={};
  class Element{
    constructor(id){this.id=id;this.value='';this.dataset={};this.style={};this.attributes={};this.classList={toggle(){}};}
    addEventListener(type,fn){this[type]??=fn;}setAttribute(n,v){this.attributes[n]=v;}removeAttribute(n){delete this.attributes[n];}
@@ -10,9 +11,10 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
  }
  for(const m of html.split('<script>')[0].matchAll(/id="([^"]+)"/g))ids[m[1]]=new Element(m[1]);ids.modalRoot.hidden=true;
  const context=vm.createContext({console,confirm:()=>true,setTimeout(){},clearTimeout(){},setInterval(){},
-   document:{visibilityState:'visible',documentElement:new Element(),getElementById:id=>ids[id]??null,querySelectorAll:()=>[],addEventListener(){},createElement:()=>new Element(),body:{appendChild(){}}},
+   document:{visibilityState:'visible',documentElement:new Element(),getElementById:id=>ids[id]??null,querySelectorAll:()=>[],addEventListener:(type,fn)=>(documentEvents[type]??=[]).push(fn),createElement:()=>new Element(),body:{appendChild(){}}},
    localStorage:{getItem:k=>saved[k]??null,setItem:(k,v)=>saved[k]=v},
-   navigator:{userAgent:'iPad',clipboard:{writeText:async text=>copied.push(text)}},window:{open:(...args)=>opened.push(args)},
+   navigator:{userAgent:'Mozilla/5.0 (Linux; Android 16; Pixel 9 Pro XL) Chrome/142 Mobile',clipboard:{writeText:async text=>copied.push(text)}},
+   window:{open:(...args)=>opened.push(args),addEventListener:(type,fn)=>(windowEvents[type]??=[]).push(fn)},
  });
  const run=s=>vm.runInContext(s,context),script=fs.readFileSync('assets/pickup-reminder.js','utf8');
  run(html.split('<script>')[1].split('</script>')[0]);
@@ -20,7 +22,12 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
  ids.notes.value='Unsaved note';ids.phone.value='Unsaved number';
  run(script);assert.equal(ids.pickupReminder.hidden,true,'11 minutes away is not due');
  const before=run('JSON.stringify(state)');
- run("deviceTime=()=> '09:15';pickupReminderController.tick();");
+ run("document.visibilityState='hidden';deviceTime=()=> '09:15';pickupReminderController.tick();");
+ assert.equal(ids.pickupReminder.hidden,true,'Hidden pages do not announce pickup reminders');
+ ids.modalRoot.hidden=false;
+ run("document.visibilityState='visible'");
+ for(const listener of documentEvents.visibilitychange)listener();
+ ids.modalRoot.hidden=true;
  assert.equal(ids.pickupReminder.hidden,false);assert.match(ids.pickupReminderTitle.textContent,/Alex · 10 min/);
  assert.match(ids.pickupReminderDetail.textContent,/9:25 AM/,'The reminder uses delayed ETA, not scheduled 9:00 pickup');
  assert.equal(run('JSON.stringify(state)'),before,'Automatic reminders never alter run status, actuals or selection');
@@ -29,11 +36,14 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
  ids.pickupReminderReview.onclick();
  assert.match(ids.modalRoot.innerHTML,/Hi, it&#39;s Anthony from Serenity/);
  assert.match(ids.modalRoot.innerHTML,/approximately ten minutes out/);
- assert.match(ids.modalRoot.innerHTML,/sms:\+15555550123/);
+ assert.match(ids.modalRoot.innerHTML,/sms:\+15555550123\?body=/);
  assert.equal(run('state.selected'),'F-002','Reviewing another rider does not replace the selected run or unsaved notes');
  await ids.pickupReminderCopy.onclick();assert.match(copied[0],/approximately ten minutes/);
  assert.equal(opened.length,0);
- run('closeModal()');run(script);assert.equal(ids.pickupReminder.hidden,true,'Reviewed reminders stay handled after a page/module reload');
+ run('closeModal()');
+ for(const listener of windowEvents.pageshow)listener();
+ assert.equal(ids.pickupReminder.hidden,true,'Returning to the page does not repeat a reviewed reminder');
+ run(script);assert.equal(ids.pickupReminder.hidden,true,'Reviewed reminders stay handled after a page/module reload');
  run("state.trips[0].status=6;state.trips[0].actual.Finished=550;Object.assign(state.trips[1],{scheduled:575,status:1,reposition:15,actual:{'En Route to Pickup':550},phone:''});deviceTime=()=> '09:15';pickupReminderController.tick();");
  assert.equal(ids.pickupReminder.hidden,false,'The next run receives its own reminder');
  ids.pickupReminderDismiss.onclick();run(script);assert.equal(ids.pickupReminder.hidden,true,'Dismissal survives reload');
