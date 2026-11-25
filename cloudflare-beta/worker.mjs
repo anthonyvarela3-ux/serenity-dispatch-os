@@ -1,3 +1,5 @@
+import { serveWorkSession } from './work-session.mjs';
+
 const VERSION = 'google-routing-beta-v1';
 const COOKIE = '__Host-serenity-routing';
 const SESSION_SECONDS = 18 * 3600, REMEMBERED_SECONDS = 30 * 24 * 3600;
@@ -197,6 +199,8 @@ async function nearbyFuel(request, env) {
 export default {
   async fetch(request, env) {
     const path = new URL(request.url).pathname;
+    if (['/api/work-driver', '/api/work-login', '/api/work-logout'].includes(path))
+      return serveWorkSession(request, env, path);
     if (path === '/api/health') {
       if (!['GET', 'HEAD'].includes(request.method)) return json({ error: 'METHOD_NOT_ALLOWED' }, 405, { Allow: 'GET, HEAD' });
       const response = json({ service: 'Serenity Dispatch', version: VERSION, runtime: 'worker',
